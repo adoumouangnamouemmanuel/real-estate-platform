@@ -31,13 +31,13 @@
 
 ## 1. Guiding Philosophy
 
-Four weeks is aggressive. Every engineer must internalize these rules before writing a single line of code.
+4 weeks is intense. Every team member must internalize these rules before writing a single line of code.
 
 **Ship vertically, not horizontally.**
 Do not build all database schemas, then all APIs, then all UIs in isolation. Each phase delivers a complete, testable, working slice of the system. By end of Week 1, the monorepo is set up and the skeleton runs. By end of Week 2, a developer can create a listing and it persists in the database. By end of Week 3, a user can browse it on the web. By Week 4, it is deployed to production.
 
 **The listing is the atom of the product.**
-Every feature in ByTe - search, favorites, WhatsApp contact, ratings, analytics - exists to surface a property listing. Build the listing pipeline first. Build everything else around it.
+Every feature in ByTe; search, favorites, WhatsApp contact, ratings, analytics; exists to surface a property listing. Build the listing pipeline first. Build everything else around it.
 
 **Mobile-first is not a design preference. It is a constraint.**
 ByTe's users in African markets are on mobile, on slow networks. Every UI decision, every image upload strategy, every API response payload must be evaluated against: *does this work on a mid-range Android on a 3G connection?*
@@ -539,7 +539,7 @@ These rules are **non-negotiable**. Emmanuel enforces them at PR review. A PR th
 ### 6.1 Branch Strategy (Git Flow)
 
 ```
-main          Production branch. Protected. Only Emmanuel merges here.
+master          Production branch. Protected. Only Emmanuel merges here.
               Deploy to production on merge via GitHub Actions.
 
 develop       Integration branch. Protected. All PRs target this branch.
@@ -566,7 +566,7 @@ hotfix/*      Critical production fixes only. Branch off main.
 ```
 
 **Rules:**
-- Never commit directly to `main` or `develop`. Always use PRs.
+- Never commit directly to `master` or `develop`. Always use PRs.
 - Branch names must be lowercase, hyphen-separated.
 - Delete feature branches after merge (GitHub setting: auto-delete head branches).
 
