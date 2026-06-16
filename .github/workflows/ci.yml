@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  detect-workspaces:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.detect.outputs.frontend }}
+      backend: ${{ steps.detect.outputs.backend }}
+      root: ${{ steps.detect.outputs.root }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: detect
+        shell: bash
+        run: |
+          frontend=false
+          backend=false
+          root=false
+
+          if [ -f package.json ]; then
+            root=true
+          fi
+
+          if [ -f frontend/package.json ]; then
+            frontend=true
+          fi
+
+          if [ -f backend/package.json ]; then
+            backend=true
+          fi
+
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "root=$root" >> "$GITHUB_OUTPUT"
+
+  frontend:
+    needs: detect-workspaces
+    if: needs.detect-workspaces.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Lint
+        working-directory: frontend
+        run: |
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.lint ? 0 : 1)"; then npm run lint; else echo "No lint script found; skipping."; fi
+      - name: Test
+        working-directory: frontend
+        run: |
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.test ? 0 : 1)"; then npm run test; else echo "No test script found; skipping."; fi
+      - name: Build
+        working-directory: frontend
+        run: |
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.build ? 0 : 1)"; then npm run build; else echo "No build script found; skipping."; fi
+
+  backend:
+    needs: detect-workspaces
+    if: needs.detect-workspaces.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Lint
+        working-directory: backend
+        run: |
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.lint ? 0 : 1)"; then npm run lint; else echo "No lint script found; skipping."; fi
+      - name: Test
+        working-directory: backend
+        run: |
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.test ? 0 : 1)"; then npm run test; else echo "No test script found; skipping."; fi
+
+  root-check:
+    needs: detect-workspaces
+    if: needs.detect-workspaces.outputs.root == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install root dependencies
+        run: npm ci
+      - name: Validate workspace scripts
+        run: |
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.lint ? 0 : 1)"; then npm run lint; else echo "No root lint script found; skipping."; fi
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.test ? 0 : 1)"; then npm run test; else echo "No root test script found; skipping."; fi
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.build ? 0 : 1)"; then npm run build; else echo "No root build script found; skipping."; fi

@@ -1,0 +1,20 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Staging deployment placeholder
+        run: |
+          echo "Configure staging deployment secrets and scripts before enabling this workflow."
+          echo "Expected targets: staging backend, frontend, and database migrations."

@@ -1,0 +1,17 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Production deployment placeholder
+        run: |
+          echo "Configure production deployment secrets and scripts before enabling this workflow."
+          echo "Expected targets: production backend, frontend, and database migrations."
