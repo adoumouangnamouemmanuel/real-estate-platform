@@ -1,9 +1,9 @@
 // ============================================================
 // LUMAVOK REAL ESTATE PLATFORM - DATABASE DESIGN
 // ============================================================
-// Mandatory Tables - 12 tables
-// Strategic Tables (Future Expansion) - 4 tables
-// Total: 16 tables
+// Mandatory Tables - 14 tables
+// Strategic Tables (Future Expansion) - 1 table
+// Total: 15 tables
 // ============================================================
 
 // ============================================================
@@ -62,10 +62,9 @@ Table property {
   category VARCHAR [note: 'APARTMENT, HOUSE, LAND, COMMERCIAL']
   listing_type VARCHAR [note: 'SALE or RENT']
   price DECIMAL [note: 'Price in local currency']
-  address VARCHAR
-  city VARCHAR
-  region VARCHAR
-  country VARCHAR [default: 'BF', note: 'Country code']
+  address VARCHAR [note: 'Street address']
+  city_id INT [note: 'Links to City (Ville)']
+  district_id INT [note: 'Links to District (Quartier)']
   bedrooms INT
   bathrooms INT
   car_spaces INT
@@ -83,7 +82,32 @@ Table property {
 }
 
 // ------------------------------------------------------------
-// 1.4 Feature - List of Amenities
+// 1.4 City - List of Cities (Villes)
+// ------------------------------------------------------------
+Table city {
+  id INT PK
+  name VARCHAR [unique, note: 'City name (e.g., Ouagadougou, Bobo-Dioulasso)']
+  is_active BOOLEAN [default: true, note: 'Is this city available on the platform?']
+  created_at TIMESTAMP
+}
+
+// ------------------------------------------------------------
+// 1.5 District - Precise Location within a City (Quartier)
+// ------------------------------------------------------------
+Table district {
+  id INT PK
+  city_id INT [note: 'Links to City (Ville)']
+  name VARCHAR [note: 'District/Neighborhood name (e.g., Zone du Bois, Dafra, Koulouba)']
+  is_active BOOLEAN [default: true, note: 'Is this district available on the platform?']
+  created_at TIMESTAMP
+
+  indexes {
+    (city_id, name) [unique, note: 'A district name must be unique within a city']
+  }
+}
+
+// ------------------------------------------------------------
+// 1.6 Feature - List of Amenities
 // ------------------------------------------------------------
 Table feature {
   id INT PK
@@ -94,7 +118,7 @@ Table feature {
 }
 
 // ------------------------------------------------------------
-// 1.5 PropertyFeature - Links Amenities to Properties
+// 1.7 PropertyFeature - Links Amenities to Properties
 // ------------------------------------------------------------
 Table property_feature {
   id INT PK
@@ -108,7 +132,7 @@ Table property_feature {
 }
 
 // ------------------------------------------------------------
-// 1.6 PropertyMedia - Images and Videos
+// 1.8 PropertyMedia - Images and Videos
 // ------------------------------------------------------------
 Table property_media {
   id INT PK
@@ -127,7 +151,7 @@ Table property_media {
 }
 
 // ------------------------------------------------------------
-// 1.7 PropertyFavorite - User's Saved Properties
+// 1.9 PropertyFavorite - User's Saved Properties
 // ------------------------------------------------------------
 Table property_favorite {
   id INT PK
@@ -141,7 +165,7 @@ Table property_favorite {
 }
 
 // ------------------------------------------------------------
-// 1.8 PropertyDeveloperRating - Trust Scores
+// 1.10 PropertyDeveloperRating - Trust Scores
 // ------------------------------------------------------------
 Table property_developer_rating {
   id INT PK
@@ -158,7 +182,7 @@ Table property_developer_rating {
 }
 
 // ------------------------------------------------------------
-// 1.9 Notification - Alerts for Sellers
+// 1.11 Notification - Alerts for Sellers
 // ------------------------------------------------------------
 Table notification {
   id INT PK
@@ -177,7 +201,7 @@ Table notification {
 }
 
 // ------------------------------------------------------------
-// 1.10 PropertyAnalytics - Daily Performance
+// 1.12 PropertyAnalytics - Daily Performance
 // ------------------------------------------------------------
 Table property_analytics {
   id INT PK
@@ -195,7 +219,7 @@ Table property_analytics {
 }
 
 // ------------------------------------------------------------
-// 1.11 Report - User Complaints / Admin Moderation
+// 1.13 Report - User Complaints / Admin Moderation
 // ------------------------------------------------------------
 Table report {
   id INT PK
@@ -217,7 +241,7 @@ Table report {
 }
 
 // ------------------------------------------------------------
-// 1.12 RefreshToken - Secure Auto-Login
+// 1.14 RefreshToken - Secure Auto-Login
 // ------------------------------------------------------------
 Table refresh_token {
   id INT PK
@@ -232,62 +256,6 @@ Table refresh_token {
   indexes {
     token_hash [unique]
   }
-}
-
-
-// ============================================================
-// 2. STRATEGIC TABLES (WEST AFRICAN EXPANSION)
-// ============================================================
-
-// ------------------------------------------------------------
-// 2.1 Country - List of Countries
-// ------------------------------------------------------------
-Table country {
-  id INT PK
-  code VARCHAR(2) [unique, note: 'ISO-3166 alpha-2 code']
-  name VARCHAR
-  currency_code VARCHAR(3) [note: 'ISO-4217 currency code']
-  currency_symbol VARCHAR
-  phone_code VARCHAR(5) [note: 'International dialing code']
-  is_active BOOLEAN [default: true]
-  created_at TIMESTAMP
-}
-
-// ------------------------------------------------------------
-// 2.2 Region - States or Provinces
-// ------------------------------------------------------------
-Table region {
-  id INT PK
-  country_id INT
-  name VARCHAR
-  code VARCHAR
-  created_at TIMESTAMP
-}
-
-// ------------------------------------------------------------
-// 2.3 City - Official Cities
-// ------------------------------------------------------------
-Table city {
-  id INT PK
-  region_id INT
-  name VARCHAR
-  latitude DECIMAL(10,8)
-  longitude DECIMAL(11,8)
-  is_active BOOLEAN [default: true]
-  created_at TIMESTAMP
-}
-
-// ------------------------------------------------------------
-// 2.4 LocalizedProperty - Translated Listings
-// ------------------------------------------------------------
-Table localized_property {
-  id INT PK
-  property_id INT
-  locale VARCHAR(5) [note: 'e.g., fr, en, pt']
-  title VARCHAR
-  description TEXT
-  created_at TIMESTAMP
-  updated_at TIMESTAMP
 }
 
 
@@ -307,6 +275,13 @@ Ref: property.property_developer_id > property_developer.id
 Ref: property_developer_rating.property_developer_id > property_developer.id
 Ref: notification.property_developer_id > property_developer.id
 
+// --- Property Location Relationships ---
+Ref: property.city_id > city.id
+Ref: property.district_id > district.id
+
+// --- District Relationships ---
+Ref: district.city_id > city.id
+
 // --- Property Relationships ---
 Ref: property_feature.property_id > property.id
 Ref: property_media.property_id > property.id
@@ -315,12 +290,3 @@ Ref: property_analytics.property_id > property.id
 
 // --- Feature Relationships ---
 Ref: property_feature.feature_id > feature.id
-
-// --- Country Relationships ---
-Ref: region.country_id > country.id
-
-// --- Region Relationships ---
-Ref: city.region_id > region.id
-
-// --- LocalizedProperty Relationships ---
-Ref: localized_property.property_id > property.id
