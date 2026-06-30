@@ -1,0 +1,25 @@
+{
+  "name": "@lumavok/database",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Prisma schema, migrations, and seed scripts for the Lumavok Real Estate Platform",
+  "type": "commonjs",
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed": "ts-node seeds/index.ts",
+    "studio": "prisma studio"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.19.43",
+    "prisma": "^5.20.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "bcryptjs": "^2.4.3"
+  }
+}

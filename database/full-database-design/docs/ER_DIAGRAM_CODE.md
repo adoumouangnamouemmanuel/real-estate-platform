@@ -1,9 +1,7 @@
 // ============================================================
 // LUMAVOK REAL ESTATE PLATFORM - DATABASE DESIGN
 // ============================================================
-// Mandatory Tables - 14 tables
-// Strategic Tables (Future Expansion) - 1 table
-// Total: 15 tables
+// Total: 14 tables | Paste this code here -> https://dbdiagram.io/home 
 // ============================================================
 
 // ============================================================
@@ -260,7 +258,7 @@ Table refresh_token {
 
 
 // ============================================================
-// 3. RELATIONSHIPS (FOREIGN KEYS)
+// 2. RELATIONSHIPS (FOREIGN KEYS)
 // ============================================================
 
 // --- User Relationships ---
