@@ -1,0 +1,405 @@
+// database/schema.prisma
+// LUMAVOK Real Estate Platform — Single source of truth for all data models.
+// Owner: Clement (DBA). Built from README.md + ER-Diagram-Code.md (29/06/2026).
+//
+// NOTE ON PRIMARY KEYS: the dbdiagram.io source (ER-Diagram-Code.md) shows
+// `id INT PK` on every table. That was a drafting mistake in the diagram —
+// confirmed with the project owner — and this schema uses cuid() string IDs
+// instead, consistent with the rest of the platform's ID strategy (no
+// sequential-ID enumeration in public URLs like /properties/:id).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  USER
+  PROPERTY_DEVELOPER
+}
+
+enum PropertyCategory {
+  APARTMENT
+  HOUSE
+  LAND
+  COMMERCIAL
+}
+
+enum ListingType {
+  SALE
+  RENT
+}
+
+enum PropertyStatus {
+  DRAFT // hidden
+  ACTIVE // visible
+  RESERVED // hidden
+  SOLD // hidden
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum TransactionType {
+  SALE
+  RENT
+  OTHER
+}
+
+enum NotificationType {
+  PROPERTY_LIKED
+  PROPERTY_VIEWED_MILESTONE
+}
+
+enum ReportTargetType {
+  PROPERTY
+  PROPERTY_DEVELOPER
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+// ─────────────────────────────────────────────
+// 1.1 User — the login account
+// ─────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  developerProfile PropertyDeveloper?
+  favorites        PropertyFavorite[]
+  ratingsGiven     PropertyDeveloperRating[]
+  reports          Report[]
+  refreshTokens    RefreshToken[]
+
+  @@map("user")
+}
+
+// ─────────────────────────────────────────────
+// 1.2 PropertyDeveloper — the seller/agent business profile
+// "Developer" = property seller, not software engineer.
+// ─────────────────────────────────────────────
+
+model PropertyDeveloper {
+  id                    String    @id @default(cuid())
+  userId                String    @unique @map("user_id")
+  businessName          String?   @map("business_name")
+  whatsappNumber        String    @map("whatsapp_number")
+  phoneNumber           String    @map("phone_number")
+  profileImageUrl       String    @map("profile_image_url")
+  profileImagePublicId  String    @map("profile_image_public_id")
+  coverImageUrl         String?   @map("cover_image_url")
+  coverImagePublicId    String?   @map("cover_image_public_id")
+  bio                   String?
+  yearsOfExperience     Int?      @map("years_of_experience")
+  specialization        String?
+  languagesSpoken       String?   @map("languages_spoken")
+  address               String?
+  city                  String // free-text city of operation, distinct from the normalized City lookup table used by Property
+  isVerified            Boolean   @default(false) @map("is_verified")
+  verifiedSince         DateTime? @map("verified_since")
+  averageRating         Decimal   @default(0) @db.Decimal(3, 2) @map("average_rating")
+  totalRatings          Int       @default(0) @map("total_ratings")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at") // soft delete
+
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  properties    Property[]
+  ratings       PropertyDeveloperRating[]
+  notifications Notification[]
+
+  @@index([isVerified], map: "idx_developer_verified")
+  @@index([averageRating], map: "idx_developer_rating")
+  @@index([city], map: "idx_developer_city")
+  @@map("property_developer")
+}
+
+// ─────────────────────────────────────────────
+// 1.3 Property — the actual listing
+// ─────────────────────────────────────────────
+
+model Property {
+  id                  String           @id @default(cuid())
+  propertyDeveloperId String           @map("property_developer_id")
+  title               String
+  slug                String           @unique
+  description         String
+  category            PropertyCategory
+  listingType         ListingType      @map("listing_type")
+  price               Decimal          @db.Decimal(15, 2)
+  address             String
+  cityId              String           @map("city_id")
+  districtId          String?          @map("district_id")
+  bedrooms            Int?
+  bathrooms           Int?
+  carSpaces            Int?            @map("car_spaces")
+  landSizeSqM         Decimal?         @db.Decimal(10, 2) @map("land_size_sq_m")
+  buildingSizeSqM     Decimal?         @db.Decimal(10, 2) @map("building_size_sq_m")
+  yearBuilt           Int?             @map("year_built")
+  status              PropertyStatus   @default(DRAFT)
+  viewCount           Int              @default(0) @map("view_count")
+  whatsappClickCount  Int              @default(0) @map("whatsapp_click_count")
+  favoriteCount       Int              @default(0) @map("favorite_count") // denormalized counter, kept in sync with PropertyFavorite by the app layer
+  publishedAt         DateTime?        @map("published_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+  deletedAt           DateTime?        @map("deleted_at") // soft delete
+
+  developer  PropertyDeveloper  @relation(fields: [propertyDeveloperId], references: [id])
+  cityRef    City               @relation(fields: [cityId], references: [id])
+  district   District?          @relation(fields: [districtId], references: [id])
+  features   PropertyFeature[]
+  media      PropertyMedia[]
+  favorites  PropertyFavorite[]
+  analytics  PropertyAnalytics[]
+
+  @@index([status], map: "idx_property_status")
+  @@index([cityId], map: "idx_property_city")
+  @@index([districtId], map: "idx_property_district")
+  @@index([listingType], map: "idx_property_listing_type")
+  @@index([price], map: "idx_property_price")
+  @@index([propertyDeveloperId], map: "idx_property_developer")
+  @@index([category], map: "idx_property_category")
+  @@index([createdAt], map: "idx_property_created")
+  @@map("property")
+}
+
+// ─────────────────────────────────────────────
+// 1.4 City — list of cities (Villes)
+// ─────────────────────────────────────────────
+
+model City {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  districts  District[]
+  properties Property[]
+
+  @@map("city")
+}
+
+// ─────────────────────────────────────────────
+// 1.5 District — precise location within a city (Quartier)
+// ─────────────────────────────────────────────
+
+model District {
+  id        String   @id @default(cuid())
+  cityId    String   @map("city_id")
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  city       City       @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  properties Property[]
+
+  @@unique([cityId, name], map: "idx_district_city_name") // "Dafra" can exist in both Ouagadougou and Bobo-Dioulasso
+  @@index([cityId], map: "idx_district_city")
+  @@map("district")
+}
+
+// ─────────────────────────────────────────────
+// 1.6 Feature — list of amenities
+// ─────────────────────────────────────────────
+
+model Feature {
+  id          String   @id @default(cuid())
+  featureName String   @unique @map("feature_name")
+  category    String?
+  iconName    String?  @map("icon_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  properties PropertyFeature[]
+
+  @@map("feature")
+}
+
+// ─────────────────────────────────────────────
+// 1.7 PropertyFeature — links amenities to properties (M:N join)
+// ─────────────────────────────────────────────
+
+model PropertyFeature {
+  id         String   @id @default(cuid())
+  propertyId String   @map("property_id")
+  featureId  String   @map("feature_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  feature  Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, featureId], map: "uq_property_feature")
+  @@index([propertyId], map: "idx_property_feature_property")
+  @@index([featureId], map: "idx_property_feature_feature")
+  @@map("property_feature")
+}
+
+// ─────────────────────────────────────────────
+// 1.8 PropertyMedia — images and videos
+// ─────────────────────────────────────────────
+
+model PropertyMedia {
+  id         String    @id @default(cuid())
+  propertyId String    @map("property_id")
+  url        String
+  publicId   String    @map("public_id")
+  mediaType  MediaType @default(IMAGE) @map("media_type")
+  isPrimary  Boolean   @default(false) @map("is_primary")
+  order      Int       @default(0)
+  altText    String?   @map("alt_text")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId], map: "idx_media_property")
+  @@index([propertyId, isPrimary], map: "idx_media_primary")
+  @@map("property_media")
+}
+
+// ─────────────────────────────────────────────
+// 1.9 PropertyFavorite — user's saved properties (M:N join)
+// ─────────────────────────────────────────────
+
+model PropertyFavorite {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  propertyId String   @map("property_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId], map: "uq_favorite_user_property")
+  @@index([userId], map: "idx_favorite_user")
+  @@index([propertyId], map: "idx_favorite_property")
+  @@map("property_favorite")
+}
+
+// ─────────────────────────────────────────────
+// 1.10 PropertyDeveloperRating — trust scores
+// ─────────────────────────────────────────────
+
+model PropertyDeveloperRating {
+  id                  String           @id @default(cuid())
+  raterUserId         String           @map("rater_user_id")
+  propertyDeveloperId String           @map("property_developer_id")
+  score               Int // 1-5, CHECK constraint added in migration SQL
+  comment             String?
+  transactionType     TransactionType? @map("transaction_type")
+  createdAt           DateTime         @default(now()) @map("created_at")
+
+  rater     User              @relation(fields: [raterUserId], references: [id], onDelete: Cascade)
+  developer PropertyDeveloper @relation(fields: [propertyDeveloperId], references: [id], onDelete: Cascade)
+
+  @@unique([raterUserId, propertyDeveloperId], map: "uq_rating_rater_developer")
+  @@index([propertyDeveloperId], map: "idx_rating_developer")
+  @@index([raterUserId], map: "idx_rating_rater")
+  @@map("property_developer_rating")
+}
+
+// ─────────────────────────────────────────────
+// 1.11 Notification — alerts for sellers
+// ─────────────────────────────────────────────
+
+model Notification {
+  id                  String           @id @default(cuid())
+  propertyDeveloperId String           @map("property_developer_id")
+  type                NotificationType
+  title               String
+  message             String
+  metadata            Json?
+  isRead              Boolean          @default(false) @map("is_read")
+  readAt              DateTime?        @map("read_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+
+  developer PropertyDeveloper @relation(fields: [propertyDeveloperId], references: [id], onDelete: Cascade)
+
+  @@index([propertyDeveloperId], map: "idx_notification_developer")
+  @@index([propertyDeveloperId, isRead], map: "idx_notification_read")
+  @@map("notification")
+}
+
+// ─────────────────────────────────────────────
+// 1.12 PropertyAnalytics — daily performance rollup
+// ─────────────────────────────────────────────
+
+model PropertyAnalytics {
+  id             String   @id @default(cuid())
+  propertyId     String   @map("property_id")
+  date           DateTime @db.Date
+  views          Int      @default(0)
+  whatsappClicks Int      @default(0) @map("whatsapp_clicks")
+  favorites      Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, date], map: "idx_analytics_property_date")
+  @@map("property_analytics")
+}
+
+// ─────────────────────────────────────────────
+// 1.13 Report — user complaints / admin moderation
+// Polymorphic target (PROPERTY or PROPERTY_DEVELOPER) — see DATABASE.md
+// for why target_id has no DB-level foreign key.
+// ─────────────────────────────────────────────
+
+model Report {
+  id              String           @id @default(cuid())
+  reporterUserId  String?          @map("reporter_user_id") // nullable - anonymous reports allowed
+  targetType      ReportTargetType @map("target_type")
+  targetId        String           @map("target_id")
+  reason          String
+  description     String?
+  status          ReportStatus     @default(OPEN)
+  resolutionNote  String?          @map("resolution_note")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  reporter User? @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+
+  @@index([status], map: "idx_report_status")
+  @@index([targetType, targetId], map: "idx_report_target")
+  @@map("report")
+}
+
+// ─────────────────────────────────────────────
+// 1.14 RefreshToken — secure auto-login
+// ─────────────────────────────────────────────
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  userAgent  String?   @map("user_agent")
+  ipAddress  String?   @map("ip_address")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_token_user")
+  @@index([tokenHash], map: "idx_token_hash")
+  @@map("refresh_token")
+}
