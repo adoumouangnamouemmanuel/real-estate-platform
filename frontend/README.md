@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ByTe Frontend
 
-## Getting Started
+The Next.js web application for ByTe — a property discovery and trust platform for African
+markets. Public browsing, developer dashboards, and admin moderation all live in this workspace.
+See [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and
+[`docs/ByTe_RealEstate_Roadmap.md`](../docs/ByTe_RealEstate_Roadmap.md) at the repo root for the
+full system design and delivery plan.
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The app expects the backend API at
+`NEXT_PUBLIC_API_URL` (defaults to `http://localhost:4000/api/v1` — see `constants/config.ts`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script                 | Purpose                                            |
+| ---------------------- | -------------------------------------------------- |
+| `npm run dev`          | Start the Next.js dev server                       |
+| `npm run build`        | Production build (also type-checks)                |
+| `npm run start`        | Serve the production build                         |
+| `npm run lint`         | ESLint (`next/core-web-vitals` + TypeScript rules) |
+| `npm run format`       | Format the codebase with Prettier                  |
+| `npm run format:check` | Check formatting without writing (CI use)          |
 
-## Learn More
+## Folder Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/                Next.js App Router
+  (public)/          No-auth routes: home, properties, developers, search — owns Navbar/Footer
+  (auth)/            login, register, forgot-password
+  (dashboard)/       Developer-only routes (auth required)
+  (admin)/           Admin-only routes
+  layout.tsx         Root layout: html/body shell, fonts — no page chrome
+  globals.css        Tailwind v4 config + design tokens (CSS-first, no tailwind.config.ts)
+components/
+  ui/                shadcn/ui-generated primitives — don't hand-edit, regenerate via CLI
+  layout/            Navbar, Footer, and future sidebars
+  common/            Cross-domain reusable components (ErrorBoundary, Loading, EmptyState)
+hooks/               Custom hooks (thin wrappers over store/query state)
+lib/                 api.ts (Axios client), utils.ts (shadcn's cn() helper)
+store/               Zustand global client state (auth, filters — server state goes in React Query instead)
+types/               Shared TypeScript types
+constants/           routes.ts (path constants), config.ts (env-derived config)
+public/              Static assets served as-is
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Coding Conventions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Repo-wide rules live in [`CONTRIBUTING.md`](../CONTRIBUTING.md) — the frontend-specific subset:
 
-## Deploy on Vercel
+- **TypeScript strict, no `any`.** Narrow `unknown` instead.
+- **No `console.log`** in committed code.
+- **Components never call the API directly** — go through a hook backed by React Query, or the
+  `store/` for client state. `lib/api.ts` is the only place an Axios instance is constructed.
+- **Naming:** components `PascalCase.tsx` (`PropertyCard.tsx`), hooks/utils `camelCase.ts`
+  (`useAuth.ts`, `formatters.ts`), booleans prefixed `is`/`has`/`can`.
+- **Styling:** Tailwind utilities first; reach for `components/ui/` (shadcn) primitives before
+  writing new low-level components. Design tokens are CSS variables in `globals.css`
+  (`--background`, `--border`, `--primary`, etc. — shadcn's standard names, not a custom prefix)
+  — reference them via Tailwind classes (`bg-background`, `text-muted-foreground`), never
+  hardcoded hex/oklch values in components.
+- **Formatting is enforced by Prettier**, not manual style debates — run `npm run format` before
+  committing. `eslint-config-prettier` disables any ESLint stylistic rules that would conflict.
+- Every exported function/component gets at least a one-line doc comment when its purpose or a
+  non-obvious constraint isn't already clear from its name and signature.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **App Router, RSC by default.** Add `"use client"` only when a component needs state, effects,
+  browser APIs, or event handlers. Class components (e.g. `ErrorBoundary`) always need it.
+- **Route groups control layout, not URLs.** `(public)`, `(auth)`, `(dashboard)`, `(admin)` each
+  get their own `layout.tsx` for role-appropriate chrome; the root `layout.tsx` stays minimal.
+- **Auth token lives in memory only** (`store/authStore.ts`), never `localStorage` — refresh
+  tokens are an HttpOnly cookie the browser sends automatically. See `docs/ARCHITECTURE.md` §6
+  for the full silent-refresh flow (not yet implemented in `lib/api.ts`).
+- **Media uploads go directly from the browser to Cloudinary**, not through this app or the
+  Express API, once that flow is built (see architecture doc §7).
+- This app is Next.js 16 / React 19 / Tailwind v4 — **assume APIs and conventions differ from
+  older Next.js versions you may know**; check `node_modules/next/dist/docs/` before relying on
+  memorized App Router behavior (see `AGENTS.md`).
+
+## Contribution Workflow
+
+- Branch from `develop`: `feature/BYTE-{issue}-short-description`.
+- Conventional Commits: `feat(scope): subject`, imperative, ≤72 chars, no trailing period.
+- Keep PRs small (repo guideline: ≤400 lines changed) and scoped to one concern.
+- Screenshots/recordings required on frontend PRs.
+- Update `CHANGELOG.md` for user-facing changes, `.env.example` for new env vars.
+- Emmanuel reviews and approves all PRs before merge.
+
+Full detail: [`CONTRIBUTING.md`](../CONTRIBUTING.md) at the repo root.
