@@ -1,0 +1,31 @@
+#version: '3.8'
+
+services:
+  # 1. The PostgreSQL Database Container
+  postgres:
+    image: postgres:15-alpine
+    container_name: byte_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: byte_secure_password123
+      POSTGRES_DB: bytedb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. The Redis Cache Container
+  redis:
+    image: redis:7-alpine
+    container_name: byte_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+# Persistent volumes so your database data isn't erased when containers stop
+volumes:
+  postgres_data:
+  redis_data:
