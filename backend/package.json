@@ -9,7 +9,7 @@
   "author": "soaliye.kindo@ashesi.edu.gh",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon index.ts",
+    "dev": "npx nodemon --exec ts-node index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:generate": "cd ../database && npx prisma generate",
     "prebuild": "npm run db:generate"
