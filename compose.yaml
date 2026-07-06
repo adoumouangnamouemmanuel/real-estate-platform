@@ -27,14 +27,14 @@ services:
 
   # 3. Your Backend API Container
   backend:
-    image: backend
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: byte_backend
+    image: backend_image
+    container_name: backend_container
     restart: always
     ports:
-      - "5000:5000"
+      - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:byte_secure_password123@postgres:5432/bytedb?schema=public
       - REDIS_URL=redis://redis:6379

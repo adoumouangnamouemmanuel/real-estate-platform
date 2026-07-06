@@ -1,0 +1,49 @@
+#version: '3.8'
+
+services:
+  # 1. The PostgreSQL Database Container
+  postgres:
+    image: postgres:15-alpine
+    container_name: byte_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: byte_secure_password123
+      POSTGRES_DB: bytedb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. The Redis Cache Container
+  redis:
+    image: redis:7-alpine
+    container_name: byte_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 3. Your Backend API Container
+  backend:
+    image: backend_image
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_container
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:byte_secure_password123@postgres:5432/bytedb?schema=public
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    command: ["node", "--inspect=0.0.0.0:9229", "index.js"]
+
+# Persistent volumes so your database data isn't erased when containers stop
+volumes:
+  postgres_data:
+  redis_data:
