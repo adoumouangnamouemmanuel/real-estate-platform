@@ -12,3 +12,27 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
+
+export type ListingType = "SALE" | "RENT";
+
+export type PropertyStatus =
+  "ACTIVE" | "RESERVED" | "SOLD" | "DRAFT" | "SUSPENDED";
+
+export interface PropertyMedia {
+  url: string;
+  publicId: string;
+}
+
+export interface Property {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  price: number;
+  listingType: ListingType;
+  category: string;
+  city: string;
+  region: string;
+  status: PropertyStatus;
+  media: PropertyMedia[];
+}
