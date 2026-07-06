@@ -25,6 +25,23 @@ services:
     volumes:
       - redis_data:/data
 
+  # 3. Your Backend API Container
+  backend:
+    image: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: byte_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:byte_secure_password123@postgres:5432/bytedb?schema=public
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+
 # Persistent volumes so your database data isn't erased when containers stop
 volumes:
   postgres_data:

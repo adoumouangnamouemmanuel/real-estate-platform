@@ -1,18 +1,26 @@
+
 {
   "name": "@lumavok/backend",
   "version": "1.0.0",
   "description": "Backend API service for the Lumavok Real Estate Platform",
   "main": "index.js",
   "type": "commonjs",
+  "keywords": [],
+  "author": "soaliye.kindo@ashesi.edu.gh",
+  "license": "MIT",
   "scripts": {
     "dev": "nodemon index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:generate": "cd ../database && npx prisma generate",
+    "prebuild": "npm run db:generate"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@lumavok/database": "*",
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.5.4",
+    "prisma": "^5.22.0"
   }
 }
