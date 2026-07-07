@@ -49,6 +49,9 @@ feat(auth): add registration controllers
 
 
 # Git & Github Reference
+#### 1. Remote Branches
+`git branch -a`
+
 #### 1. Get Changes from another Branch
 `git fetch origin` or `git fetch origin <some_branch>`
 

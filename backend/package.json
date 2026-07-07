@@ -4,12 +4,12 @@
   "version": "1.0.0",
   "description": "Backend API service for the Lumavok Real Estate Platform",
   "main": "index.js",
-  "type": "commonjs",
+  "type": "module",
   "keywords": [],
   "author": "soaliye.kindo@ashesi.edu.gh",
   "license": "MIT",
   "scripts": {
-    "dev": "npx nodemon --exec ts-node index.ts",
+    "dev": "nodemon --exec node --loader ts-node/esm src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:generate": "cd ../database && npx prisma generate",
     "prebuild": "npm run db:generate"
