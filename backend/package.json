@@ -15,6 +15,7 @@
     "prebuild": "npm run db:generate"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "express": "^4.21.2"
   },
   "devDependencies": {
