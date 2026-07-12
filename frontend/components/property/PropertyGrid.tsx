@@ -11,6 +11,7 @@ interface PropertyGridProps {
   isError: boolean;
   error?: unknown;
   skeletonCount?: number;
+  emptyDescription?: string;
 }
 
 const GRID_CLASSNAME = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4";
@@ -22,6 +23,7 @@ export function PropertyGrid({
   isError,
   error,
   skeletonCount = 8,
+  emptyDescription = "Try adjusting your search or check back later.",
 }: PropertyGridProps) {
   if (isError) {
     return (
@@ -45,10 +47,7 @@ export function PropertyGrid({
 
   if (properties.length === 0) {
     return (
-      <EmptyState
-        title="No properties found"
-        description="Try adjusting your search or check back later."
-      />
+      <EmptyState title="No properties found" description={emptyDescription} />
     );
   }
 

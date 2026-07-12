@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
 import { PropertiesView } from "@/components/property/PropertiesView";
+import {
+  parsePropertyFilters,
+  type RawPropertySearchParams,
+} from "@/lib/propertyFilters";
 
 export const metadata: Metadata = {
   title: "Properties | ByTe",
@@ -8,14 +12,13 @@ export const metadata: Metadata = {
 };
 
 interface PropertiesPageProps {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<RawPropertySearchParams>;
 }
 
 export default async function PropertiesPage({
   searchParams,
 }: PropertiesPageProps) {
-  const { page } = await searchParams;
-  const pageNumber = Math.max(1, Number(page) || 1);
+  const filters = parsePropertyFilters(await searchParams);
 
-  return <PropertiesView page={pageNumber} />;
+  return <PropertiesView filters={filters} heading="Properties" />;
 }
