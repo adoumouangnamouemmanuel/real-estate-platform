@@ -1,7 +1,9 @@
+import type { FilterChip } from "@/components/common/FilterChips";
 import {
   PROPERTY_CATEGORIES,
   type PropertyCategory,
 } from "@/constants/categories";
+import { formatPrice } from "@/lib/formatters";
 import type { GetPropertiesParams, PropertySort } from "@/services";
 
 export type RawPropertySearchParams = Record<
@@ -41,4 +43,38 @@ export function parsePropertyFilters(
     maxPrice: parsePrice(first(raw.maxPrice)),
     sort: sort && SORT_VALUES.includes(sort) ? sort : undefined,
   };
+}
+
+/** Builds the active-filter chip list for FilterChips from the current URL-derived filters. */
+export function buildPropertyFilterChips(
+  filters: GetPropertiesParams,
+): FilterChip<keyof GetPropertiesParams>[] {
+  const chips: FilterChip<keyof GetPropertiesParams>[] = [];
+
+  if (filters.q) chips.push({ key: "q", label: `"${filters.q}"` });
+
+  if (filters.category) {
+    const category = PROPERTY_CATEGORIES.find(
+      (option) => option.value === filters.category,
+    );
+    chips.push({ key: "category", label: category?.label ?? filters.category });
+  }
+
+  if (filters.city) chips.push({ key: "city", label: filters.city });
+
+  if (filters.minPrice !== undefined) {
+    chips.push({
+      key: "minPrice",
+      label: `Min ${formatPrice(filters.minPrice)}`,
+    });
+  }
+
+  if (filters.maxPrice !== undefined) {
+    chips.push({
+      key: "maxPrice",
+      label: `Max ${formatPrice(filters.maxPrice)}`,
+    });
+  }
+
+  return chips;
 }

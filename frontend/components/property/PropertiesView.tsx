@@ -2,11 +2,12 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
+import { FilterChips } from "@/components/common/FilterChips";
 import { Pagination } from "@/components/common/Pagination";
 import { PropertyGrid } from "@/components/property/PropertyGrid";
-import { FilterChips } from "@/components/search/FilterChips";
 import { FilterPanel } from "@/components/search/FilterPanel";
 import { useProperties } from "@/hooks/useProperties";
+import { buildPropertyFilterChips } from "@/lib/propertyFilters";
 import type { GetPropertiesParams } from "@/services";
 
 interface PropertiesViewProps {
@@ -56,7 +57,10 @@ export function PropertiesView({
       </div>
 
       <FilterPanel filters={filters} onApply={handleFilterChange} />
-      <FilterChips filters={filters} onRemove={handleRemoveFilter} />
+      <FilterChips
+        chips={buildPropertyFilterChips(filters)}
+        onRemove={handleRemoveFilter}
+      />
 
       <PropertyGrid
         properties={data?.items ?? []}
