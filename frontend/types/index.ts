@@ -46,3 +46,22 @@ export interface Property {
   status: PropertyStatus;
   media: PropertyMedia[];
 }
+
+export interface DeveloperSummary {
+  id: string;
+  slug: string;
+  name: string;
+  isVerified: boolean;
+  rating?: number;
+}
+
+/**
+ * The full detail-page shape. Kept separate from Property (the list/card shape) because a real
+ * API would join the developer and other heavier fields only on GET /properties/:slug, not on
+ * the list endpoint — mirrors that distinction instead of forcing every card fetch to carry it.
+ */
+export interface PropertyDetail extends Property {
+  address: string;
+  amenities: string[];
+  developer: DeveloperSummary;
+}

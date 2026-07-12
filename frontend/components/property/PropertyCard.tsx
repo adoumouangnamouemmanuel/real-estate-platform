@@ -2,6 +2,7 @@ import { Building2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { formatPrice } from "@/lib/formatters";
 import type { Property } from "@/types";
@@ -32,9 +33,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
             <Building2 className="size-8" aria-hidden />
           </div>
         )}
-        <span className="bg-background/90 absolute top-2 left-2 rounded-full px-2 py-0.5 text-xs font-medium">
+        <Badge
+          variant="outline"
+          className="bg-background/90 absolute top-2 left-2 border-0"
+        >
           {property.listingType === "SALE" ? "For Sale" : "For Rent"}
-        </span>
+        </Badge>
       </div>
       <div className="flex flex-col gap-1 p-3">
         <p className="truncate text-sm font-medium">{property.title}</p>

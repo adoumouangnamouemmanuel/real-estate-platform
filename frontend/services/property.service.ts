@@ -1,11 +1,77 @@
-import type { PaginatedResult, Property } from "@/types";
+import type { PropertyCategory } from "@/constants/categories";
+import { buildWhatsAppMessage } from "@/lib/whatsapp";
+import type {
+  DeveloperSummary,
+  PaginatedResult,
+  Property,
+  PropertyDetail,
+} from "@/types";
 
 const DEFAULT_PAGE_SIZE = 12;
 const MOCK_LATENCY_MS = 400;
 
+const DEVELOPERS = {
+  atlantic: {
+    id: "d1",
+    slug: "atlantic-properties",
+    name: "Atlantic Properties",
+    isVerified: true,
+    rating: 4.6,
+  },
+  goldcrest: {
+    id: "d2",
+    slug: "goldcrest-homes",
+    name: "Goldcrest Homes",
+    isVerified: true,
+    rating: 4.2,
+  },
+  westgate: {
+    id: "d3",
+    slug: "westgate-developers",
+    name: "Westgate Developers",
+    isVerified: false,
+    rating: 3.8,
+  },
+} satisfies Record<string, DeveloperSummary>;
+
+const AMENITY_POOLS: Record<PropertyCategory, string[]> = {
+  apartment: [
+    "24/7 Security",
+    "Backup Generator",
+    "Fitted Kitchen",
+    "Balcony",
+    "Parking",
+  ],
+  house: [
+    "24/7 Security",
+    "Backup Generator",
+    "Garden",
+    "Parking",
+    "Boys' Quarters",
+  ],
+  land: [
+    "Gated Community",
+    "Electricity Access",
+    "Water Access",
+    "Registered Title",
+  ],
+  commercial: [
+    "Loading Bay",
+    "Backup Generator",
+    "24/7 Security",
+    "Ample Parking",
+  ],
+  office: [
+    "Elevator Access",
+    "Backup Generator",
+    "24/7 Security",
+    "Air Conditioning",
+  ],
+};
+
 // TODO(backend): replace with GET /api/v1/properties once the endpoint exists
 // (see docs/ARCHITECTURE.md §10 for the query contract this should match).
-const MOCK_PROPERTIES: Property[] = [
+const MOCK_PROPERTIES: PropertyDetail[] = [
   {
     id: "p1",
     slug: "luxury-3br-apartment-east-legon",
@@ -17,8 +83,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "apartment",
     city: "Accra",
     region: "Greater Accra",
+    address: "14 Adjei Kojo Street, East Legon",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.apartment,
+    developer: DEVELOPERS.atlantic,
   },
   {
     id: "p2",
@@ -30,8 +99,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "house",
     city: "Accra",
     region: "Greater Accra",
+    address: "9 Volta Street, Airport Residential",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.house,
+    developer: DEVELOPERS.goldcrest,
   },
   {
     id: "p3",
@@ -43,8 +115,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "commercial",
     city: "Tema",
     region: "Greater Accra",
+    address: "Plot 22, Tema Industrial Area",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.commercial,
+    developer: DEVELOPERS.westgate,
   },
   {
     id: "p4",
@@ -56,8 +131,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "office",
     city: "Accra",
     region: "Greater Accra",
+    address: "31 Oxford Street, Osu",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.office,
+    developer: DEVELOPERS.atlantic,
   },
   {
     id: "p5",
@@ -69,8 +147,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "land",
     city: "Kumasi",
     region: "Ashanti",
+    address: "Ahodwo Estates, Plot 14",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.land,
+    developer: DEVELOPERS.goldcrest,
   },
   {
     id: "p6",
@@ -82,8 +163,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "apartment",
     city: "Kumasi",
     region: "Ashanti",
+    address: "6 Nhyiaeso Road, Kumasi",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.apartment,
+    developer: DEVELOPERS.westgate,
   },
   {
     id: "p7",
@@ -95,8 +179,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "house",
     city: "Takoradi",
     region: "Western",
+    address: "18 Beach Road, Takoradi",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.house,
+    developer: DEVELOPERS.atlantic,
   },
   {
     id: "p8",
@@ -108,8 +195,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "apartment",
     city: "Accra",
     region: "Greater Accra",
+    address: "4 Cantonments Road, Accra",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.apartment,
+    developer: DEVELOPERS.goldcrest,
   },
   {
     id: "p9",
@@ -121,8 +211,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "land",
     city: "Accra",
     region: "Greater Accra",
+    address: "Adenta SSNIT Flats Extension, Plot 7",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.land,
+    developer: DEVELOPERS.westgate,
   },
   {
     id: "p10",
@@ -134,8 +227,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "house",
     city: "Kumasi",
     region: "Ashanti",
+    address: "11 Ridge Avenue, Kumasi",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.house,
+    developer: DEVELOPERS.atlantic,
   },
   {
     id: "p11",
@@ -147,8 +243,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "commercial",
     city: "Accra",
     region: "Greater Accra",
+    address: "Spintex Road, near Sakumono Junction",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.commercial,
+    developer: DEVELOPERS.goldcrest,
   },
   {
     id: "p12",
@@ -160,8 +259,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "office",
     city: "Accra",
     region: "Greater Accra",
+    address: "27 Ridge Road, Accra",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.office,
+    developer: DEVELOPERS.westgate,
   },
   {
     id: "p13",
@@ -173,8 +275,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "apartment",
     city: "Takoradi",
     region: "Western",
+    address: "3 Anaji Estate Road, Takoradi",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.apartment,
+    developer: DEVELOPERS.atlantic,
   },
   {
     id: "p14",
@@ -186,8 +291,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "house",
     city: "Tema",
     region: "Greater Accra",
+    address: "Community 25, House 14B, Tema",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.house,
+    developer: DEVELOPERS.goldcrest,
   },
   {
     id: "p15",
@@ -199,8 +307,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "land",
     city: "Takoradi",
     region: "Western",
+    address: "Butumagyebu Coastal Road, Takoradi",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.land,
+    developer: DEVELOPERS.westgate,
   },
   {
     id: "p16",
@@ -212,8 +323,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "apartment",
     city: "Kumasi",
     region: "Ashanti",
+    address: "8 Asokwa Estate Road, Kumasi",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.apartment,
+    developer: DEVELOPERS.atlantic,
   },
   {
     id: "p17",
@@ -225,8 +339,11 @@ const MOCK_PROPERTIES: Property[] = [
     category: "office",
     city: "Tema",
     region: "Greater Accra",
+    address: "Community 1, Tema Motorway Roundabout",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.office,
+    developer: DEVELOPERS.goldcrest,
   },
   {
     id: "p18",
@@ -238,14 +355,21 @@ const MOCK_PROPERTIES: Property[] = [
     category: "commercial",
     city: "Kumasi",
     region: "Ashanti",
+    address: "Adum Central, Kumasi",
     status: "ACTIVE",
     media: [],
+    amenities: AMENITY_POOLS.commercial,
+    developer: DEVELOPERS.westgate,
   },
 ];
 
 export interface GetPropertiesParams {
   page?: number;
   pageSize?: number;
+}
+
+export interface WhatsAppLinkResponse {
+  deeplink: string;
 }
 
 function paginate<T>(
@@ -264,15 +388,48 @@ function paginate<T>(
   };
 }
 
+function delay<T>(value: T): Promise<T> {
+  return new Promise((resolve) =>
+    setTimeout(() => resolve(value), MOCK_LATENCY_MS),
+  );
+}
+
 export const propertyService = {
   getProperties: ({
     page = 1,
     pageSize = DEFAULT_PAGE_SIZE,
-  }: GetPropertiesParams = {}) =>
-    new Promise<PaginatedResult<Property>>((resolve) => {
-      setTimeout(
-        () => resolve(paginate(MOCK_PROPERTIES, page, pageSize)),
-        MOCK_LATENCY_MS,
-      );
+  }: GetPropertiesParams = {}): Promise<PaginatedResult<Property>> =>
+    delay(paginate(MOCK_PROPERTIES, page, pageSize)),
+
+  getPropertyBySlug: (slug: string): Promise<PropertyDetail> => {
+    const property = MOCK_PROPERTIES.find((item) => item.slug === slug);
+    return property
+      ? delay(property)
+      : Promise.reject(new Error("Property not found"));
+  },
+
+  getRelatedProperties: (
+    property: Pick<Property, "id" | "category">,
+    limit = 4,
+  ): Promise<Property[]> =>
+    delay(
+      MOCK_PROPERTIES.filter(
+        (item) =>
+          item.category === property.category && item.id !== property.id,
+      ).slice(0, limit),
+    ),
+
+  /**
+   * Simulates GET /api/v1/properties/:id/whatsapp-link. The developer's number is never sent
+   * to the client before this call (docs/ARCHITECTURE.md §8's number-masking design) — since
+   * no real number exists yet, the mock omits it entirely rather than fabricating one.
+   */
+  getWhatsAppLink: (property: {
+    title: string;
+    city: string;
+    listingType: Property["listingType"];
+  }): Promise<WhatsAppLinkResponse> =>
+    delay({
+      deeplink: `https://wa.me/?text=${encodeURIComponent(buildWhatsAppMessage(property))}`,
     }),
 };

@@ -6,6 +6,7 @@
  */
 export const FEATURES = {
   WHATSAPP_CONTACT: false,
+  PROPERTY_MAP: false,
   DEVELOPER_ANALYTICS: false,
   ADMIN_REPORTS: false,
 } as const;
