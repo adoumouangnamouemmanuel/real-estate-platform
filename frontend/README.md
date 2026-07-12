@@ -43,6 +43,7 @@ components/
   common/            Cross-domain reusable components (ErrorBoundary, Loading, EmptyState)
 hooks/               Custom hooks (thin wrappers over store/query state)
 lib/                 api.ts (Axios client), utils.ts (shadcn's cn() helper)
+services/            One file per API domain (auth.service.ts, ...) — the only place that calls lib/api.ts directly
 store/               Zustand global client state (auth, filters — server state goes in React Query instead)
 types/               Shared TypeScript types
 constants/           routes.ts (path constants), config.ts (env-derived config)
