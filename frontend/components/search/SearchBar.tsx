@@ -22,7 +22,11 @@ export function SearchBar() {
       onSubmit={handleSubmit}
       className="border-border bg-background flex w-full max-w-xl items-center gap-2 rounded-lg border p-2"
     >
+      <label htmlFor="search-query" className="sr-only">
+        Search by city, neighborhood, or property name
+      </label>
       <input
+        id="search-query"
         type="text"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
