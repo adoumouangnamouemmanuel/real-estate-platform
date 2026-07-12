@@ -1,9 +1,12 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Mirrors PropertyCard's layout so the loading state doesn't shift once real cards render. */
-export function PropertyCardSkeleton() {
+export function PropertyCardSkeleton(props: React.ComponentProps<"div">) {
   return (
-    <div className="border-border flex flex-col overflow-hidden rounded-lg border">
+    <div
+      className="border-border flex flex-col overflow-hidden rounded-lg border"
+      {...props}
+    >
       <Skeleton className="aspect-[4/3] w-full rounded-none" />
       <div className="flex flex-col gap-2 p-3">
         <Skeleton className="h-4 w-3/4" />

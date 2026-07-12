@@ -34,9 +34,10 @@ export function PropertyGrid({
 
   if (isLoading) {
     return (
-      <div className={GRID_CLASSNAME}>
+      <div role="status" aria-live="polite" className={GRID_CLASSNAME}>
+        <span className="sr-only">Loading properties…</span>
         {Array.from({ length: skeletonCount }).map((_, index) => (
-          <PropertyCardSkeleton key={index} />
+          <PropertyCardSkeleton key={index} aria-hidden />
         ))}
       </div>
     );
