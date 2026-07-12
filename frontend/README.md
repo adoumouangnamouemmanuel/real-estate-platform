@@ -46,7 +46,7 @@ lib/                 api.ts (Axios client), errors.ts (API error messages), util
 services/            One file per API domain (auth.service.ts, ...) — the only place that calls lib/api.ts directly
 store/               Zustand global client state (auth, filters — server state goes in React Query instead)
 types/               Shared TypeScript types
-constants/           routes.ts (path constants), config.ts (env-derived config)
+constants/           routes.ts (path constants), config.ts (env-derived config), features.ts (feature flags)
 public/              Static assets served as-is
 ```
 
