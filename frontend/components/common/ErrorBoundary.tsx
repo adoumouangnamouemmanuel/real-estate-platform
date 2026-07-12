@@ -2,6 +2,8 @@
 
 import { Component, type ReactNode } from "react";
 
+import { ErrorState } from "@/components/common/ErrorState";
+
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
@@ -23,13 +25,7 @@ export class ErrorBoundary extends Component<
 
   render() {
     if (this.state.hasError) {
-      return (
-        this.props.fallback ?? (
-          <div className="text-muted-foreground flex flex-1 items-center justify-center p-8 text-sm">
-            Something went wrong.
-          </div>
-        )
-      );
+      return this.props.fallback ?? <ErrorState />;
     }
 
     return this.props.children;

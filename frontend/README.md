@@ -40,9 +40,9 @@ app/                Next.js App Router
 components/
   ui/                shadcn/ui-generated primitives — don't hand-edit, regenerate via CLI
   layout/            Navbar, Footer, and future sidebars
-  common/            Cross-domain reusable components (ErrorBoundary, Loading, EmptyState)
+  common/            Cross-domain reusable components (ErrorBoundary, Loading, ErrorState, EmptyState)
 hooks/               Custom hooks (thin wrappers over store/query state)
-lib/                 api.ts (Axios client), utils.ts (shadcn's cn() helper)
+lib/                 api.ts (Axios client), errors.ts (API error messages), utils.ts (shadcn's cn() helper)
 services/            One file per API domain (auth.service.ts, ...) — the only place that calls lib/api.ts directly
 store/               Zustand global client state (auth, filters — server state goes in React Query instead)
 types/               Shared TypeScript types
@@ -81,6 +81,11 @@ Repo-wide rules live in [`CONTRIBUTING.md`](../CONTRIBUTING.md) — the frontend
   restores the session on app load; `proxy.ts` gates `(dashboard)` and `(admin)` on the
   refresh cookie's presence. See `docs/ARCHITECTURE.md` §6 for the full flow — deep role checks
   (DEVELOPER vs ADMIN) still happen server-side, not in middleware.
+- **Async UI has three canonical states**: `components/common/Loading`, `ErrorState`, and
+  `EmptyState`. Pair `ErrorState` with `lib/errors.ts`'s `getErrorMessage()` to turn an Axios
+  failure into a user-facing message — don't reach into `error.response.data` by hand in
+  components. `ErrorBoundary`'s default fallback is `ErrorState`, so render-time and API-failure
+  errors look the same.
 - **Media uploads go directly from the browser to Cloudinary**, not through this app or the
   Express API, once that flow is built (see architecture doc §7).
 - This app is Next.js 16 / React 19 / Tailwind v4 — **assume APIs and conventions differ from
