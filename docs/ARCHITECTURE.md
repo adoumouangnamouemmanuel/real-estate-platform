@@ -1,7 +1,7 @@
 # ByTe Real Estate Platform — Architecture
 
 > **Document type:** Architecture Reference + Architecture Decision Records (ADRs)
-> **Last updated:** June 15, 2026
+> **Last updated:** July 12, 2026
 > **Owner:** Emmanuel (CTO)
 > **Status:** Living document — update this file when any architectural decision changes.
 
@@ -940,6 +940,26 @@ Layer 6: Data
 - ✅ Zero real-time messaging infrastructure to maintain
 - ⚠️ ByTe has no visibility into conversations between developers and users
 - ⚠️ Cannot track conversion from WhatsApp click to actual transaction
+
+---
+
+### ADR-007: Frontend Domains Built Against Typed Mock Services, Not Stubbed Pages
+
+**Date:** July 12, 2026
+**Status:** Accepted
+**Decision:** With no backend endpoints implemented yet, the Properties and Developer domains were built as complete, production-shaped frontend features backed by `services/*.service.ts` functions that return realistic mock data — not placeholder pages waiting on the API.
+
+**Rationale:**
+- Every mock service function's signature matches the query contract this document already specifies (§10 Search query building, §8 WhatsApp deeplink flow) — swapping in a real `fetch`/Axios call later is a query-building change inside one file, not a component redesign.
+- `services/mocks/` holds the raw fixture data (`properties.mock.ts`, `developers.mock.ts`); `*.service.ts` files hold the filtering/sorting/pagination logic that will survive the swap. Developer records are defined once and referenced by both a property's embedded `developer` field and the developer's own profile, so frontend fixtures can't drift the way two independent mocks would.
+- The WhatsApp deeplink flow (`lib/whatsapp.ts`'s `getWhatsAppLink`) is genuinely async and click-triggered even in mock form, preserving the number-masking shape from §8 rather than short-circuiting it.
+- Two feature flags (`FEATURES.WHATSAPP_CONTACT`, `FEATURES.MAP_VIEW`) gate the two capabilities that are frontend-complete but backend-blocked (real developer phone numbers; a Mapbox key), so the UI ships honestly disabled rather than fake-functional.
+
+**Consequences:**
+- ✅ Backend integration for these domains is scoped to `services/*.service.ts` — no frontend component changes expected.
+- ✅ Frontend and backend teams can work in parallel against this document's contracts without a shared staging API.
+- ⚠️ Mock data (18 properties, 3 developers) is hand-authored for variety across categories/cities, not representative of real inventory scale — pagination/empty-state UX should be re-verified once real data volumes exist.
+- ⚠️ `AUTH_COOKIE_NAME` and the WhatsApp-link/developers endpoint shapes are frontend assumptions pending backend confirmation; see `frontend/TODO.md`.
 
 ---
 

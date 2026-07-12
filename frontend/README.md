@@ -40,10 +40,12 @@ app/                Next.js App Router
 components/
   ui/                shadcn/ui-generated primitives — don't hand-edit, regenerate via CLI
   layout/            Navbar, Footer, and future sidebars
-  common/            Cross-domain reusable components (ErrorBoundary, Loading, ErrorState, EmptyState)
+  common/            Cross-domain reusable components (ErrorBoundary, Loading, ErrorState, EmptyState,
+                     Pagination, FilterChips, WhatsAppCTA, MapPlaceholder)
 hooks/               Custom hooks (thin wrappers over store/query state)
 lib/                 api.ts (Axios client), errors.ts (API error messages), utils.ts (shadcn's cn() helper)
 services/            One file per API domain (auth.service.ts, ...) — the only place that calls lib/api.ts directly
+  mocks/               Mock fixtures backing the services until real endpoints exist
 store/               Zustand global client state (auth, filters — server state goes in React Query instead)
 types/               Shared TypeScript types
 constants/           routes.ts (path constants), config.ts (env-derived config), features.ts (feature flags)
