@@ -77,8 +77,10 @@ Repo-wide rules live in [`CONTRIBUTING.md`](../CONTRIBUTING.md) — the frontend
 - **Route groups control layout, not URLs.** `(public)`, `(auth)`, `(dashboard)`, `(admin)` each
   get their own `layout.tsx` for role-appropriate chrome; the root `layout.tsx` stays minimal.
 - **Auth token lives in memory only** (`store/authStore.ts`), never `localStorage` — refresh
-  tokens are an HttpOnly cookie the browser sends automatically. See `docs/ARCHITECTURE.md` §6
-  for the full silent-refresh flow (not yet implemented in `lib/api.ts`).
+  tokens are an HttpOnly cookie the browser sends automatically. `hooks/useAuthBootstrap.ts`
+  restores the session on app load; `proxy.ts` gates `(dashboard)` and `(admin)` on the
+  refresh cookie's presence. See `docs/ARCHITECTURE.md` §6 for the full flow — deep role checks
+  (DEVELOPER vs ADMIN) still happen server-side, not in middleware.
 - **Media uploads go directly from the browser to Cloudinary**, not through this app or the
   Express API, once that flow is built (see architecture doc §7).
 - This app is Next.js 16 / React 19 / Tailwind v4 — **assume APIs and conventions differ from
