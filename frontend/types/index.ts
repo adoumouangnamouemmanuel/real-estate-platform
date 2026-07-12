@@ -1,3 +1,5 @@
+import type { PropertyCategory } from "@/constants/categories";
+
 export type UserRole = "USER" | "DEVELOPER" | "ADMIN";
 
 export interface User {
@@ -30,7 +32,7 @@ export interface Property {
   description: string;
   price: number;
   listingType: ListingType;
-  category: string;
+  category: PropertyCategory;
   city: string;
   region: string;
   status: PropertyStatus;
