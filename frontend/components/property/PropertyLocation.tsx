@@ -1,5 +1,6 @@
 import { MapPin } from "lucide-react";
 
+import { MapPlaceholder } from "@/components/common/MapPlaceholder";
 import { isFeatureEnabled } from "@/constants/features";
 import type { PropertyDetail } from "@/types";
 
@@ -20,11 +21,7 @@ export function PropertyLocation({ property }: PropertyLocationProps) {
         </span>
       </p>
 
-      {!isFeatureEnabled("PROPERTY_MAP") && (
-        <div className="border-border text-muted-foreground flex h-40 items-center justify-center rounded-lg border border-dashed text-sm">
-          Map view coming soon
-        </div>
-      )}
+      {!isFeatureEnabled("MAP_VIEW") && <MapPlaceholder />}
     </div>
   );
 }

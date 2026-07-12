@@ -5,23 +5,22 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "@/lib/errors";
-import { propertyService } from "@/services";
-import type { ListingType } from "@/types";
+import { getWhatsAppLink } from "@/lib/whatsapp";
 
 interface WhatsAppCTAProps {
-  property: {
-    title: string;
-    city: string;
-    listingType: ListingType;
-  };
+  message: string;
+  label?: string;
 }
 
 /**
- * Fetches the deeplink on click rather than embedding it in the DOM — the developer's number
- * is never sent to the client before this call (docs/ARCHITECTURE.md §8's number-masking
- * design). Only rendered when FEATURES.WHATSAPP_CONTACT is on; see PropertyDetailView.
+ * Domain-agnostic — used by both the property detail page and the developer profile page.
+ * Fetches the deeplink on click rather than embedding it in the DOM (docs/ARCHITECTURE.md §8's
+ * number-masking design).
  */
-export function WhatsAppCTA({ property }: WhatsAppCTAProps) {
+export function WhatsAppCTA({
+  message,
+  label = "Contact on WhatsApp",
+}: WhatsAppCTAProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +29,7 @@ export function WhatsAppCTA({ property }: WhatsAppCTAProps) {
     setError(null);
 
     try {
-      const { deeplink } = await propertyService.getWhatsAppLink(property);
+      const { deeplink } = await getWhatsAppLink(message);
       window.open(deeplink, "_blank", "noopener,noreferrer");
     } catch (err) {
       setError(getErrorMessage(err));
@@ -43,7 +42,7 @@ export function WhatsAppCTA({ property }: WhatsAppCTAProps) {
     <div className="flex flex-col gap-1">
       <Button onClick={handleClick} disabled={isLoading} className="gap-2">
         <MessageCircle aria-hidden />
-        {isLoading ? "Opening WhatsApp…" : "Contact on WhatsApp"}
+        {isLoading ? "Opening WhatsApp…" : label}
       </Button>
       {error && (
         <p role="alert" className="text-destructive text-xs">

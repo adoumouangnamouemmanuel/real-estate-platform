@@ -47,12 +47,37 @@ export interface Property {
   media: PropertyMedia[];
 }
 
-export interface DeveloperSummary {
+/** The list/card shape — also what a property embeds for its developer. */
+export interface Developer {
   id: string;
   slug: string;
   name: string;
+  logoUrl?: string;
+  city: string;
+  region: string;
   isVerified: boolean;
   rating?: number;
+  activeListings: number;
+}
+
+export interface DeveloperSocialLinks {
+  website?: string;
+  facebook?: string;
+  instagram?: string;
+}
+
+/**
+ * The full profile-page shape. Kept separate from Developer (the list/card + property-embed
+ * shape) for the same reason as Property/PropertyDetail: a real API would only join bio, cover
+ * image, and stats on GET /developers/:slug, not the list endpoint or a property's join.
+ */
+export interface DeveloperProfile extends Developer {
+  bio: string;
+  coverImageUrl?: string;
+  email: string;
+  socialLinks: DeveloperSocialLinks;
+  totalListings: number;
+  yearsActive: number;
 }
 
 /**
@@ -63,5 +88,5 @@ export interface DeveloperSummary {
 export interface PropertyDetail extends Property {
   address: string;
   amenities: string[];
-  developer: DeveloperSummary;
+  developer: Developer;
 }

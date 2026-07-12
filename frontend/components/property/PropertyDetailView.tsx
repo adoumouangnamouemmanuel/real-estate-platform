@@ -2,14 +2,15 @@ import { MessageCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DeveloperInfoCard } from "@/components/property/DeveloperInfoCard";
+import { WhatsAppCTA } from "@/components/common/WhatsAppCTA";
+import { DeveloperInfoCard } from "@/components/developer/DeveloperInfoCard";
 import { PropertyAmenities } from "@/components/property/PropertyAmenities";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { PropertyLocation } from "@/components/property/PropertyLocation";
 import { PropertyMediaGallery } from "@/components/property/PropertyMediaGallery";
-import { WhatsAppCTA } from "@/components/property/WhatsAppCTA";
 import { isFeatureEnabled } from "@/constants/features";
 import { formatPrice } from "@/lib/formatters";
+import { buildWhatsAppMessage } from "@/lib/whatsapp";
 import type { Property, PropertyDetail } from "@/types";
 
 interface PropertyDetailViewProps {
@@ -74,7 +75,7 @@ export function PropertyDetailView({
           <h2 className="text-lg font-semibold">Contact</h2>
           <DeveloperInfoCard developer={property.developer} />
           {isFeatureEnabled("WHATSAPP_CONTACT") ? (
-            <WhatsAppCTA property={property} />
+            <WhatsAppCTA message={buildWhatsAppMessage(property)} />
           ) : (
             <Button disabled className="gap-2">
               <MessageCircle aria-hidden />
