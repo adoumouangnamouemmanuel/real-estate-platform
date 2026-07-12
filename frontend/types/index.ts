@@ -15,6 +15,14 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export type ListingType = "SALE" | "RENT";
 
 export type PropertyStatus =
