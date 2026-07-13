@@ -16,6 +16,19 @@ test.describe("Accessibility (axe)", () => {
     { name: "Property listing", path: "/properties" },
     { name: "Developer listing", path: "/developers" },
     { name: "Search results", path: "/search?q=Accra" },
+    { name: "Login", path: "/login" },
+    { name: "Registration", path: "/register" },
+    { name: "Forgot password", path: "/forgot-password" },
+    {
+      name: "Reset password (valid token)",
+      path: "/reset-password?token=valid-token-demo",
+    },
+    {
+      name: "Reset password (expired token)",
+      path: "/reset-password?token=expired-token-demo",
+    },
+    { name: "Unauthorized", path: "/unauthorized" },
+    { name: "Forbidden", path: "/forbidden" },
   ];
 
   for (const { name, path } of pages) {
@@ -96,5 +109,33 @@ test.describe("Accessibility (axe)", () => {
     await page.keyboard.press("Enter");
 
     await expect(page).toHaveURL(/\/search\?q=Accra/);
+  });
+
+  test("login form is fully keyboard-operable: tab order, submit via Enter", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+
+    await page.getByLabel("Email").focus();
+    await page.keyboard.type("demo@byte.africa");
+    await page.keyboard.press("Tab");
+    await expect(page.getByLabel("Password", { exact: true })).toBeFocused();
+    await page.keyboard.type("Password123");
+    await page.keyboard.press("Enter");
+
+    await expect(page).toHaveURL("/");
+  });
+
+  test("password visibility toggle has an accessible name and reflects its pressed state", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+
+    const toggle = page.getByRole("button", { name: "Show password" });
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await toggle.click();
+    await expect(
+      page.getByRole("button", { name: "Hide password" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 });

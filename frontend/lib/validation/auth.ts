@@ -17,24 +17,25 @@ export const loginSchema = z.object({
 
 export type LoginValues = z.infer<typeof loginSchema>;
 
-export const registerSchema = z
-  .object({
-    fullName: z
-      .string()
-      .trim()
-      .min(2, "Enter your full name.")
-      .max(100, "Full name is too long."),
-    email: z.email("Enter a valid email address."),
-    password,
-    confirmPassword: z.string(),
-    acceptTerms: z.literal(true, {
-      error: "You must accept the Terms of Service and Privacy Policy.",
-    }),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    message: "Passwords don't match.",
-    path: ["confirmPassword"],
-  });
+// Deliberately NOT chaining .refine()/.check() here for the password-match rule: Zod
+// only runs those after every other field in the object has already validated
+// successfully, so an unchecked acceptTerms checkbox would silently swallow a
+// simultaneous "passwords don't match" error until a second submit. See
+// withPasswordMatchResolver, which checks the match independently of the rest of
+// the schema so both errors can surface in the same submission.
+export const registerSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Enter your full name.")
+    .max(100, "Full name is too long."),
+  email: z.email("Enter a valid email address."),
+  password,
+  confirmPassword: z.string(),
+  acceptTerms: z.literal(true, {
+    error: "You must accept the Terms of Service and Privacy Policy.",
+  }),
+});
 
 export type RegisterValues = z.infer<typeof registerSchema>;
 
@@ -44,14 +45,10 @@ export const forgotPasswordSchema = z.object({
 
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 
-export const resetPasswordSchema = z
-  .object({
-    password,
-    confirmPassword: z.string(),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    message: "Passwords don't match.",
-    path: ["confirmPassword"],
-  });
+// Same reasoning as registerSchema: no .refine() here, see withPasswordMatchResolver.
+export const resetPasswordSchema = z.object({
+  password,
+  confirmPassword: z.string(),
+});
 
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;

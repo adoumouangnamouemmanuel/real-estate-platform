@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -14,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getPostLoginDestination } from "@/lib/authRedirect";
 import { getErrorMessage } from "@/lib/errors";
 import { registerSchema, type RegisterValues } from "@/lib/validation/auth";
+import { withPasswordMatchResolver } from "@/lib/validation/withPasswordMatchResolver";
 import { authService } from "@/services";
 
 export function RegisterForm() {
@@ -25,7 +25,9 @@ export function RegisterForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterValues>({ resolver: zodResolver(registerSchema) });
+  } = useForm<RegisterValues>({
+    resolver: withPasswordMatchResolver(registerSchema),
+  });
 
   async function onSubmit(values: RegisterValues) {
     setFormError(null);

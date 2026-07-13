@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       footer={
         <>
           Don&apos;t have an account?{" "}
-          <Link href={ROUTES.REGISTER} className="text-primary hover:underline">
+          <Link href={ROUTES.REGISTER} className="text-primary underline">
             Sign up
           </Link>
         </>

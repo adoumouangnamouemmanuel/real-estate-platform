@@ -44,6 +44,10 @@ describe("loginSchema", () => {
 });
 
 describe("registerSchema", () => {
+  // Note: password/confirmPassword matching is NOT validated by this schema — see
+  // withPasswordMatchResolver.test.ts. Zod's .refine()/.check() only runs after every
+  // other field validates, so chaining it here would hide the mismatch behind an
+  // unrelated field error (e.g. an unchecked terms box) until a second submit.
   const validPayload = {
     fullName: "Ama Boateng",
     email: "ama@example.com",
@@ -63,17 +67,6 @@ describe("registerSchema", () => {
       confirmPassword: "Short1",
     });
     expect(result.success).toBe(false);
-  });
-
-  it("rejects mismatched password/confirmPassword", () => {
-    const result = registerSchema.safeParse({
-      ...validPayload,
-      confirmPassword: "Different123",
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0].path).toEqual(["confirmPassword"]);
-    }
   });
 
   it("rejects when acceptTerms is false", () => {
@@ -105,20 +98,13 @@ describe("forgotPasswordSchema", () => {
 });
 
 describe("resetPasswordSchema", () => {
+  // Same note as registerSchema: matching is checked by withPasswordMatchResolver, not here.
   it("accepts matching passwords meeting the length policy", () => {
     const result = resetPasswordSchema.safeParse({
       password: "NewPassword123",
       confirmPassword: "NewPassword123",
     });
     expect(result.success).toBe(true);
-  });
-
-  it("rejects mismatched passwords", () => {
-    const result = resetPasswordSchema.safeParse({
-      password: "NewPassword123",
-      confirmPassword: "Mismatch123",
-    });
-    expect(result.success).toBe(false);
   });
 
   it("rejects a password over the 128-character maximum", () => {

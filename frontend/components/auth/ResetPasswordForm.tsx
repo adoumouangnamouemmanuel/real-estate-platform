@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -16,6 +15,7 @@ import {
   resetPasswordSchema,
   type ResetPasswordValues,
 } from "@/lib/validation/auth";
+import { withPasswordMatchResolver } from "@/lib/validation/withPasswordMatchResolver";
 import { authService } from "@/services";
 
 interface ResetPasswordFormProps {
@@ -49,7 +49,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordValues>({
-    resolver: zodResolver(resetPasswordSchema),
+    resolver: withPasswordMatchResolver(resetPasswordSchema),
   });
 
   async function onSubmit(values: ResetPasswordValues) {

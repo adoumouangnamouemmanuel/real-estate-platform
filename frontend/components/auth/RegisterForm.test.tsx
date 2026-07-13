@@ -84,6 +84,40 @@ describe("RegisterForm", () => {
     expect(register).not.toHaveBeenCalled();
   });
 
+  it("shows the password mismatch error even when the terms checkbox is also unchecked", async () => {
+    // Regression test: Zod's .refine() only runs after every other field validates,
+    // so chaining the match check onto the schema hid it behind the acceptTerms error
+    // until a second submit — caught via Playwright, fixed with withPasswordMatchResolver.
+    const user = userEvent.setup();
+    render(<RegisterForm />);
+
+    await user.type(screen.getByLabelText("Full name"), "Ama Boateng");
+    await user.type(
+      screen.getByLabelText("Email", { exact: true }),
+      "ama@example.com",
+    );
+    await user.type(
+      screen.getByLabelText("Password", { exact: true }),
+      "Password123",
+    );
+    await user.type(
+      screen.getByLabelText("Confirm password", { exact: true }),
+      "Different123",
+    );
+    // Deliberately leave the terms checkbox unchecked.
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+
+    expect(
+      await screen.findByText("Passwords don't match."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "You must accept the Terms of Service and Privacy Policy.",
+      ),
+    ).toBeInTheDocument();
+    expect(register).not.toHaveBeenCalled();
+  });
+
   it("shows the service's error message on a duplicate email", async () => {
     const user = userEvent.setup();
     register.mockRejectedValue(
