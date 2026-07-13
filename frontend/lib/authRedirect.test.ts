@@ -40,6 +40,10 @@ describe("getSafeRedirectPath (open-redirect protection)", () => {
     expect(getSafeRedirectPath("//evil.example")).toBeUndefined();
   });
 
+  it("rejects backslash-leading paths (some browsers normalize \\ to / and treat it as protocol-relative)", () => {
+    expect(getSafeRedirectPath("/\\evil.example")).toBeUndefined();
+  });
+
   it("rejects absolute external URLs", () => {
     expect(getSafeRedirectPath("https://evil.example")).toBeUndefined();
     expect(getSafeRedirectPath("http://evil.example/phish")).toBeUndefined();

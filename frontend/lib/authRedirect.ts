@@ -16,7 +16,12 @@ export function getPostLoginDestination(user: User): string {
 export function getSafeRedirectPath(
   path: string | undefined | null,
 ): string | undefined {
-  if (!path || !path.startsWith("/") || path.startsWith("//")) {
+  if (
+    !path ||
+    !path.startsWith("/") ||
+    path.startsWith("//") ||
+    path.startsWith("/\\")
+  ) {
     return undefined;
   }
 
