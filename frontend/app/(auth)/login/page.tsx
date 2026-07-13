@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 };
 
 interface LoginPageProps {
-  searchParams: Promise<{ redirect?: string }>;
+  searchParams: Promise<{ redirect?: string; reset?: string }>;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { redirect } = await searchParams;
+  const { redirect, reset } = await searchParams;
 
   return (
     <AuthCard
@@ -30,6 +30,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </>
       }
     >
+      {reset === "success" && (
+        <p
+          role="status"
+          className="border-border bg-muted rounded-md border p-3 text-center text-sm"
+        >
+          Your password has been reset. Sign in with your new password.
+        </p>
+      )}
       <LoginForm redirectTo={redirect} />
     </AuthCard>
   );
