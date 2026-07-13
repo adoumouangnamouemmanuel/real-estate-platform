@@ -6,3 +6,6 @@ public
 package-lock.json
 AGENTS.md
 CLAUDE.md
+coverage
+playwright-report
+test-results
