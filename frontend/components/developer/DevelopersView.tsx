@@ -1,12 +1,11 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-
 import { FilterChips } from "@/components/common/FilterChips";
 import { Pagination } from "@/components/common/Pagination";
 import { DeveloperFilterPanel } from "@/components/developer/DeveloperFilterPanel";
 import { DeveloperGrid } from "@/components/developer/DeveloperGrid";
 import { useDevelopers } from "@/hooks/useDevelopers";
+import { useFilterNavigation } from "@/hooks/useFilterNavigation";
 import { buildDeveloperFilterChips } from "@/lib/developerFilters";
 import type { GetDevelopersParams } from "@/services";
 
@@ -16,17 +15,8 @@ interface DevelopersViewProps {
 
 /** Mirrors PropertiesView: filters live in the URL, pagination carries the full filter set. */
 export function DevelopersView({ filters }: DevelopersViewProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const { data, isLoading, isError, error } = useDevelopers(filters);
-
-  function updateParams(next: GetDevelopersParams) {
-    const params = new URLSearchParams();
-    Object.entries(next).forEach(([key, value]) => {
-      if (value !== undefined && value !== "") params.set(key, String(value));
-    });
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  const updateParams = useFilterNavigation<GetDevelopersParams>();
 
   function handleFilterChange(partial: Partial<GetDevelopersParams>) {
     updateParams({ ...filters, ...partial, page: 1 });

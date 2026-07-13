@@ -1,11 +1,10 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-
 import { FilterChips } from "@/components/common/FilterChips";
 import { Pagination } from "@/components/common/Pagination";
 import { PropertyGrid } from "@/components/property/PropertyGrid";
 import { FilterPanel } from "@/components/search/FilterPanel";
+import { useFilterNavigation } from "@/hooks/useFilterNavigation";
 import { useProperties } from "@/hooks/useProperties";
 import { buildPropertyFilterChips } from "@/lib/propertyFilters";
 import type { GetPropertiesParams } from "@/services";
@@ -27,17 +26,8 @@ export function PropertiesView({
   heading,
   emptyDescription,
 }: PropertiesViewProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const { data, isLoading, isError, error } = useProperties(filters);
-
-  function updateParams(next: GetPropertiesParams) {
-    const params = new URLSearchParams();
-    Object.entries(next).forEach(([key, value]) => {
-      if (value !== undefined && value !== "") params.set(key, String(value));
-    });
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  const updateParams = useFilterNavigation<GetPropertiesParams>();
 
   function handleFilterChange(partial: Partial<GetPropertiesParams>) {
     updateParams({ ...filters, ...partial, page: 1 });
