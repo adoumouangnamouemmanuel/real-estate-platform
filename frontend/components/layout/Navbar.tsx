@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { NavbarAuthSection } from "@/components/layout/NavbarAuthSection";
 import { ROUTES } from "@/constants/routes";
 
 const NAV_LINKS = [
@@ -30,6 +31,8 @@ export function Navbar() {
             </li>
           ))}
         </ul>
+
+        <NavbarAuthSection />
       </nav>
     </header>
   );

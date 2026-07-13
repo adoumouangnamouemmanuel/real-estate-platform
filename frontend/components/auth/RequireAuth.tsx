@@ -10,8 +10,19 @@ import type { UserRole } from "@/types";
 
 interface RequireAuthProps {
   children: React.ReactNode;
-  /** If set, the signed-in user's role must match exactly (no role hierarchy check here). */
+  /** Minimum role required, per the inheritance model in docs/ARCHITECTURE.md §6 (ADMIN > DEVELOPER > USER). */
   role?: UserRole;
+}
+
+const ROLE_RANK: Record<UserRole, number> = { USER: 0, DEVELOPER: 1, ADMIN: 2 };
+
+function hasRequiredRole(
+  userRole: UserRole | undefined,
+  requiredRole: UserRole,
+) {
+  return (
+    userRole !== undefined && ROLE_RANK[userRole] >= ROLE_RANK[requiredRole]
+  );
 }
 
 /**
@@ -31,7 +42,8 @@ export function RequireAuth({ children, role }: RequireAuthProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isBootstrapping = useAuthStore((state) => state.isBootstrapping);
 
-  const isForbidden = isAuthenticated && !!role && user?.role !== role;
+  const isForbidden =
+    isAuthenticated && !!role && !hasRequiredRole(user?.role, role);
 
   useEffect(() => {
     if (isBootstrapping) return;
