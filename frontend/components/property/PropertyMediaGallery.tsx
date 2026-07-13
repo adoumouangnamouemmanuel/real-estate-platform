@@ -43,7 +43,7 @@ export function PropertyMediaGallery({
 
       {media.length > 1 && (
         <div
-          role="tablist"
+          role="group"
           aria-label="Property photos"
           className="flex gap-2 overflow-x-auto"
         >
@@ -51,8 +51,7 @@ export function PropertyMediaGallery({
             <button
               key={item.publicId}
               type="button"
-              role="tab"
-              aria-selected={index === activeIndex}
+              aria-current={index === activeIndex ? "true" : undefined}
               aria-label={`Photo ${index + 1} of ${media.length}`}
               onClick={() => setActiveIndex(index)}
               className={cn(
