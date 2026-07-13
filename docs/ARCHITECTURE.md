@@ -354,6 +354,66 @@ Authorization is enforced in two places:
 1. **Middleware layer** — `authorize(Role.DEVELOPER)` on routes requiring developer role.
 2. **Service layer** — ownership checks (e.g., `if (property.developerId !== req.user.developerId) throw new ApiError(403)`). This is the critical layer. Middleware is defense in depth.
 
+### Frontend Authentication (Phase 5, Mock-Backed)
+
+The frontend's auth screens (login, register, forgot/reset password, logout) are built against `services/mocks/auth.mock.ts`, following the same mock-first pattern as the Properties/Developer domains (ADR-007). See [ADR-009](#adr-009-frontend-auth-forms-built-against-mocks-with-a-documented-cookie-limitation) for the full rationale and its known limitation.
+
+**Client-side session lifecycle:**
+
+```
+App loads
+    │
+    ▼
+useAuthBootstrap runs once (root layout)
+    │
+    ▼
+authService.refresh() — real, not-yet-existent backend call
+    │
+    ├─ succeeds (future, once backend exists) → hydrate Zustand authStore
+    │
+    └─ fails (current, expected in dev — no backend) → store stays cleared
+    │
+    ▼
+authStore.setBootstrapped() — isBootstrapping: false
+    │
+    ▼
+RequireAuth-gated routes now render their real check instead of a loading state
+```
+
+- Access token lives only in the Zustand `authStore` (memory), never `localStorage` — consistent with the token strategy above.
+- `RedirectIfAuthenticated` (wraps `(auth)` routes) does **not** block on `isBootstrapping` — it only redirects once bootstrap resolves to "authenticated," so the common anonymous-visitor case renders the form immediately rather than waiting out a refresh round-trip.
+- `RequireAuth` (wraps `(dashboard)`/`(admin)`) **does** block on `isBootstrapping`, since protected content must never flash before session state is confirmed.
+
+**Protected route flow (defense in depth, two independent layers):**
+
+```
+Request for /dashboard or /admin
+    │
+    ▼
+Layer 1 — proxy.ts (server, runs first)
+    → No auth cookie present → redirect to /login?redirect=/dashboard
+    → Cookie present → request reaches the React tree
+    │
+    ▼
+Layer 2 — RequireAuth (client component, wraps the route's layout)
+    → isBootstrapping → <Loading />
+    → not authenticated → redirect to /login?redirect=<path>
+    → authenticated but role too low → redirect to /forbidden
+      (ROLE_RANK: USER=0 < DEVELOPER=1 < ADMIN=2, checked with >=, matching
+      the role-inheritance model in the Role-Based Authorization section above)
+    → passes both checks → render children
+```
+
+`getSafeRedirectPath` (`lib/authRedirect.ts`) validates the `?redirect=` query param before it's ever passed to `router.push()` — it rejects protocol-relative (`//evil.example`), absolute-external (`https://evil.example`), and non-path (`javascript:...`) values, since that param is attacker-controllable (OWASP open-redirect guard).
+
+**Error handling strategy:**
+- Login always shows a single generic "Invalid email or password." message, regardless of which part failed — prevents user enumeration.
+- `requestPasswordReset` always resolves successfully whether or not the email matches an account — same anti-enumeration reasoning, applied specifically to the reset flow.
+- Registration *does* disclose a duplicate email ("An account with this email already exists.") — a deliberate, documented UX tradeoff for that one flow, not an oversight.
+- Password policy is length-only (8–128 characters), matching current NIST SP 800-63B / OWASP ASVS guidance that favors length over forced composition rules.
+
+**Known limitation:** mock `login`/`register` cannot set a real `HttpOnly` cookie (that requires a `Set-Cookie` header from an actual server), so session state does not survive a full page reload in this mock environment, and `proxy.ts`'s cookie check always wins over `RequireAuth`'s client-side check — meaning `RequireAuth`'s role-forbidden path is unreachable via full browser navigation today and is instead covered by a unit test with a mocked store. This resolves itself automatically once the real backend issues real cookies; no frontend code changes are anticipated.
+
 ---
 
 ## 7. Media Pipeline
@@ -979,6 +1039,29 @@ Layer 6: Data
 - ✅ `npm run test` / `test:coverage` (Vitest) and `npm run e2e` (Playwright) are independent — CI runs both on every PR (`frontend` and `frontend-e2e` jobs), but `frontend-e2e` only runs the `chromium-desktop` project for speed; the full 5-project matrix is for local/nightly use.
 - ✅ Two genuine cross-browser findings surfaced immediately by running the full matrix once: Playwright's `.fill()` doesn't reliably trigger React's controlled-input `onChange` in WebKit (use `.pressSequentially()` for real keystroke simulation instead), and axe-scanning a client-navigated page right after `networkidle` can race Next's async-`generateMetadata` title commit (wait for the actual expected title, not just non-empty, before scanning). Both were test-authoring fixes, not application bugs — recorded here so they aren't rediscovered from scratch.
 - ⚠️ Server Components with real async data fetching have no unit-test safety net by design — a regression in `getPropertyBySlug`'s error handling, for example, is only caught by the Playwright 404 tests, not a fast unit test. Acceptable given Next's own constraint, but worth remembering when triaging a slow CI failure.
+
+---
+
+### ADR-009: Frontend Auth Forms Built Against Mocks, With a Documented Cookie Limitation
+
+**Date:** July 13, 2026
+**Status:** Accepted
+**Decision:** Login, registration, forgot-password, and reset-password are implemented as complete, production-shaped UI backed by `services/mocks/auth.mock.ts` (in-memory `MOCK_ACCOUNTS` array, `MOCK_RESET_TOKENS` map), extending the same mock-first pattern used for Properties and Developers (ADR-007), rather than waiting on the real backend.
+
+**Rationale:**
+- `services/auth.service.ts`'s function signatures (`login`, `register`, `logout`, `requestPasswordReset`, `validateResetToken`, `resetPassword`) already match this document's token strategy and role model (§6) — swapping in real HTTP calls is a body-of-function change, not a redesign of the forms, store, or route guards.
+- Building real forms (React Hook Form + Zod validation, loading/error/success states, accessible controls) against a mock service surfaces real UX and validation bugs early — one was caught this way (see the `withPasswordMatchResolver` fix below) that a stubbed page never would have.
+- A single, explicit, documented limitation is preferable to a fake `document.cookie` write that would misrepresent how session persistence will actually work once a real backend exists.
+
+**The limitation:** a mock `login`/`register` running entirely in the browser cannot set a real `HttpOnly` `Set-Cookie` header — only a server response can do that. Consequently:
+- Session state does not survive a full page reload in this mock environment. `authService.refresh()` deliberately still calls the real (not-yet-existent) backend and always fails in dev — this is correct behavior to keep, not a bug to patch around.
+- `proxy.ts`'s server-side cookie check always wins over `RequireAuth`'s client-side check, so `RequireAuth`'s role-forbidden (`/forbidden`) redirect path is unreachable via full-navigation E2E testing today. It's covered instead by a unit test (`RequireAuth.test.tsx`) using a mocked Zustand store.
+
+**Consequences:**
+- ✅ Auth backend integration is scoped to `services/auth.service.ts` — no expected changes to forms, store, or route guard components.
+- ✅ The validation-bug class this surfaced (Zod's `.refine()`/`.check()` short-circuiting on multi-field errors — see `lib/validation/withPasswordMatchResolver.ts`) would very likely have shipped unnoticed behind a stubbed page.
+- ⚠️ E2E coverage of the `RequireAuth` role-forbidden path is currently unit-test-only, not full-browser — re-verify via Playwright once real cookies exist.
+- ⚠️ `AUTH_COOKIE_NAME` (see `frontend/TODO.md`) remains a frontend assumption pending backend confirmation of the real cookie name.
 
 ---
 
