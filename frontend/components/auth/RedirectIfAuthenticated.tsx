@@ -11,14 +11,22 @@ interface RedirectIfAuthenticatedProps {
   children: React.ReactNode;
 }
 
-/** Wraps the (auth) route group — a signed-in user shouldn't see login/register/etc. */
+/**
+ * Wraps the (auth) route group — a signed-in user shouldn't see login/register/etc.
+ *
+ * Deliberately does NOT block rendering on isBootstrapping: the overwhelming majority
+ * of visits to these pages are anonymous (that's the whole point of a login page), so
+ * forms render immediately rather than waiting out the session-restore round-trip.
+ * The rare already-authenticated visitor (e.g. bookmark, back button) sees a brief
+ * flash of the form before being redirected once bootstrap confirms who they are —
+ * an accepted tradeoff for not penalizing the common case with an artificial delay.
+ */
 export function RedirectIfAuthenticated({
   children,
 }: RedirectIfAuthenticatedProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isBootstrapping = useAuthStore((state) => state.isBootstrapping);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -26,7 +34,7 @@ export function RedirectIfAuthenticated({
     }
   }, [isAuthenticated, user, router]);
 
-  if (isBootstrapping || isAuthenticated) {
+  if (isAuthenticated) {
     return <Loading />;
   }
 
