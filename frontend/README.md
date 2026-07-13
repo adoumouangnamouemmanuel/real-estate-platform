@@ -18,14 +18,20 @@ Open [http://localhost:3000](http://localhost:3000). The app expects the backend
 
 ## Scripts
 
-| Script                 | Purpose                                            |
-| ---------------------- | -------------------------------------------------- |
-| `npm run dev`          | Start the Next.js dev server                       |
-| `npm run build`        | Production build (also type-checks)                |
-| `npm run start`        | Serve the production build                         |
-| `npm run lint`         | ESLint (`next/core-web-vitals` + TypeScript rules) |
-| `npm run format`       | Format the codebase with Prettier                  |
-| `npm run format:check` | Check formatting without writing (CI use)          |
+| Script                  | Purpose                                                |
+| ----------------------- | ------------------------------------------------------ |
+| `npm run dev`           | Start the Next.js dev server                           |
+| `npm run build`         | Production build (also type-checks)                    |
+| `npm run start`         | Serve the production build                             |
+| `npm run lint`          | ESLint (`next/core-web-vitals` + TypeScript rules)     |
+| `npm run format`        | Format the codebase with Prettier                      |
+| `npm run format:check`  | Check formatting without writing (CI use)              |
+| `npm run typecheck`     | `tsc --noEmit`                                         |
+| `npm run test`          | Unit + integration tests (Vitest, single run)          |
+| `npm run test:watch`    | Vitest in watch mode                                   |
+| `npm run test:coverage` | Vitest with a coverage report (`coverage/`)            |
+| `npm run e2e`           | Playwright E2E suite — all 5 browser/viewport projects |
+| `npm run e2e:ui`        | Playwright's interactive UI mode                       |
 
 ## Folder Structure
 
@@ -50,7 +56,26 @@ store/               Zustand global client state (auth, filters — server state
 types/               Shared TypeScript types
 constants/           routes.ts (path constants), config.ts (env-derived config), features.ts (feature flags)
 public/              Static assets served as-is
+test/                fixtures.ts, renderWithQueryClient.tsx — shared Vitest test helpers
+e2e/                 Playwright specs (user-journey, error-states, accessibility)
 ```
+
+Unit/integration tests are colocated with the code they test (`Component.test.tsx` next to
+`Component.tsx`), except cross-component integration tests, which live in `test/integration/`.
+
+## Testing
+
+- **Unit/integration** (Vitest + React Testing Library): `npm run test`. Mock at the service
+  boundary (`vi.mock("@/services", ...)`), not the hook layer — integration tests should exercise
+  the real hook + React Query wiring.
+- **E2E** (Playwright, + `@axe-core/playwright` for automated WCAG scanning): `npm run e2e`. Needs
+  a running app — Playwright's `webServer` config builds and starts one automatically.
+- Async Server Components (route `page.tsx` files) cannot be unit-tested — this is a Vitest/Next.js
+  constraint, not a gap to work around. Test the `*View` composition component directly with
+  fixture props for integration coverage, and rely on Playwright for the real page.
+- See ADR-008 in `docs/ARCHITECTURE.md` for the full rationale, including two cross-browser
+  gotchas already found and fixed (WebKit + `.fill()`, and a `generateMetadata` timing race in
+  axe scans) — read before adding new E2E tests so they aren't rediscovered.
 
 ## Coding Conventions
 

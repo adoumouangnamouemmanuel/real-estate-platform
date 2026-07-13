@@ -1,7 +1,7 @@
 # ByTe Real Estate Platform — Architecture
 
 > **Document type:** Architecture Reference + Architecture Decision Records (ADRs)
-> **Last updated:** July 12, 2026
+> **Last updated:** July 13, 2026
 > **Owner:** Emmanuel (CTO)
 > **Status:** Living document — update this file when any architectural decision changes.
 
@@ -963,6 +963,24 @@ Layer 6: Data
 
 ---
 
+### ADR-008: Vitest + React Testing Library for Unit/Integration, Playwright for E2E
+
+**Date:** July 13, 2026
+**Status:** Accepted
+**Decision:** The frontend's testing stack is Vitest + React Testing Library for unit and integration tests, and Playwright (+ `@axe-core/playwright`) for end-to-end and automated accessibility testing. No Jest.
+
+**Rationale:**
+- This is Next.js's own current recommendation for the App Router: Vitest is ESM-native and doesn't need the SWC/Babel juggling Jest requires to work with Turbopack and Server Components, and it shares a Jest-compatible assertion API so there's no new mental model.
+- Next's own docs are explicit that Vitest **cannot** render `async` Server Components — our route `page.tsx` files (`await searchParams`, `await params`, direct `await propertyService...` calls) fall in that category. Rather than work around this, the boundary is respected: presentational and `"use client"` components are unit-tested directly; the `*View` composition components (`PropertyDetailView`, `DeveloperProfileView`, etc.) are integration-tested by rendering them directly with fixture data, bypassing the async page wrapper; the async pages themselves are only exercised by Playwright, which drives a real running server end-to-end.
+- Playwright covers what Vitest structurally cannot: real navigation, real Next.js metadata/title behavior, and cross-browser/responsive verification via its project matrix (Chromium, Firefox, WebKit, plus mobile Chrome/Safari viewports).
+- Mocking happens at the service boundary (`vi.mock("@/services", ...)`), not the hook or component layer — integration tests exercise the real `useProperties`/`useDevelopers` hooks and a real `QueryClient`, so a broken hook or a broken React Query wiring would actually fail the test.
+
+**Consequences:**
+- ✅ `npm run test` / `test:coverage` (Vitest) and `npm run e2e` (Playwright) are independent — CI runs both on every PR (`frontend` and `frontend-e2e` jobs), but `frontend-e2e` only runs the `chromium-desktop` project for speed; the full 5-project matrix is for local/nightly use.
+- ✅ Two genuine cross-browser findings surfaced immediately by running the full matrix once: Playwright's `.fill()` doesn't reliably trigger React's controlled-input `onChange` in WebKit (use `.pressSequentially()` for real keystroke simulation instead), and axe-scanning a client-navigated page right after `networkidle` can race Next's async-`generateMetadata` title commit (wait for the actual expected title, not just non-empty, before scanning). Both were test-authoring fixes, not application bugs — recorded here so they aren't rediscovered from scratch.
+- ⚠️ Server Components with real async data fetching have no unit-test safety net by design — a regression in `getPropertyBySlug`'s error handling, for example, is only caught by the Playwright 404 tests, not a fast unit test. Acceptable given Next's own constraint, but worth remembering when triaging a slow CI failure.
+
+---
+
 *ByTe Real Estate Platform — ARCHITECTURE.md*
 *Maintained by Emmanuel (CTO). Update this document when any architectural decision changes.*
-*Last updated: June 15, 2026*
