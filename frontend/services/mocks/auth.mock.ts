@@ -20,6 +20,18 @@ export const MOCK_ACCOUNTS: MockAccount[] = [
     },
     password: "Password123",
   },
+  // Seeded so the Developer Dashboard (RequireAuth role="DEVELOPER") is reachable
+  // in dev and E2E without a real backend granting roles.
+  {
+    user: {
+      id: "u2",
+      fullName: "Kwame Mensah",
+      email: "developer@byte.africa",
+      role: "DEVELOPER",
+      developerId: "dev-1",
+    },
+    password: "Password123",
+  },
 ];
 
 export interface MockResetToken {

@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Tests proxy.ts's server-side cookie gate specifically. RequireAuth's client-side
- * role-forbidden path is intentionally NOT covered here: in this mock environment
- * (no real backend), mock login/register can't set a real HttpOnly cookie, so
- * proxy.ts's redirect-to-login always wins before RequireAuth is ever reached — see
- * ADR's Phase 5.5 commit message. That path is unit-tested instead
- * (RequireAuth.test.tsx, with a mocked store).
+ * Tests proxy.ts's server-side cookie gate for anonymous visitors specifically.
+ * Login/register set a mock marker cookie (lib/mockSessionCookie.ts, added in Phase
+ * 6 so the dashboard is reachable at all — see ADR-009's addendum in
+ * docs/ARCHITECTURE.md), so an authenticated developer now reaches /dashboard for
+ * real; see e2e/dashboard.spec.ts. RequireAuth's role-forbidden path specifically
+ * is still unit-tested only (RequireAuth.test.tsx, dashboard-shell.test.tsx): there's
+ * no user-facing affordance for a wrong-role user to attempt entry, so it can't be
+ * triggered via a real click path.
  */
 test.describe("Protected routes", () => {
   test("an anonymous visitor to /dashboard is redirected to /login with a redirect param", async ({

@@ -1,4 +1,5 @@
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 export default function DashboardLayout({
   children,
@@ -7,7 +8,7 @@ export default function DashboardLayout({
 }>) {
   return (
     <RequireAuth role="DEVELOPER">
-      <main className="flex flex-1 flex-col">{children}</main>
+      <DashboardShell>{children}</DashboardShell>
     </RequireAuth>
   );
 }

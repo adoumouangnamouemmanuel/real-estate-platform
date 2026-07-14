@@ -87,6 +87,11 @@
   @apply mx-auto max-w-6xl px-4 sm:px-6;
 }
 
+/* Wider than container-page: dashboard tables need the extra room desktop screens have. */
+@utility container-dashboard {
+  @apply mx-auto max-w-(--breakpoint-xl) px-4 py-6 lg:px-6;
+}
+
 body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }

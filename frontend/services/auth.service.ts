@@ -1,4 +1,8 @@
 import { api } from "@/lib/api";
+import {
+  clearMockSessionCookie,
+  setMockSessionCookie,
+} from "@/lib/mockSessionCookie";
 import { MOCK_ACCOUNTS, MOCK_RESET_TOKENS } from "@/services/mocks/auth.mock";
 import type { ApiResponse, User } from "@/types";
 
@@ -71,6 +75,8 @@ export const authService = {
       return fail("Invalid email or password.");
     }
 
+    setMockSessionCookie();
+
     return delay({
       user: account.user,
       accessToken: buildMockAccessToken(account.user),
@@ -96,12 +102,16 @@ export const authService = {
       role: "USER",
     };
     MOCK_ACCOUNTS.push({ user, password });
+    setMockSessionCookie();
 
     return delay({ user, accessToken: buildMockAccessToken(user) });
   },
 
   // TODO(backend): replace with POST /api/v1/auth/logout (clears the refresh cookie server-side).
-  logout: (): Promise<void> => delay(undefined),
+  logout: (): Promise<void> => {
+    clearMockSessionCookie();
+    return delay(undefined);
+  },
 
   // TODO(backend): replace with POST /api/v1/auth/forgot-password once the endpoint exists.
   // Always resolves the same way regardless of whether the email matches an account —

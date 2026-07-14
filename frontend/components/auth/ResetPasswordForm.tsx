@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { FormField } from "@/components/auth/FormField";
 import { InvalidResetLink } from "@/components/auth/InvalidResetLink";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Loading } from "@/components/common/Loading";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
 import { ROUTES } from "@/constants/routes";
 import { getErrorMessage } from "@/lib/errors";
 import {

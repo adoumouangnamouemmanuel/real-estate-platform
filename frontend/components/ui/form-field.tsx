@@ -7,7 +7,7 @@ interface FormFieldProps {
   children: ReactNode;
 }
 
-/** Shared label + control + validation-error layout for every auth form field. */
+/** Shared label + control + validation-error layout, used by every form in the app. */
 export function FormField({ label, htmlFor, error, children }: FormFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">

@@ -9,6 +9,13 @@ export const FEATURES = {
   MAP_VIEW: false,
   DEVELOPER_ANALYTICS: false,
   ADMIN_REPORTS: false,
+  // Dashboard modules land phase by phase (see docs/ARCHITECTURE.md's Phase 6 ADR) —
+  // each flips to true when its phase ships, same pattern as WHATSAPP_CONTACT/MAP_VIEW.
+  DASHBOARD_PROPERTIES: false,
+  DASHBOARD_APPOINTMENTS: false,
+  DASHBOARD_NOTIFICATIONS: false,
+  DASHBOARD_PROFILE: false,
+  DASHBOARD_SETTINGS: false,
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURES;

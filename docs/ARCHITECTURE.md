@@ -128,13 +128,13 @@ byte-realestate/  (monorepo)
 
 ### Port Map
 
-| Service    | Internal Port | Public URL                  | Exposed? |
-|------------|---------------|-----------------------------|----------|
-| Frontend   | 3000          | https://app.byte.africa     | Via Nginx |
-| Backend    | 4000          | https://api.byte.africa     | Via Nginx |
-| PostgreSQL | 5432          | —                           | ❌ Never |
-| Redis      | 6379          | —                           | ❌ Never |
-| Nginx      | 80, 443       | Public internet             | ✅ Yes   |
+| Service    | Internal Port | Public URL              | Exposed?  |
+| ---------- | ------------- | ----------------------- | --------- |
+| Frontend   | 3000          | https://app.byte.africa | Via Nginx |
+| Backend    | 4000          | https://api.byte.africa | Via Nginx |
+| PostgreSQL | 5432          | —                       | ❌ Never  |
+| Redis      | 6379          | —                       | ❌ Never  |
+| Nginx      | 80, 443       | Public internet         | ✅ Yes    |
 
 ---
 
@@ -268,14 +268,14 @@ Property (1:N) ──────────── PropertyAnalytics (daily rol
 
 ### Caching Strategy
 
-| Data                     | Cache Key Pattern                      | TTL    | Invalidated When             |
-|--------------------------|----------------------------------------|--------|------------------------------|
-| Property list (browse)   | `props:list:{md5(queryString)}`        | 30s    | Any property created/updated |
-| Single property          | `props:single:{id}`                    | 60s    | That property updated        |
-| Developer profile        | `dev:profile:{id}`                     | 5 min  | Profile updated              |
-| Featured properties      | `props:featured`                       | 5 min  | Featured flag changes        |
-| Search results           | `search:{md5(q+filters)}`              | 15s    | Not cached (too dynamic)     |
-| Developer notifications  | Not cached (real-time requirement)     | —      | —                            |
+| Data                    | Cache Key Pattern                  | TTL   | Invalidated When             |
+| ----------------------- | ---------------------------------- | ----- | ---------------------------- |
+| Property list (browse)  | `props:list:{md5(queryString)}`    | 30s   | Any property created/updated |
+| Single property         | `props:single:{id}`                | 60s   | That property updated        |
+| Developer profile       | `dev:profile:{id}`                 | 5 min | Profile updated              |
+| Featured properties     | `props:featured`                   | 5 min | Featured flag changes        |
+| Search results          | `search:{md5(q+filters)}`          | 15s   | Not cached (too dynamic)     |
+| Developer notifications | Not cached (real-time requirement) | —     | —                            |
 
 ### Data Retention
 
@@ -351,6 +351,7 @@ Role: ADMIN
 ```
 
 Authorization is enforced in two places:
+
 1. **Middleware layer** — `authorize(Role.DEVELOPER)` on routes requiring developer role.
 2. **Service layer** — ownership checks (e.g., `if (property.developerId !== req.user.developerId) throw new ApiError(403)`). This is the critical layer. Middleware is defense in depth.
 
@@ -407,12 +408,13 @@ Layer 2 — RequireAuth (client component, wraps the route's layout)
 `getSafeRedirectPath` (`lib/authRedirect.ts`) validates the `?redirect=` query param before it's ever passed to `router.push()` — it rejects protocol-relative (`//evil.example`), absolute-external (`https://evil.example`), and non-path (`javascript:...`) values, since that param is attacker-controllable (OWASP open-redirect guard).
 
 **Error handling strategy:**
+
 - Login always shows a single generic "Invalid email or password." message, regardless of which part failed — prevents user enumeration.
 - `requestPasswordReset` always resolves successfully whether or not the email matches an account — same anti-enumeration reasoning, applied specifically to the reset flow.
-- Registration *does* disclose a duplicate email ("An account with this email already exists.") — a deliberate, documented UX tradeoff for that one flow, not an oversight.
+- Registration _does_ disclose a duplicate email ("An account with this email already exists.") — a deliberate, documented UX tradeoff for that one flow, not an oversight.
 - Password policy is length-only (8–128 characters), matching current NIST SP 800-63B / OWASP ASVS guidance that favors length over forced composition rules.
 
-**Known limitation:** mock `login`/`register` cannot set a real `HttpOnly` cookie (that requires a `Set-Cookie` header from an actual server), so session state does not survive a full page reload in this mock environment, and `proxy.ts`'s cookie check always wins over `RequireAuth`'s client-side check — meaning `RequireAuth`'s role-forbidden path is unreachable via full browser navigation today and is instead covered by a unit test with a mocked store. This resolves itself automatically once the real backend issues real cookies; no frontend code changes are anticipated.
+**Known limitation:** mock `login`/`register` cannot set a real `HttpOnly` cookie (that requires a `Set-Cookie` header from an actual server), so session state does not survive a full page reload in this mock environment. **Update (Phase 6):** this used to also mean `proxy.ts`'s cookie check always won over `RequireAuth`, blocking the dashboard entirely — even the client-side redirect immediately after a successful mock login re-triggers `proxy.ts` (Next re-runs middleware on the RSC fetch behind every navigation, not just full page loads). `lib/mockSessionCookie.ts` now sets a non-`HttpOnly` marker cookie on login/register and clears it on logout, purely to satisfy `proxy.ts`'s presence check — see [ADR-010](#adr-010-dashboard-shell--the-mock-session-cookie-fix). `RequireAuth`'s role-forbidden path specifically is still unreachable via a real click path (no user-facing affordance ever points a wrong-role user at a dashboard route) and remains unit-tested only.
 
 ---
 
@@ -454,12 +456,12 @@ ByTe uses **client-side direct upload** to Cloudinary. Images never pass through
 
 Cloudinary URL transformations are used to serve appropriately sized images for each context:
 
-| Context              | Transformation                        | Example |
-|----------------------|---------------------------------------|---------|
+| Context              | Transformation                       | Example                            |
+| -------------------- | ------------------------------------ | ---------------------------------- |
 | Property card (grid) | w_400,h_280,c_fill,f_auto,q_auto     | 400×280, auto format, auto quality |
-| Property gallery     | w_1200,h_800,c_limit,f_auto,q_auto   | Max 1200px, preserve ratio |
-| Developer avatar     | w_80,h_80,c_fill,g_face,r_max,f_auto | 80×80 circle, face-detect crop |
-| OG image             | w_1200,h_630,c_fill,f_jpg,q_90       | Fixed OG size |
+| Property gallery     | w_1200,h_800,c_limit,f_auto,q_auto   | Max 1200px, preserve ratio         |
+| Developer avatar     | w_80,h_80,c_fill,g_face,r_max,f_auto | 80×80 circle, face-detect crop     |
+| OG image             | w_1200,h_630,c_fill,f_jpg,q_90       | Fixed OG size                      |
 
 All transformation URLs are built in `lib/cloudinary.ts` on the frontend. Never hardcode transformation strings in components.
 
@@ -512,10 +514,10 @@ This adds ~200ms latency to the WhatsApp click but protects developer numbers fr
 export function buildWhatsAppMessage(property: {
   title: string;
   city: string;
-  listingType: 'SALE' | 'RENT';
+  listingType: "SALE" | "RENT";
   price: number;
 }): string {
-  const action = property.listingType === 'SALE' ? 'purchase' : 'rent';
+  const action = property.listingType === "SALE" ? "purchase" : "rent";
   return (
     `Hi, I'm interested in the ${action} of your property: ` +
     `"${property.title}" in ${property.city}, listed on ByTe. ` +
@@ -530,13 +532,13 @@ export function buildWhatsAppMessage(property: {
 
 ### Notification Types
 
-| Type                         | Trigger                                          | Delivery         |
-|------------------------------|--------------------------------------------------|------------------|
-| `PROPERTY_LIKED`             | User adds property to favorites                 | In-app           |
-| `PROPERTY_VIEWED_MILESTONE`  | Property reaches 10, 50, 100, 500 views         | In-app           |
-| `APPOINTMENT_REQUESTED`      | Guest schedules a visit                          | In-app + Email   |
-| `APPOINTMENT_CONFIRMED`      | Developer confirms appointment                   | Email to guest   |
-| `DEVELOPER_VERIFIED`         | Admin verifies developer account                 | In-app + Email   |
+| Type                        | Trigger                                 | Delivery       |
+| --------------------------- | --------------------------------------- | -------------- |
+| `PROPERTY_LIKED`            | User adds property to favorites         | In-app         |
+| `PROPERTY_VIEWED_MILESTONE` | Property reaches 10, 50, 100, 500 views | In-app         |
+| `APPOINTMENT_REQUESTED`     | Guest schedules a visit                 | In-app + Email |
+| `APPOINTMENT_CONFIRMED`     | Developer confirms appointment          | Email to guest |
+| `DEVELOPER_VERIFIED`        | Admin verifies developer account        | In-app + Email |
 
 ### Notification Flow
 
@@ -570,6 +572,7 @@ Event occurs (e.g., user favorites a property)
 ### Why Polling, Not WebSockets
 
 For MVP, notification delivery uses **polling** (React Query refetch interval) rather than WebSockets or Server-Sent Events. Rationale:
+
 - Simpler to implement and debug
 - No persistent connection overhead on a single VPS
 - Notification latency of 30s is acceptable for the use case (likes, views)
@@ -640,11 +643,11 @@ This migration is designed to be a **backend-only change**, which is why the sea
 
 ### Event Types
 
-| Event              | Triggered By                    | Stored In              |
-|--------------------|---------------------------------|------------------------|
-| `property_view`    | GET /api/v1/properties/:id      | PropertyAnalytics (aggregated daily) |
-| `whatsapp_click`   | POST /api/v1/analytics/events   | PropertyAnalytics (aggregated daily) |
-| `property_liked`   | POST /api/v1/favorites/:id      | PropertyFavorite count |
+| Event            | Triggered By                  | Stored In                            |
+| ---------------- | ----------------------------- | ------------------------------------ |
+| `property_view`  | GET /api/v1/properties/:id    | PropertyAnalytics (aggregated daily) |
+| `whatsapp_click` | POST /api/v1/analytics/events | PropertyAnalytics (aggregated daily) |
+| `property_liked` | POST /api/v1/favorites/:id    | PropertyFavorite count               |
 
 ### Aggregation Strategy
 
@@ -884,6 +887,7 @@ Layer 6: Data
 **Context:** The team of 4 needs to share types, coordinate schema changes with API changes, and keep CI/CD simple.
 
 **Consequences:**
+
 - ✅ Single PR can span frontend + backend + schema change
 - ✅ Shared TypeScript types possible between packages
 - ✅ One CI/CD pipeline to maintain
@@ -901,6 +905,7 @@ Layer 6: Data
 **Context:** The initial proposal mentioned both PostgreSQL and MongoDB as options.
 
 **Rationale:**
+
 - Property data is inherently relational: properties belong to developers, which have ratings, which belong to users, which have favorites.
 - Enforcing data integrity (e.g., a property cannot exist without a developer) is critical for a trust platform. PostgreSQL's foreign key constraints enforce this at the database level.
 - PostgreSQL's native full-text search (tsvector/GIN) covers MVP search needs without adding a search service.
@@ -908,6 +913,7 @@ Layer 6: Data
 - The team has more combined experience with PostgreSQL.
 
 **Consequences:**
+
 - ✅ ACID guarantees — no orphaned records, no data inconsistency
 - ✅ Full-text search built in (saves running Elasticsearch for MVP)
 - ✅ One database to operate and back up
@@ -923,12 +929,14 @@ Layer 6: Data
 **Decision:** Use Next.js 14 with the App Router, not the legacy Pages Router.
 
 **Rationale:**
+
 - App Router enables React Server Components — critical for property listing pages where SEO and initial load performance matter.
 - Nested layouts reduce boilerplate (dashboard layout, public layout, admin layout).
 - Built-in support for ISR with `revalidate` makes property pages cached and fast without a separate caching layer.
 - The App Router is the future of Next.js. Starting with Pages Router would require migration later.
 
 **Consequences:**
+
 - ✅ RSC for property pages = faster FCP, better SEO
 - ✅ Route groups for clean URL organization
 - ✅ Built-in ISR for property pages
@@ -944,6 +952,7 @@ Layer 6: Data
 **Decision:** Use Cloudinary for all image and video storage, not self-hosted MinIO or AWS S3.
 
 **Rationale:**
+
 - Auto-generates WebP variants and resizes on the fly via URL parameters.
 - Global CDN included — critical for serving images fast on African mobile networks.
 - Client-side direct upload (with signed presets) means images never hit the Express server — keeps the API server lean.
@@ -951,6 +960,7 @@ Layer 6: Data
 - `publicId` allows server-side deletion without storing full URLs in the DB.
 
 **Consequences:**
+
 - ✅ Zero image processing code to write
 - ✅ Global CDN without managing CloudFront or nginx cache
 - ✅ URL-based transformations (resize, crop, format) without any server code
@@ -966,13 +976,15 @@ Layer 6: Data
 **Decision:** Self-host on a VPS (Hetzner) with Docker Compose, not use managed platforms like Vercel + Railway.
 
 **Rationale:**
-- Cost: Hetzner CX31 at ~€15/month vs Vercel Pro (~$20/month) + Railway (~$20/month) = €15 vs $40+.
+
+- Cost: Hetzner CX31 at ~~€15/month vs Vercel Pro (~~$20/month) + Railway (~$20/month) = €15 vs $40+.
 - Control: Full control over Nginx config, Redis, PostgreSQL tuning, networking.
 - Scalability path: Adding more services (Meilisearch, background workers) is trivial on a VPS, expensive on managed platforms.
 - Skills: Emmanuel's DevOps skills make VPS management a strength, not a burden.
 - Unified domain: Easier to manage subdomains on a single server.
 
 **Consequences:**
+
 - ✅ Lower monthly cost
 - ✅ No vendor lock-in on hosting
 - ✅ Full control over infrastructure
@@ -989,12 +1001,14 @@ Layer 6: Data
 **Decision:** ByTe will never build in-app messaging for MVP. All communication goes through WhatsApp deeplinks.
 
 **Rationale:**
+
 - In-app chat requires: real-time infrastructure (WebSockets), message storage, notification delivery, read receipts, media sharing — weeks of engineering for a feature users already have for free on WhatsApp.
 - Trust in African real estate markets is built via WhatsApp. Users trust WhatsApp conversations more than unknown in-app chat systems.
 - Building in-app chat competes with WhatsApp's UX, which users know and prefer.
 - Every hour spent on in-app chat is an hour not spent on listings, search, or trust features.
 
 **Consequences:**
+
 - ✅ Eliminates a major scope risk
 - ✅ Aligns with actual user behavior
 - ✅ Zero real-time messaging infrastructure to maintain
@@ -1010,12 +1024,14 @@ Layer 6: Data
 **Decision:** With no backend endpoints implemented yet, the Properties and Developer domains were built as complete, production-shaped frontend features backed by `services/*.service.ts` functions that return realistic mock data — not placeholder pages waiting on the API.
 
 **Rationale:**
+
 - Every mock service function's signature matches the query contract this document already specifies (§10 Search query building, §8 WhatsApp deeplink flow) — swapping in a real `fetch`/Axios call later is a query-building change inside one file, not a component redesign.
 - `services/mocks/` holds the raw fixture data (`properties.mock.ts`, `developers.mock.ts`); `*.service.ts` files hold the filtering/sorting/pagination logic that will survive the swap. Developer records are defined once and referenced by both a property's embedded `developer` field and the developer's own profile, so frontend fixtures can't drift the way two independent mocks would.
 - The WhatsApp deeplink flow (`lib/whatsapp.ts`'s `getWhatsAppLink`) is genuinely async and click-triggered even in mock form, preserving the number-masking shape from §8 rather than short-circuiting it.
 - Two feature flags (`FEATURES.WHATSAPP_CONTACT`, `FEATURES.MAP_VIEW`) gate the two capabilities that are frontend-complete but backend-blocked (real developer phone numbers; a Mapbox key), so the UI ships honestly disabled rather than fake-functional.
 
 **Consequences:**
+
 - ✅ Backend integration for these domains is scoped to `services/*.service.ts` — no frontend component changes expected.
 - ✅ Frontend and backend teams can work in parallel against this document's contracts without a shared staging API.
 - ⚠️ Mock data (18 properties, 3 developers) is hand-authored for variety across categories/cities, not representative of real inventory scale — pagination/empty-state UX should be re-verified once real data volumes exist.
@@ -1030,12 +1046,14 @@ Layer 6: Data
 **Decision:** The frontend's testing stack is Vitest + React Testing Library for unit and integration tests, and Playwright (+ `@axe-core/playwright`) for end-to-end and automated accessibility testing. No Jest.
 
 **Rationale:**
+
 - This is Next.js's own current recommendation for the App Router: Vitest is ESM-native and doesn't need the SWC/Babel juggling Jest requires to work with Turbopack and Server Components, and it shares a Jest-compatible assertion API so there's no new mental model.
 - Next's own docs are explicit that Vitest **cannot** render `async` Server Components — our route `page.tsx` files (`await searchParams`, `await params`, direct `await propertyService...` calls) fall in that category. Rather than work around this, the boundary is respected: presentational and `"use client"` components are unit-tested directly; the `*View` composition components (`PropertyDetailView`, `DeveloperProfileView`, etc.) are integration-tested by rendering them directly with fixture data, bypassing the async page wrapper; the async pages themselves are only exercised by Playwright, which drives a real running server end-to-end.
 - Playwright covers what Vitest structurally cannot: real navigation, real Next.js metadata/title behavior, and cross-browser/responsive verification via its project matrix (Chromium, Firefox, WebKit, plus mobile Chrome/Safari viewports).
 - Mocking happens at the service boundary (`vi.mock("@/services", ...)`), not the hook or component layer — integration tests exercise the real `useProperties`/`useDevelopers` hooks and a real `QueryClient`, so a broken hook or a broken React Query wiring would actually fail the test.
 
 **Consequences:**
+
 - ✅ `npm run test` / `test:coverage` (Vitest) and `npm run e2e` (Playwright) are independent — CI runs both on every PR (`frontend` and `frontend-e2e` jobs), but `frontend-e2e` only runs the `chromium-desktop` project for speed; the full 5-project matrix is for local/nightly use.
 - ✅ Two genuine cross-browser findings surfaced immediately by running the full matrix once: Playwright's `.fill()` doesn't reliably trigger React's controlled-input `onChange` in WebKit (use `.pressSequentially()` for real keystroke simulation instead), and axe-scanning a client-navigated page right after `networkidle` can race Next's async-`generateMetadata` title commit (wait for the actual expected title, not just non-empty, before scanning). Both were test-authoring fixes, not application bugs — recorded here so they aren't rediscovered from scratch.
 - ⚠️ Server Components with real async data fetching have no unit-test safety net by design — a regression in `getPropertyBySlug`'s error handling, for example, is only caught by the Playwright 404 tests, not a fast unit test. Acceptable given Next's own constraint, but worth remembering when triaging a slow CI failure.
@@ -1049,21 +1067,48 @@ Layer 6: Data
 **Decision:** Login, registration, forgot-password, and reset-password are implemented as complete, production-shaped UI backed by `services/mocks/auth.mock.ts` (in-memory `MOCK_ACCOUNTS` array, `MOCK_RESET_TOKENS` map), extending the same mock-first pattern used for Properties and Developers (ADR-007), rather than waiting on the real backend.
 
 **Rationale:**
+
 - `services/auth.service.ts`'s function signatures (`login`, `register`, `logout`, `requestPasswordReset`, `validateResetToken`, `resetPassword`) already match this document's token strategy and role model (§6) — swapping in real HTTP calls is a body-of-function change, not a redesign of the forms, store, or route guards.
 - Building real forms (React Hook Form + Zod validation, loading/error/success states, accessible controls) against a mock service surfaces real UX and validation bugs early — one was caught this way (see the `withPasswordMatchResolver` fix below) that a stubbed page never would have.
 - A single, explicit, documented limitation is preferable to a fake `document.cookie` write that would misrepresent how session persistence will actually work once a real backend exists.
 
 **The limitation:** a mock `login`/`register` running entirely in the browser cannot set a real `HttpOnly` `Set-Cookie` header — only a server response can do that. Consequently:
+
 - Session state does not survive a full page reload in this mock environment. `authService.refresh()` deliberately still calls the real (not-yet-existent) backend and always fails in dev — this is correct behavior to keep, not a bug to patch around.
 - `proxy.ts`'s server-side cookie check always wins over `RequireAuth`'s client-side check, so `RequireAuth`'s role-forbidden (`/forbidden`) redirect path is unreachable via full-navigation E2E testing today. It's covered instead by a unit test (`RequireAuth.test.tsx`) using a mocked Zustand store.
 
 **Consequences:**
+
 - ✅ Auth backend integration is scoped to `services/auth.service.ts` — no expected changes to forms, store, or route guard components.
 - ✅ The validation-bug class this surfaced (Zod's `.refine()`/`.check()` short-circuiting on multi-field errors — see `lib/validation/withPasswordMatchResolver.ts`) would very likely have shipped unnoticed behind a stubbed page.
 - ⚠️ E2E coverage of the `RequireAuth` role-forbidden path is currently unit-test-only, not full-browser — re-verify via Playwright once real cookies exist.
 - ⚠️ `AUTH_COOKIE_NAME` (see `frontend/TODO.md`) remains a frontend assumption pending backend confirmation of the real cookie name.
 
+> **Superseded in part by [ADR-010](#adr-010-dashboard-shell--the-mock-session-cookie-fix):** the "no fake cookie" stance above held while the cookie limitation was cosmetic — no `RequireAuth`-gated page had real content to reach. Phase 6 made it a hard blocker (the dashboard was unreachable in any browser, full stop), which changed the calculus. See ADR-010.
+
 ---
 
-*ByTe Real Estate Platform — ARCHITECTURE.md*
-*Maintained by Emmanuel (CTO). Update this document when any architectural decision changes.*
+### ADR-010: Dashboard Shell + the Mock-Session-Cookie Fix
+
+**Date:** July 14, 2026
+**Status:** Accepted
+**Decision:** Phase 6.0 builds a dedicated dashboard shell — `DashboardShell`/`DashboardTopBar`/`DashboardSidebar`/`DashboardMobileNav`/`DashboardUserMenu`, plus the shared primitives every later dashboard module will reuse — mounted inside the `(dashboard)` route group Phase 5 already guards with `proxy.ts` + `RequireAuth`. It also introduces `lib/mockSessionCookie.ts`, a mock-only marker cookie set on login/register and cleared on logout.
+
+**Why the cookie fix was necessary, not optional:** building real dashboard content exposed that `proxy.ts` (Next middleware) re-runs on every navigation — including the client-side RSC fetch behind the redirect that fires immediately after a successful mock login — not just full page loads. Since mock `login`/`register` never set `AUTH_COOKIE_NAME`, `proxy.ts` bounced every attempt to reach `/dashboard` back to `/login`, even in the same authenticated browser session. `RequireAuth`'s own logic never even ran; the redirect happened at the network layer before React mounted. Under the "Every phase must be independently deployable" / "no placeholder functionality" bar this phase was built against, a dashboard that cannot be reached in any real browser session fails that bar outright — this needed a real fix, not a documentation note.
+
+**The fix:** `setMockSessionCookie()`/`clearMockSessionCookie()` write/clear a non-`HttpOnly` cookie named `AUTH_COOKIE_NAME` with a value that carries no auth power of its own (`proxy.ts` only checks presence, never decodes it) — the actual access token still lives only in the in-memory Zustand store, per §6's token strategy. Called from `authService.login`/`register`/`logout`. Deliberately **not** called from `refresh()`, which still calls the real, not-yet-existent backend and still fails in dev — so the already-documented "session doesn't survive a full reload" limitation (ADR-009) is unchanged; this fix only unblocks the immediate post-login navigation within one browser session.
+
+**Feature-flag-gated navigation:** `components/dashboard/dashboard-nav.ts` is the single source of truth for all seven dashboard destinations, shared by `DashboardSidebar` (desktop) and `DashboardMobileNav` (mobile), so the two can't drift. Every destination beyond Dashboard Home is gated by its own flag in `constants/features.ts` (`DASHBOARD_PROPERTIES`, `DASHBOARD_APPOINTMENTS`, `DASHBOARD_NOTIFICATIONS`, `DASHBOARD_PROFILE`, `DASHBOARD_SETTINGS`; Analytics reuses the pre-existing `DEVELOPER_ANALYTICS` flag) and renders as a real, disabled control with a "Soon" badge when off — the same idiom `FEATURES.WHATSAPP_CONTACT`/`MAP_VIEW` already established, not a new pattern. Each later phase flips one boolean and adds its page; the nav config needs no changes.
+
+**Consequences:**
+
+- ✅ The dashboard is genuinely reachable end-to-end in dev and E2E (`e2e/dashboard.spec.ts`) for the first time — Phase 5's `RequireAuth` role-forbidden path being unit-test-only is now scoped correctly: it's _specifically_ about the absence of a click path for a wrong-role user, not a symptom of the cookie problem, which is fixed.
+- ✅ Every later Phase 6.x module (My Properties, Appointments, Analytics, Notifications, Profile, Settings) ships by flipping its flag and adding a page — no shell or nav changes anticipated.
+- ✅ Primitives scaffolded via the shadcn CLI already configured in this repo (`components.json`, style `base-nova`, `@base-ui/react`) rather than hand-rolled: `Card`, `Table`, `Tabs`, `Dialog`, `Drawer`, `DropdownMenu`, `sonner`'s `Toaster` — matching `Button`/`Checkbox`/`Badge`'s existing provenance exactly, not a second component vocabulary.
+- ⚠️ `services/mocks/auth.mock.ts` now seeds a second account (`developer@byte.africa`, role `DEVELOPER`) purely so the dashboard is reachable at all in dev/E2E without a real backend granting roles — flagging so it isn't mistaken for test data drift.
+- ⚠️ The mock session cookie is a Phase-6-only shim; `lib/mockSessionCookie.ts` is explicitly marked `TODO(backend)` for deletion once real `Set-Cookie` login responses exist.
+
+---
+
+_ByTe Real Estate Platform — ARCHITECTURE.md_
+_Maintained by Emmanuel (CTO). Update this document when any architectural decision changes._

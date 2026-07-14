@@ -8,6 +8,22 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Added
 
+- **Frontend: Developer Dashboard shell (Phase 6.0).** `DashboardShell` with a
+  persistent desktop sidebar (icon rail from `md`, full labels from `lg`) and a
+  mobile bottom tab bar with a "More" sheet, driven by one shared nav config
+  (`components/dashboard/dashboard-nav.ts`) so the two can't drift; a TopBar
+  with an account menu (name, role, "View public site", log out); shared
+  primitives every later dashboard module will reuse — `Card`, `Table`,
+  `Tabs`, `Dialog`, `Drawer`, `DropdownMenu`, `sonner` toast infrastructure, a
+  hand-rolled `Sparkline`, `StatCard`, `Breadcrumbs` — scaffolded via the
+  shadcn CLI already configured in this repo (same provenance as
+  `Button`/`Checkbox`/`Badge`). Every destination beyond Dashboard Home is
+  gated by its own feature flag and renders disabled with a "Soon" badge
+  until its phase ships, matching the existing `FEATURES.WHATSAPP_CONTACT`
+  idiom. `FormField` promoted from `components/auth/` to `components/ui/` for
+  reuse across dashboard forms. See ADR-010 in `docs/ARCHITECTURE.md`. 27
+  new unit/integration tests, 4 new E2E tests, 1 new page added to the
+  accessibility scan (zero violations).
 - **Frontend: Authentication domain.** Login, registration, forgot-password,
   and reset-password pages with React Hook Form + Zod validation, password
   visibility toggle, and loading/error/success states; session bootstrap and
@@ -49,6 +65,13 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Fixed
 
+- The dashboard was unreachable in any real browser session — even
+  immediately after a successful login — because `proxy.ts` re-runs on the
+  client-side navigation fetch behind every route change, not just full page
+  loads, and mock login never set the cookie it checks for. Discovered while
+  building the Phase 6.0 shell, since Phase 5 had no dashboard content to
+  expose it. Fixed with `lib/mockSessionCookie.ts`, a mock-only marker cookie
+  set on login/register and cleared on logout (see ADR-010).
 - Registration and reset-password forms could silently hide a "Passwords
   don't match." error behind an unrelated field error (e.g. an unchecked
   terms checkbox) until a second submit — caught by the E2E suite. Root
@@ -56,11 +79,11 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
   every other field validates. Fixed with `withPasswordMatchResolver`, a
   resolver wrapper that checks the match independently and merges it into
   whatever else failed, so every problem in a submission surfaces at once.
-- Login/register footer links ("Sign in"/"Sign up") relied on `hover:
-  underline` alone, leaving insufficient color contrast against surrounding
-  text with no non-color distinguisher at rest — caught by axe once the auth
-  pages were added to the accessibility scan. Changed to a persistent
-  `underline`.
+- Login/register footer links ("Sign in"/"Sign up") relied on
+  `hover:underline` alone, leaving insufficient color contrast against
+  surrounding text with no non-color distinguisher at rest — caught by axe
+  once the auth pages were added to the accessibility scan. Changed to a
+  persistent `underline`.
 - `PropertyMediaGallery`'s thumbnail picker used `role="tablist"`/`role="tab"`
   without the arrow-key navigation that ARIA tab semantics require — found
   during the Phase 4 accessibility audit (not by automated axe scanning, which
