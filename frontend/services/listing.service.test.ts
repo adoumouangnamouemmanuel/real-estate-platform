@@ -181,4 +181,79 @@ describe("listingService mutations", () => {
     expect(result.skipped).toEqual([active.id]);
     expect(MOCK_LISTINGS.find((item) => item.id === draft.id)).toBeUndefined();
   });
+
+  it("createListing seeds a DRAFT with a slug derived from the title", async () => {
+    snapshot = snapshotListings();
+    const created = await listingService.createListing({
+      title: "My New Listing",
+    });
+
+    expect(created.status).toBe("DRAFT");
+    expect(created.slug).toBe("my-new-listing");
+    expect(MOCK_LISTINGS.find((item) => item.id === created.id)).toBeDefined();
+  });
+
+  it("createListing falls back to 'untitled-listing' and de-duplicates slugs", async () => {
+    snapshot = snapshotListings();
+    const first = await listingService.createListing({});
+    const second = await listingService.createListing({});
+
+    expect(first.slug).toBe("untitled-listing");
+    expect(second.slug).toBe("untitled-listing-2");
+    expect(first.title).toBe("Untitled Listing");
+  });
+
+  it("createListing gives untyped fields typed empty defaults, not undefined", async () => {
+    snapshot = snapshotListings();
+    const created = await listingService.createListing({ title: "Draft" });
+
+    expect(created.price).toBe(0);
+    expect(created.city).toBe("");
+    expect(created.media).toEqual([]);
+    expect(created.amenities).toEqual([]);
+  });
+
+  it("getListingForEdit resolves by slug and rejects for an unknown slug", async () => {
+    snapshot = snapshotListings();
+    const existing = MOCK_LISTINGS[0];
+
+    await expect(
+      listingService.getListingForEdit(existing.slug),
+    ).resolves.toMatchObject({ id: existing.id });
+    await expect(
+      listingService.getListingForEdit("no-such-slug"),
+    ).rejects.toThrow(/not found/);
+  });
+
+  it("updateListing applies only the given patch (PATCH semantics) and keeps the slug stable", async () => {
+    snapshot = snapshotListings();
+    const created = await listingService.createListing({ title: "Original" });
+
+    const updated = await listingService.updateListing(created.slug, {
+      price: 5000,
+    });
+
+    expect(updated.price).toBe(5000);
+    expect(updated.title).toBe("Original");
+    expect(updated.slug).toBe(created.slug);
+  });
+
+  it("updateListing does not regenerate the slug when the title changes", async () => {
+    snapshot = snapshotListings();
+    const created = await listingService.createListing({ title: "Original" });
+
+    const updated = await listingService.updateListing(created.slug, {
+      title: "Renamed",
+    });
+
+    expect(updated.title).toBe("Renamed");
+    expect(updated.slug).toBe(created.slug);
+  });
+
+  it("updateListing rejects an unknown slug", async () => {
+    snapshot = snapshotListings();
+    await expect(
+      listingService.updateListing("no-such-slug", { price: 1 }),
+    ).rejects.toThrow(/not found/);
+  });
 });

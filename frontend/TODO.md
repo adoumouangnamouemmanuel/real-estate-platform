@@ -116,17 +116,63 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   transition logic, every new component, a full-flow integration test), 9 new
   E2E tests, 1 new page added to the accessibility scan (zero violations).
 
+- **Phase 6.3 — Property Editor**: create (`/listings/new`) and edit
+  (`/listings/[slug]/edit`) share one `ListingForm`, parameterized by mode.
+  Autosave-as-draft (debounced, PATCHes only the fields React Hook Form marks
+  dirty) while `status === "DRAFT"`; an explicit "Save changes" button once
+  published, since a live listing shouldn't change under a buyer mid-edit.
+  `MediaUploader` runs an explicit upload state machine (QUEUED → UPLOADING →
+  UPLOADED/FAILED, with Retry) and persists an explicit `order` field per
+  photo rather than relying on array position, so an async upload queue
+  finishing out of order can never scramble the cover image. One
+  `listingSchema` with a `publishListingSchema` extending it for the stricter
+  "ready to go live" profile — not two independently maintained schemas.
+  `useNavigationGuard` (generic, not listing-specific — reusable by any future
+  dashboard form) plus `NavigationGuardDialog` warn before losing unsaved
+  work. A lightweight `ListingEditorProvider` holds cross-cutting editor
+  metadata (identity, autosave status, publish-in-flight) while React Hook
+  Form remains the sole source of truth for field values. Flips
+  `FEATURES.DASHBOARD_PROPERTY_EDITOR`, lighting up every "Add Property"/"Edit
+  listing" control already wired to it since Phase 6.2. See ADR-013 in
+  `docs/ARCHITECTURE.md`. ~40 new unit/integration tests, 10 new E2E tests
+  (across two specs), 1 new page added to the accessibility scan (zero
+  violations).
+- Fixed three real bugs found while building 6.3, not shipped:
+  - **My Properties' "Edit listing" row action never actually linked
+    anywhere** — Phase 6.2 built it as a disabled placeholder (the editor
+    didn't exist yet), and flipping `DASHBOARD_PROPERTY_EDITOR` in isolation
+    would have left a live-looking, unwired menu item. Caught by the first
+    E2E run against the real flag flip, not by any unit test (the row's
+    `disabled` state was already covered; its `href` never was). Fixed by
+    wiring `render={<Link href={ROUTES.EDIT_LISTING(property.slug)} />}` —
+    the same pattern `RecentListings`'s equivalent action already used.
+  - **`router.replace()` to adopt a brand-new draft's real URL could discard
+    in-progress edits.** `/listings/new` and `/listings/[slug]/edit` are
+    different leaf routes, so a genuine Next.js navigation between them
+    unmounts and remounts the whole page — losing anything typed after the
+    autosave snapshot that triggered the create, and orphaning any
+    in-flight continuation (Publish's own follow-up status update, in
+    particular, never ran). Fixed by using `window.history.replaceState`
+    directly for that specific URL sync: it fixes up what a refresh or
+    copy-pasted link lands on without ever invoking Next's router, so the
+    component keeps running uninterrupted. See ADR-013.
+  - **A field marked clean by autosave/save could stay "dirty" forever
+    afterward**, permanently (and incorrectly) triggering the unsaved-changes
+    guard on every subsequent navigation attempt. `form.reset(undefined,
+{ keepValues: true })` keeps the displayed values but never updates React
+    Hook Form's internal dirty-comparison baseline, since no new baseline was
+    given — every later edit kept comparing against the _original_
+    `defaultValues`. Fixed by passing a freshly-read `form.getValues()` (not
+    a snapshot captured before the save's network `await`) as the reset
+    baseline, in `useAutosaveListing` and both of `ListingForm`'s explicit
+    save paths.
+
 ## In Progress
 
 - Nothing currently in flight.
 
 ## Next Tasks
 
-- Phase 6.3 — Property Editor: `ListingForm` (multi-section, autosave-as-draft),
-  `MediaUploader`, flip `FEATURES.DASHBOARD_PROPERTY_EDITOR` — which also lights
-  up the My Properties row menu's "Edit listing", the Recent Listings widget's
-  "Edit listing", and the Quick Actions panel's "Add Property", all already
-  wired to this flag.
 - Wire `propertyService`/`developerService` to the real backend once
   `GET /api/v1/properties` and `GET /api/v1/developers` exist — every mock method
   has a `TODO(backend)` marking the endpoint it stands in for.
@@ -140,11 +186,25 @@ Living tracker for frontend work. Update this alongside feature work, not after 
 - `FEATURES.WHATSAPP_CONTACT` — needs the backend's `/properties/:id/whatsapp-link`
   endpoint and real developer phone numbers (number-masking design, ARCHITECTURE.md §8).
 - `FEATURES.MAP_VIEW` — needs a Mapbox API key.
-- Real property/developer media — needs the Cloudinary upload flow
+- Real property media uploads — Phase 6.3's `MediaUploader` built the full
+  UI/UX (queue, retry, ordering) against a mock `uploadService`, but actually
+  reaching Cloudinary needs the backend's `POST /api/v1/uploads/signature`
   (ARCHITECTURE.md §7); `next.config.ts` is already configured for it.
 
 ## Technical Debt
 
+- `MediaUploader` reorders photos with explicit "move earlier"/"move later"
+  buttons, not drag-and-drop — drag-and-drop would need a new dependency and
+  its own from-scratch keyboard-accessibility work; the buttons are fully
+  keyboard-operable today with no added dependency. Revisit if a design pass
+  specifically calls for drag reordering.
+- Disabling autosave the instant Publish/Delete starts (`useAutosaveListing`'s
+  `enabled` flag) cancels any _scheduled-but-not-yet-fired_ debounce timer
+  immediately, which is the realistic case at human/E2E interaction speeds.
+  It does not cancel a save whose network call was already mid-flight in the
+  same tick publish/delete began — no `AbortController`-based request
+  cancellation exists yet. Acceptable at today's mock latency; revisit if this
+  ever causes an observed issue against real backend latency.
 - `services/mocks/listings.mock.ts` (My Properties' portfolio) and
   `services/mocks/dashboard.mock.ts` (Dashboard Home's "recent" listings) are
   deliberately independent datasets, not the same array — Phase 6.1 shipped and

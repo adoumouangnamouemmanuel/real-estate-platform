@@ -1,42 +1,7 @@
-import type { PropertyCategory } from "@/constants/categories";
+import { AMENITY_POOLS } from "@/constants/amenities";
 import type { PropertyDetail } from "@/types";
 
 import { DEVELOPERS } from "./developers.mock";
-
-export const AMENITY_POOLS: Record<PropertyCategory, string[]> = {
-  apartment: [
-    "24/7 Security",
-    "Backup Generator",
-    "Fitted Kitchen",
-    "Balcony",
-    "Parking",
-  ],
-  house: [
-    "24/7 Security",
-    "Backup Generator",
-    "Garden",
-    "Parking",
-    "Boys' Quarters",
-  ],
-  land: [
-    "Gated Community",
-    "Electricity Access",
-    "Water Access",
-    "Registered Title",
-  ],
-  commercial: [
-    "Loading Bay",
-    "Backup Generator",
-    "24/7 Security",
-    "Ample Parking",
-  ],
-  office: [
-    "Elevator Access",
-    "Backup Generator",
-    "24/7 Security",
-    "Air Conditioning",
-  ],
-};
 
 // TODO(backend): replace with GET /api/v1/properties once the endpoint exists
 // (see docs/ARCHITECTURE.md §10 for the query contract this should match).

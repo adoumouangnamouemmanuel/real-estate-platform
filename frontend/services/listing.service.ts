@@ -143,6 +143,43 @@ function findListingOrThrow(id: string): Property {
   return listing;
 }
 
+/** The subset of Property fields the editor can write — id/slug/status/updatedAt are server-managed. */
+export type ListingPatch = Partial<
+  Pick<
+    Property,
+    | "title"
+    | "description"
+    | "price"
+    | "listingType"
+    | "category"
+    | "city"
+    | "region"
+    | "address"
+    | "amenities"
+    | "media"
+  >
+>;
+
+function slugify(input: string): string {
+  const base = input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  return base || "untitled-listing";
+}
+
+/** Appends a numeric suffix until the slug is unique — a draft can start untitled, so collisions on "untitled-listing" are the common case, not the edge case. */
+function uniqueSlug(base: string): string {
+  let candidate = base;
+  let suffix = 1;
+  while (MOCK_LISTINGS.some((item) => item.slug === candidate)) {
+    suffix += 1;
+    candidate = `${base}-${suffix}`;
+  }
+  return candidate;
+}
+
 /**
  * The developer's own portfolio — filtering, sorting, pagination, and the status/
  * delete mutations "My Properties" needs. Distinct from propertyService (the public,
@@ -254,5 +291,64 @@ export const listingService = {
     }
 
     return delay({ deleted, skipped });
+  },
+
+  /** The developer's own full editable record — includes address/amenities the list view doesn't need. */
+  getListingForEdit: (slug: string): Promise<Property> => {
+    const listing = MOCK_LISTINGS.find((item) => item.slug === slug);
+    return listing
+      ? delay(listing)
+      : Promise.reject(new Error("Listing not found"));
+  },
+
+  /**
+   * Creates a new listing as a DRAFT with a stable, immutable slug (never
+   * regenerated on later title edits, so the editor's own URL can't go stale
+   * mid-session). Untitled/incomplete fields get empty-but-typed defaults
+   * (0, "", []) rather than leaving them undefined — Property's non-optional
+   * fields stay non-optional for every other reader (cards, tables); it's
+   * `publishListingSchema` (lib/validation/listing.ts), not this shape, that
+   * enforces "must be filled in before going live."
+   */
+  createListing: (patch: ListingPatch = {}): Promise<Property> => {
+    const title = patch.title?.trim() || "Untitled Listing";
+    const slug = uniqueSlug(slugify(title));
+    const now = new Date().toISOString();
+
+    const listing: Property = {
+      id: crypto.randomUUID(),
+      slug,
+      title,
+      description: patch.description ?? "",
+      price: patch.price ?? 0,
+      listingType: patch.listingType ?? "SALE",
+      category: patch.category ?? "apartment",
+      city: patch.city ?? "",
+      region: patch.region ?? "",
+      status: "DRAFT",
+      media: patch.media ?? [],
+      address: patch.address ?? "",
+      amenities: patch.amenities ?? [],
+      updatedAt: now,
+    };
+
+    MOCK_LISTINGS.unshift(listing);
+    return delay(listing);
+  },
+
+  /**
+   * PATCH semantics: only the keys present in `patch` are written. Autosave
+   * sends just the fields that changed since the last save; an explicit "Save
+   * changes" click sends the full form values as one patch — same method,
+   * same contract either way.
+   */
+  updateListing: (slug: string, patch: ListingPatch): Promise<Property> => {
+    const listing = MOCK_LISTINGS.find((item) => item.slug === slug);
+    if (!listing) {
+      return Promise.reject(new Error("Listing not found"));
+    }
+
+    Object.assign(listing, patch, { updatedAt: new Date().toISOString() });
+    return delay(listing);
   },
 };

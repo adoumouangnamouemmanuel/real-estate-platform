@@ -111,7 +111,12 @@ function RowActions({
         >
           View listing
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!canEdit}>
+        <DropdownMenuItem
+          disabled={!canEdit}
+          {...(canEdit
+            ? { render: <Link href={ROUTES.EDIT_LISTING(property.slug)} /> }
+            : {})}
+        >
           {canEdit ? "Edit listing" : "Edit listing (soon)"}
         </DropdownMenuItem>
         {transitions.length > 0 && <DropdownMenuSeparator />}

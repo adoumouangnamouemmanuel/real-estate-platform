@@ -33,7 +33,11 @@ export {
 export type {
   GetListingsParams,
   ListingFilters,
+  ListingPatch,
   ListingSort,
   ListingStatusCounts,
   StatusTransition,
 } from "./listing.service";
+
+export { uploadService } from "./upload.service";
+export type { UploadedFile } from "./upload.service";

@@ -22,14 +22,16 @@ describe("QuickActions", () => {
     );
   });
 
-  it("still gates 'Add Property' as a disabled 'Soon' control — the Property Editor hasn't shipped", () => {
+  it("links 'Add Property' now that the Property Editor (Phase 6.3) has shipped", () => {
     render(<QuickActions />);
 
-    const addProperty = screen.getByRole("button", { name: /Add Property/ });
-    expect(addProperty).toBeDisabled();
+    expect(screen.getByRole("link", { name: /Add Property/ })).toHaveAttribute(
+      "href",
+      "/listings/new",
+    );
   });
 
-  it("renders every not-yet-shipped action as a disabled 'Soon' control, not a broken link", () => {
+  it("still gates not-yet-shipped actions as disabled 'Soon' controls, not broken links", () => {
     render(<QuickActions />);
 
     const buttons = screen.getAllByRole("button");

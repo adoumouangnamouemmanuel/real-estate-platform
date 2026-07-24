@@ -1,7 +1,7 @@
 # ByTe Real Estate Platform — Architecture
 
 > **Document type:** Architecture Reference + Architecture Decision Records (ADRs)
-> **Last updated:** July 13, 2026
+> **Last updated:** July 24, 2026
 > **Owner:** Emmanuel (CTO)
 > **Status:** Living document — update this file when any architectural decision changes.
 
@@ -1149,6 +1149,37 @@ Layer 6: Data
 - ✅ `MOCK_LISTINGS` (the developer's portfolio) and `MOCK_DASHBOARD_LISTINGS` (Dashboard Home's "recent" list, shipped in 6.1) are deliberately independent datasets — Phase 6.1 was already reviewed and this phase doesn't touch it. A real backend serves both from one table; until then, a status change in My Properties doesn't retroactively update what Dashboard Home shows.
 - ⚠️ `MOCK_LISTINGS` is a mutable module-level array (same idiom as `auth.mock.ts`), so `e2e/listings.spec.ts`'s mutating tests (publish/delete/bulk) run under `test.describe.configure({ mode: "serial" })` — concurrent workers racing the same in-memory array produced flaky row counts during development. The unit-level mutation tests in `listing.service.test.ts` snapshot/restore the array around each other for the same reason.
 - ⚠️ E2E tests reach `/listings` only by clicking the sidebar link after login, never `page.goto("/listings?...")` — per ADR-009, the mock session lives only in memory and doesn't survive a full page load, so a direct `goto` to a protected route lands on the sign-in-required fallback even with the mock session cookie present. Every dashboard e2e spec already followed this convention; documented explicitly here since it's easy to trip over when a test wants to deep-link into a specific filter state.
+
+---
+
+### ADR-013: Property Editor — Autosave Baselines, Explicit Upload State, History-API URL Sync
+
+**Date:** July 24, 2026
+**Status:** Accepted
+**Decision:** Phase 6.3 builds the create (`/listings/new`) and edit (`/listings/[slug]/edit`) experience as one `ListingForm`, parameterized by mode — the fields are identical; only initial values and submit semantics differ. A single React Hook Form instance is the sole source of truth for field values (shared with every section via `FormProvider`); a lightweight `ListingEditorProvider` holds cross-cutting metadata that isn't itself a form field — identity (null until a brand-new draft's first save mints one), autosave status, and whether a publish is in flight — so section components and the publish bar can read it without prop-drilling, without ever duplicating what React Hook Form already owns.
+
+**One schema, two profiles:** `lib/validation/listing.ts` exports `listingSchema` (every field lenient — a draft can be nearly empty) and `publishListingSchema = listingSchema.extend({...stricter})`. The publish profile is always a structural superset of the base, never an independently authored schema that could drift from it.
+
+**Autosave sends only what changed:** `useAutosaveListing` extracts the dirty-fields subset via React Hook Form's `dirtyFields` and PATCHes just that through `listingService.updateListing`. It's gated to `DRAFT` status only — a live, publicly-visible listing shouldn't change under a buyer's nose mid-edit — and stops scheduling further silent retries after three consecutive failures (a manual "Retry" affordance always resets the counter).
+
+**Explicit upload state machine:** `useUploadQueue` models each file's lifecycle as QUEUED → UPLOADING → UPLOADED, or UPLOADING → FAILED with a user-triggered retry back to UPLOADING — not a boolean `isUploading` flag, so the UI can show each file's own status independently while a batch uploads in parallel. Reordering uses explicit "move earlier/later" buttons that swap an explicit per-photo `order` field (not drag-and-drop, which would need a new dependency and its own keyboard-accessibility work from scratch) — display order is decoupled from array/insertion position because an async upload queue can finish out of order, and array index alone can't be trusted to mean "what the developer sees."
+
+**`useNavigationGuard` is generic, not listing-specific** — any future dashboard form can adopt the same `{ shouldBlock, message }` → `guardNavigation(action)` API, paired with a generic `NavigationGuardDialog` (in `components/common/`, not `components/dashboard/listings/`).
+
+**Three real bugs found and fixed during implementation** (all in the diff, none shipped):
+
+1. **My Properties' "Edit listing" row action was never actually wired.** Phase 6.2 built it as a disabled placeholder (the editor didn't exist yet); flipping `DASHBOARD_PROPERTY_EDITOR` alone would have left a live-looking menu item with no `href`. Caught by the first E2E run against the real flag flip, not by any unit test — the row's `disabled` state was already covered, its link target never was. Fixed with the same `render={<Link .../>}` pattern `RecentListings`'s equivalent action already used.
+
+2. **`router.replace()` to adopt a new draft's real URL could unmount the whole page mid-edit.** The original design (matching the Phase 6.3 review) called for updating the address bar from `/listings/new` to `/listings/[slug]/edit` via Next's router the instant autosave minted an identity. But these are two different leaf routes in the App Router — a genuine `router.replace()` navigation between them unmounts and remounts the page from a fresh server fetch, discarding anything the developer typed after the autosave snapshot that triggered the create, and orphaning any in-flight continuation (Publish's own follow-up status update, specifically, never ran — the component it was scheduled on had already been torn down). **Fix:** use `window.history.replaceState` directly for that one URL sync. It fixes up what a page refresh or copy-pasted link lands on without ever invoking Next's router — the component keeps running uninterrupted, exactly as intended.
+
+3. **A field cleared of "dirty" state by autosave/save could stay dirty forever afterward**, permanently and incorrectly triggering the unsaved-changes guard on every later navigation attempt. `form.reset(undefined, { keepValues: true, keepDirty: false })` keeps the displayed values but never supplies a new baseline for React Hook Form's dirty comparison — every subsequent edit kept comparing against the *original* `defaultValues` from when the form first mounted. **Fix:** pass a freshly-read `form.getValues()` (read at reset-time, not a snapshot captured before the save's network `await`) as the reset baseline, in `useAutosaveListing` and both of `ListingForm`'s explicit-save paths.
+
+**Consequences:**
+
+- ✅ Every future dashboard form (Company Profile, Account Settings, once those phases ship) can reuse `useNavigationGuard` + `NavigationGuardDialog` as-is — the API was never listing-specific.
+- ✅ Backend integration for media is a single-file swap: `services/upload.service.ts`'s `uploadFile`/`deleteUpload` stand in for `POST /api/v1/uploads/signature` + a direct-to-Cloudinary upload (ARCHITECTURE.md §7) and `DELETE /api/v1/uploads/:publicId`; `MediaUploader` and `useUploadQueue` never change.
+- ⚠️ `useAutosaveListing`'s `enabled` gate cancels a *scheduled* debounce timer immediately once Publish/Delete starts, but can't cancel a save whose network call was already mid-flight in the same tick — no `AbortController`-based cancellation exists yet. Acceptable at today's mock latency; revisit only if this surfaces against real backend latency.
+- ⚠️ A real testing lesson from this phase, not a product issue: Playwright's `getByText` does case-insensitive *substring* matching by default. `MediaUploader`'s own section description ("...the cover image.") satisfied an E2E wait for the "Cover" badge before any upload had actually finished, producing a flaky-looking failure that was actually a bad test assertion. Fixed with `{ exact: true }`; documented here so future specs don't rediscover it the hard way.
 
 ---
 

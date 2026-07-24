@@ -8,6 +8,24 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Added
 
+- **Frontend: Property Editor (Phase 6.3).** Create (`/listings/new`) and edit
+  (`/listings/[slug]/edit`) share one `ListingForm`. Autosave-as-draft while
+  `status === "DRAFT"` (debounced, PATCHes only the fields that actually
+  changed); an explicit "Save changes" action once published. `MediaUploader`
+  runs an explicit upload state machine (QUEUED → UPLOADING →
+  UPLOADED/FAILED, with retry) and persists an explicit per-photo `order`
+  field rather than relying on array position, so the cover image can't get
+  scrambled by an async upload queue finishing out of order. One
+  `listingSchema` with a stricter `publishListingSchema` extending it for the
+  "ready to publish" profile. `useNavigationGuard` — generic, reusable by any
+  future dashboard form — plus a `NavigationGuardDialog` warn before losing
+  unsaved work. A lightweight `ListingEditorProvider` holds cross-cutting
+  editor metadata (identity, autosave status, publish-in-flight) while React
+  Hook Form remains the sole source of truth for field values. Flips
+  `FEATURES.DASHBOARD_PROPERTY_EDITOR`. See ADR-013 in `docs/ARCHITECTURE.md`.
+  ~40 new unit/integration tests, 10 new E2E tests, 1 new page added to the
+  accessibility scan (zero violations).
+
 - **Frontend: My Properties (Phase 6.2).** Listing management for the
   developer's own portfolio — search, filter, sort, pagination, status changes,
   and delete; the create/edit form is deliberately out of scope for this phase
@@ -103,6 +121,25 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Fixed
 
+- My Properties' "Edit listing" row action was a disabled placeholder with no
+  `href` wired at all — built in Phase 6.2 before the editor existed, and
+  never revisited when Phase 6.3 flipped the flag that would make it live.
+  Caught by the first E2E run against the real flag flip. Fixed with the same
+  `render={<Link .../>}` pattern already used by the equivalent Recent
+  Listings action.
+- A brand-new draft's first autosave used to update the address bar via
+  `router.replace()` to its real edit URL — a genuine Next.js navigation
+  between two different leaf routes (`/listings/new` and
+  `/listings/[slug]/edit`), which unmounts and remounts the whole page,
+  discarding anything typed afterward and orphaning Publish's own follow-up
+  status update. Fixed by using `window.history.replaceState` directly for
+  that URL sync, which never invokes Next's router.
+- A field cleared of its "dirty" state by autosave or an explicit save could
+  stay dirty forever afterward, permanently and incorrectly triggering the
+  unsaved-changes navigation guard. `form.reset(undefined, { keepValues: true
+  })` never updates React Hook Form's internal dirty-comparison baseline;
+  fixed by passing a freshly-read `form.getValues()` (not a pre-await
+  snapshot) as the reset baseline.
 - The dashboard was unreachable in any real browser session — even
   immediately after a successful login — because `proxy.ts` re-runs on the
   client-side navigation fetch behind every route change, not just full page

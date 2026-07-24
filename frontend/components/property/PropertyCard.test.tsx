@@ -53,7 +53,11 @@ describe("PropertyCard", () => {
     const property = makeProperty({
       title: "Apartment with a view",
       media: [
-        { url: "https://res.cloudinary.com/demo/image.jpg", publicId: "img1" },
+        {
+          url: "https://res.cloudinary.com/demo/image.jpg",
+          publicId: "img1",
+          order: 0,
+        },
       ],
     });
 

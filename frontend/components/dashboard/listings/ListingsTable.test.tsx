@@ -98,6 +98,17 @@ describe("ListingsTable", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("links 'Edit listing' to the property editor now that Phase 6.3 has shipped", async () => {
+    const user = userEvent.setup();
+    renderTable();
+
+    await user.click(screen.getByLabelText("Actions for Draft Listing"));
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Edit listing" }),
+    ).toHaveAttribute("href", "/listings/test-property/edit");
+  });
+
   it("offers no Delete action and no transitions for a SOLD (terminal) listing", async () => {
     const user = userEvent.setup();
     renderTable();

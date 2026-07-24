@@ -32,6 +32,13 @@ export type PropertyStatus =
 export interface PropertyMedia {
   url: string;
   publicId: string;
+  /**
+   * Explicit display order (0 = cover image), set by the editor's drag-to-reorder
+   * UI. Persisted rather than inferred from array position: an async upload
+   * queue can append items out of visual order, and relying on array index alone
+   * would make "what the user sees" and "what gets saved" driftable.
+   */
+  order: number;
 }
 
 export interface Property {
@@ -52,6 +59,13 @@ export interface Property {
    * which is what the Recent Listings widget orders by and displays.
    */
   updatedAt?: string;
+  /**
+   * Optional for the same reason as `updatedAt`: the public list endpoint
+   * doesn't surface them, but the Property Editor (Phase 6.3) reads and writes
+   * both on the developer's own listing record.
+   */
+  address?: string;
+  amenities?: string[];
 }
 
 /** The list/card shape — also what a property embeds for its developer. */
