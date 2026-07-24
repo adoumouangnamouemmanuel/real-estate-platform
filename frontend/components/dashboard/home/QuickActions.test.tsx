@@ -13,14 +13,28 @@ describe("QuickActions", () => {
     expect(screen.getByText("Edit Company Profile")).toBeInTheDocument();
   });
 
-  it("renders flag-gated actions as disabled 'Soon' controls, not broken links", () => {
-    // All Phase 6.x destination flags are still off, so every action gates.
+  it("links 'View Listings' now that My Properties (Phase 6.2) has shipped", () => {
+    render(<QuickActions />);
+
+    expect(screen.getByRole("link", { name: /View Listings/ })).toHaveAttribute(
+      "href",
+      "/listings",
+    );
+  });
+
+  it("still gates 'Add Property' as a disabled 'Soon' control — the Property Editor hasn't shipped", () => {
+    render(<QuickActions />);
+
+    const addProperty = screen.getByRole("button", { name: /Add Property/ });
+    expect(addProperty).toBeDisabled();
+  });
+
+  it("renders every not-yet-shipped action as a disabled 'Soon' control, not a broken link", () => {
     render(<QuickActions />);
 
     const buttons = screen.getAllByRole("button");
     expect(buttons.length).toBeGreaterThan(0);
     buttons.forEach((button) => expect(button).toBeDisabled());
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(screen.getAllByText("Soon").length).toBe(buttons.length);
   });
 });

@@ -8,6 +8,25 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Added
 
+- **Frontend: My Properties (Phase 6.2).** Listing management for the
+  developer's own portfolio — search, filter, sort, pagination, status changes,
+  and delete; the create/edit form is deliberately out of scope for this phase
+  and ships separately. `/listings` gives a status-aware action menu per row
+  (only the transitions valid for that listing's current status are offered,
+  plus Delete only when the status allows it — DRAFT and SUSPENDED are the only
+  deletable statuses, since anything with a real transaction history must be
+  suspended first), bulk select-and-act (Publish/Suspend/Delete, applying only
+  to whichever selected rows are actually eligible and reporting what it
+  skipped), a status-count summary doubling as a one-click filter, and a
+  selectable page size (10/25/50) for large portfolios. New `listingService`
+  (mock-backed, distinct from the public `propertyService` catalogue) and
+  `hooks/useListings.ts` — the first real consumer of the `sonner` toast
+  infrastructure built in Phase 6.0. Splits the Phase 6.0 `DASHBOARD_PROPERTIES`
+  flag: it now gates the (shipped) listing page and nav item, while a new
+  `DASHBOARD_PROPERTY_EDITOR` flag keeps Add/Edit disabled with a "Soon" control
+  until the editor phase. See ADR-012 in `docs/ARCHITECTURE.md`. ~50 new unit/
+  integration tests, 9 new E2E tests, 1 new page added to the accessibility scan
+  (zero violations).
 - **Frontend: Developer Dashboard Home (Phase 6.1).** The developer's post-login
   overview, built on the Phase 6.0 shell (not a redesign of it): a welcome header
   (time-of-day greeting, company, current date, and a one-line pending-work

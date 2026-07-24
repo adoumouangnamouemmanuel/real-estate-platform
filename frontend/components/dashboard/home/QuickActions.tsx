@@ -32,7 +32,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     label: "Add Property",
     href: ROUTES.NEW_LISTING,
     icon: Plus,
-    flag: "DASHBOARD_PROPERTIES",
+    flag: "DASHBOARD_PROPERTY_EDITOR",
   },
   {
     label: "View Listings",

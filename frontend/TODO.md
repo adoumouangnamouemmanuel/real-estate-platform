@@ -91,16 +91,42 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   > Editor" as Phase 6.1. The approved spec makes **Dashboard Home** 6.1; My
   > Properties moves to 6.2. Names, not scope, changed.
 
+- **Phase 6.2 — My Properties**: listing management only (search, filter, sort,
+  pagination, status changes, delete) — the create/edit form is explicitly out of
+  scope for this phase and ships as its own phase next. `/listings`
+  (`ListingsView`) gives a developer a portfolio-wide table: keyword + status +
+  category + listing-type filters, four sort orders, a selectable page size
+  (10/25/50) for large portfolios, per-row status transitions and delete via a
+  status-aware action menu (only the moves valid for that listing's current
+  status are offered — `STATUS_TRANSITIONS`/`DELETABLE_STATUSES` in
+  `services/listing.service.ts` are the one source of truth both the row menu and
+  the bulk actions toolbar read from), bulk select-and-act (Publish/Suspend/
+  Delete, applying only to whichever selected rows are actually eligible and
+  reporting what it skipped), and a status-count summary that doubles as a
+  one-click filter. New `listingService` (mock-backed, `TODO(backend)`,
+  distinct from the public `propertyService` catalogue — this is the
+  authenticated owner's own management surface) and `hooks/useListings.ts`
+  (query + four mutations, `sonner` toasts on success/error — the first real
+  consumer of the `Toaster` infrastructure built in Phase 6.0). Introduces
+  `FEATURES.DASHBOARD_PROPERTY_EDITOR` as a sibling to `DASHBOARD_PROPERTIES`:
+  the nav item and the listing table shipped now (`DASHBOARD_PROPERTIES` flipped
+  true), but Add/Edit still render disabled "Soon" controls
+  (`DASHBOARD_PROPERTY_EDITOR` stays false) until the editor phase. See ADR-012
+  in `docs/ARCHITECTURE.md`. ~50 new unit/integration tests (service filter/sort/
+  transition logic, every new component, a full-flow integration test), 9 new
+  E2E tests, 1 new page added to the accessibility scan (zero violations).
+
 ## In Progress
 
 - Nothing currently in flight.
 
 ## Next Tasks
 
-- Phase 6.2 — My Properties + Property Editor: `PropertyTable`, `ListingForm`
-  (multi-section, autosave-as-draft), `MediaUploader`, flip
-  `FEATURES.DASHBOARD_PROPERTIES` (which also lights up the Recent Listings
-  "View all"/"Edit" actions and the Quick Actions panel, already wired to it).
+- Phase 6.3 — Property Editor: `ListingForm` (multi-section, autosave-as-draft),
+  `MediaUploader`, flip `FEATURES.DASHBOARD_PROPERTY_EDITOR` — which also lights
+  up the My Properties row menu's "Edit listing", the Recent Listings widget's
+  "Edit listing", and the Quick Actions panel's "Add Property", all already
+  wired to this flag.
 - Wire `propertyService`/`developerService` to the real backend once
   `GET /api/v1/properties` and `GET /api/v1/developers` exist — every mock method
   has a `TODO(backend)` marking the endpoint it stands in for.
@@ -119,6 +145,18 @@ Living tracker for frontend work. Update this alongside feature work, not after 
 
 ## Technical Debt
 
+- `services/mocks/listings.mock.ts` (My Properties' portfolio) and
+  `services/mocks/dashboard.mock.ts` (Dashboard Home's "recent" listings) are
+  deliberately independent datasets, not the same array — Phase 6.1 shipped and
+  was reviewed before Phase 6.2 existed, and this phase doesn't touch it. A real
+  backend serves both from one table; until that integration, publishing/
+  deleting a listing in My Properties doesn't change what Dashboard Home shows.
+- `MOCK_LISTINGS` is a mutable module-level array (same idiom as
+  `auth.mock.ts`), so `e2e/listings.spec.ts`'s mutating tests
+  (publish/delete/bulk) must run serial (`test.describe.configure({ mode:
+"serial" })`) — concurrent workers would race on the same in-memory list and
+  produce flaky row counts. `services/listing.service.test.ts`'s mutation tests
+  snapshot/restore the array around each other for the same reason.
 - `FilterPanel` (properties) and `DeveloperFilterPanel` (developers) are
   structurally identical but not shared — deliberate (their fields differ enough
   that a shared abstraction would need render-prop-style configuration for two

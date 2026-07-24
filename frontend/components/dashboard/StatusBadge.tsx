@@ -56,6 +56,15 @@ export function PropertyStatusBadge({ status }: { status: PropertyStatus }) {
   return <StatusBadge label={label} tone={tone} />;
 }
 
+/** Single source of truth for a property status's display label — reused by the My Properties filter dropdown so it can't drift from the badge text. */
+export const PROPERTY_STATUS_LABEL: Record<PropertyStatus, string> =
+  Object.fromEntries(
+    Object.entries(PROPERTY_STATUS).map(([status, { label }]) => [
+      status,
+      label,
+    ]),
+  ) as Record<PropertyStatus, string>;
+
 const APPOINTMENT_STATUS: Record<
   AppointmentStatus,
   { label: string; tone: StatusTone }

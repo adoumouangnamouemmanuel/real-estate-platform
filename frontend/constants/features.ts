@@ -11,7 +11,11 @@ export const FEATURES = {
   ADMIN_REPORTS: false,
   // Dashboard modules land phase by phase (see docs/ARCHITECTURE.md's Phase 6 ADR) —
   // each flips to true when its phase ships, same pattern as WHATSAPP_CONTACT/MAP_VIEW.
-  DASHBOARD_PROPERTIES: false,
+  // Phase 6.2 shipped listing management (the /listings table) but deliberately not
+  // the create/edit form — split into two flags so "My Properties" can go live
+  // while Add/Edit stays gated until the Property Editor phase. See ADR-012.
+  DASHBOARD_PROPERTIES: true,
+  DASHBOARD_PROPERTY_EDITOR: false,
   DASHBOARD_APPOINTMENTS: false,
   DASHBOARD_NOTIFICATIONS: false,
   DASHBOARD_PROFILE: false,

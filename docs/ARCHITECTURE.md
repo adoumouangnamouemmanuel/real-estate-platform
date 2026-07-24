@@ -1131,5 +1131,26 @@ Layer 6: Data
 
 ---
 
+### ADR-012: My Properties — Split Feature Flag, Status-Rule Single Source, Serial E2E Mutations
+
+**Date:** July 24, 2026
+**Status:** Accepted
+**Decision:** Phase 6.2 builds My Properties (`/listings`) on the Phase 6.0 shell and the Phase 6.1 primitives: listing management only — search, filter, sort, pagination, status changes, and delete. The create/edit form is explicitly out of scope and ships as its own phase (6.3). A new `listingService` (mock-backed, `services/mocks/listings.mock.ts`) and `hooks/useListings.ts` (one query hook, four mutation hooks) drive `ListingsView`, which composes `ListingsStatusSummary`, `ListingsFilterBar`, `ListingsBulkActionsBar`, `ListingsTable`, and `DeleteListingDialog` — mirroring `PropertiesView`/`DevelopersView`'s URL-driven-filters pattern (ADR-007) rather than inventing a new one.
+
+**Splitting `DASHBOARD_PROPERTIES`:** Phase 6.0 gated the entire "My Properties" nav destination — page and future editor alike — behind one flag. Shipping only the listing table this phase meant that flag could no longer also gate Add/Edit. `constants/features.ts` now has `DASHBOARD_PROPERTIES` (the nav item and `/listings` — flipped `true` this phase) and a new sibling `DASHBOARD_PROPERTY_EDITOR` (Add Property, Edit listing — stays `false`). Every place Phase 6.1 gated "Add Property"/"Edit listing" behind `DASHBOARD_PROPERTIES` (`QuickActions`, `RecentListings`'s row menu) was repointed to `DASHBOARD_PROPERTY_EDITOR`; their "View all"/"View Listings" links stayed on `DASHBOARD_PROPERTIES` and now light up as real links, since `/listings` exists. Same "Soon"-badge idiom (ADR-010), just two flags instead of one where the phase boundary cut a single destination in half.
+
+**One status-rule source, read by two UIs:** `STATUS_TRANSITIONS` (which moves are valid from a given `PropertyStatus`) and `DELETABLE_STATUSES` (only `DRAFT` and `SUSPENDED` — anything with real transaction history must be suspended first) live once in `services/listing.service.ts`. Both the per-row action menu (`ListingsTable`) and the bulk actions toolbar read from the same exports, so a business-rule change can't update one UI and silently miss the other. Bulk mutations (`bulkUpdateStatus`/`bulkDelete`) apply only to whichever selected rows the action is actually valid for and report what they skipped, rather than failing the whole operation because one row in a mixed-status selection doesn't qualify.
+
+**Toasts, for real this time:** Phase 6.0 scaffolded `sonner`'s `Toaster` but nothing ever called `toast()`. `hooks/useListings.ts`'s four mutations are the first real consumer — success/error feedback for status changes, deletes, and their bulk equivalents.
+
+**Consequences:**
+
+- ✅ Phase 6.3 (Property Editor) flips `DASHBOARD_PROPERTY_EDITOR` and adds `/listings/new` + `/listings/[slug]/edit`; every "Add Property"/"Edit listing" control already wired to that flag lights up with no further changes to My Properties, Recent Listings, or Quick Actions.
+- ✅ `MOCK_LISTINGS` (the developer's portfolio) and `MOCK_DASHBOARD_LISTINGS` (Dashboard Home's "recent" list, shipped in 6.1) are deliberately independent datasets — Phase 6.1 was already reviewed and this phase doesn't touch it. A real backend serves both from one table; until then, a status change in My Properties doesn't retroactively update what Dashboard Home shows.
+- ⚠️ `MOCK_LISTINGS` is a mutable module-level array (same idiom as `auth.mock.ts`), so `e2e/listings.spec.ts`'s mutating tests (publish/delete/bulk) run under `test.describe.configure({ mode: "serial" })` — concurrent workers racing the same in-memory array produced flaky row counts during development. The unit-level mutation tests in `listing.service.test.ts` snapshot/restore the array around each other for the same reason.
+- ⚠️ E2E tests reach `/listings` only by clicking the sidebar link after login, never `page.goto("/listings?...")` — per ADR-009, the mock session lives only in memory and doesn't survive a full page load, so a direct `goto` to a protected route lands on the sign-in-required fallback even with the mock session cookie present. Every dashboard e2e spec already followed this convention; documented explicitly here since it's easy to trip over when a test wants to deep-link into a specific filter state.
+
+---
+
 _ByTe Real Estate Platform — ARCHITECTURE.md_
 _Maintained by Emmanuel (CTO). Update this document when any architectural decision changes._

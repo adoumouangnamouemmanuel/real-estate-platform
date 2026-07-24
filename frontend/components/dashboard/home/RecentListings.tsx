@@ -32,7 +32,7 @@ import type { Property } from "@/types";
 const COLUMN_COUNT = 4;
 
 function ListingActions({ property }: { property: Property }) {
-  const canEdit = isFeatureEnabled("DASHBOARD_PROPERTIES");
+  const canEdit = isFeatureEnabled("DASHBOARD_PROPERTY_EDITOR");
 
   return (
     <DropdownMenu>

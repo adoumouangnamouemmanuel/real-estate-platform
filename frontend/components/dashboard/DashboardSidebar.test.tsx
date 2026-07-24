@@ -24,17 +24,27 @@ describe("DashboardSidebar", () => {
     mockPathname = "/dashboard";
     render(<DashboardSidebar />);
 
-    // Every flagged-off item renders as a disabled button, not a link — Dashboard
-    // is the only real link in Phase 6.0, so there's nothing else to assert "not
-    // active" against yet. This guards that assumption explicitly.
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    // Dashboard and My Properties are real links as of Phase 6.2; neither is
+    // marked active while on /dashboard.
+    expect(
+      screen.getByRole("link", { name: "My Properties" }),
+    ).not.toHaveAttribute("aria-current");
+  });
+
+  it("renders My Properties as a live link now that Phase 6.2 has shipped", () => {
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: "My Properties" })).toHaveAttribute(
+      "href",
+      "/listings",
+    );
   });
 
   it("renders not-yet-shipped destinations as disabled, with a Soon badge, not as broken links", () => {
     render(<DashboardSidebar />);
 
-    const myProperties = screen.getByRole("button", { name: /My Properties/ });
-    expect(myProperties).toBeDisabled();
+    const appointments = screen.getByRole("button", { name: /Appointments/ });
+    expect(appointments).toBeDisabled();
     expect(screen.getAllByText("Soon").length).toBeGreaterThan(0);
   });
 

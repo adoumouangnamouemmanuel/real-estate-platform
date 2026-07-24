@@ -13,8 +13,9 @@ describe("DashboardMobileNav", () => {
     render(<DashboardMobileNav />);
 
     expect(screen.getByRole("link", { name: /Dashboard/ })).toBeInTheDocument();
+    // My Properties shipped in Phase 6.2 — it's a live link now, not a disabled button.
     expect(
-      screen.getByRole("button", { name: /My Properties/ }),
+      screen.getByRole("link", { name: /My Properties/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Appointments/ }),
