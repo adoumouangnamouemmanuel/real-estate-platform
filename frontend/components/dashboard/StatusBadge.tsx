@@ -71,8 +71,10 @@ const APPOINTMENT_STATUS: Record<
 > = {
   REQUESTED: { label: "Requested", tone: "warning" },
   CONFIRMED: { label: "Confirmed", tone: "positive" },
+  RESCHEDULED: { label: "Rescheduled", tone: "info" },
   COMPLETED: { label: "Completed", tone: "info" },
   CANCELLED: { label: "Cancelled", tone: "muted" },
+  NO_SHOW: { label: "No Show", tone: "danger" },
 };
 
 export function AppointmentStatusBadge({
@@ -83,3 +85,12 @@ export function AppointmentStatusBadge({
   const { label, tone } = APPOINTMENT_STATUS[status];
   return <StatusBadge label={label} tone={tone} />;
 }
+
+/** Single source of truth for an appointment status's display label — reused by the Appointments filter bar so it can't drift from the badge text. */
+export const APPOINTMENT_STATUS_LABEL: Record<AppointmentStatus, string> =
+  Object.fromEntries(
+    Object.entries(APPOINTMENT_STATUS).map(([status, { label }]) => [
+      status,
+      label,
+    ]),
+  ) as Record<AppointmentStatus, string>;

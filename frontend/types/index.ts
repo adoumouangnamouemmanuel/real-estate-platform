@@ -119,7 +119,12 @@ export interface PropertyDetail extends Property {
 // these shapes or the components that consume them.
 
 export type AppointmentStatus =
-  "REQUESTED" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+  | "REQUESTED"
+  | "CONFIRMED"
+  | "RESCHEDULED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "NO_SHOW";
 
 /** A property viewing a prospective buyer/renter has requested or booked. */
 export interface Appointment {
@@ -130,6 +135,15 @@ export interface Appointment {
   /** ISO 8601 timestamp of the visit. */
   scheduledFor: string;
   status: AppointmentStatus;
+  /**
+   * ISO 8601 timestamp this appointment was rescheduled *from* — only set
+   * while `status === "RESCHEDULED"`. Optional and additive for the same
+   * reason `Property.updatedAt` is: the Dashboard Home widget's shape
+   * (Phase 6.1) doesn't need it, the Appointments page (Phase 6.4) does.
+   */
+  previousScheduledFor?: string;
+  /** The appointment's own lifecycle, rendered via the reusable ActivityTimeline in its details drawer. */
+  history?: ActivityItem[];
 }
 
 /** The three buckets the Appointment Overview widget renders as tabs. */
@@ -155,7 +169,11 @@ export type ActivityType =
   | "LISTING_PUBLISHED"
   | "LISTING_UPDATED"
   | "APPOINTMENT_REQUESTED"
+  | "APPOINTMENT_CONFIRMED"
+  | "APPOINTMENT_RESCHEDULED"
   | "APPOINTMENT_COMPLETED"
+  | "APPOINTMENT_CANCELLED"
+  | "APPOINTMENT_NO_SHOW"
   | "PROPERTY_VIEWED"
   | "PROFILE_UPDATED";
 

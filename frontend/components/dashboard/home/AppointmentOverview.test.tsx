@@ -61,6 +61,23 @@ describe("AppointmentOverview", () => {
     expect(screen.getByText("Requested Office")).toBeInTheDocument();
   });
 
+  it("shows a 'View all' link to the Appointments page now that Phase 6.4 has shipped", async () => {
+    getAppointmentOverview.mockResolvedValue({
+      upcoming: [makeAppointment()],
+      requested: [],
+      completed: [],
+    });
+
+    renderWithQueryClient(<AppointmentOverview />);
+
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "View all" })).toHaveAttribute(
+        "href",
+        "/appointments",
+      ),
+    );
+  });
+
   it("shows a per-tab empty state when a bucket is empty", async () => {
     const user = userEvent.setup();
     getAppointmentOverview.mockResolvedValue({

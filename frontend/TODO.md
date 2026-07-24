@@ -167,6 +167,53 @@ Living tracker for frontend work. Update this alongside feature work, not after 
     baseline, in `useAutosaveListing` and both of `ListingForm`'s explicit
     save paths.
 
+- **Phase 6.4 — Appointments**: `/appointments` (`AppointmentsView`) gives a
+  developer their appointment book — full lifecycle management, not just a
+  list. `AppointmentStatus` extends the Phase 6.1 four states with
+  `RESCHEDULED` and `NO_SHOW` (a rescheduled booking isn't "still requested,"
+  and an unattended visit isn't "cancelled" by the developer). New
+  `lib/appointmentActionPolicy.ts` centralizes which actions are valid from
+  each status (`getActions`, `getBulkActions`, `isValidTransition`,
+  `isTerminal`) — the row action menu, the bulk toolbar, the details drawer,
+  and `appointmentService`'s own transition validation all read from this one
+  module, same reasoning as `STATUS_TRANSITIONS` in `listing.service.ts`.
+  Bulk actions are deliberately narrower than per-row actions: only Confirm
+  and Cancel (`bulkSafe` in `ACTION_DEFINITIONS`) — Reschedule needs a
+  per-row date/time input, Complete/No-Show are one-visit outcomes, neither
+  batches sensibly. Keyword + status + timeframe (today/upcoming/overdue)
+  filters, two sort orders, a selectable page size, date-grouped rows, and a
+  status-count summary doubling as a one-click filter (mirrors
+  `ListingsStatusSummary`). The details drawer reuses the existing
+  `ActivityTimeline` component unchanged for per-appointment history — each
+  mock appointment carries its own `history: ActivityItem[]`, appended to by
+  every mutation. A reschedule dialog picks a new date/time via
+  `<input type="datetime-local">`. New `appointmentService` (mock-backed,
+  `TODO(backend)`, its own dataset — distinct from Phase 6.1's Dashboard Home
+  widget data) and `hooks/useAppointments.ts`. Appointment lifecycle events
+  route through a new no-op telemetry seam, `lib/telemetry.ts`'s
+  `trackAppointmentEvent` (dev-only `console.debug` today; a documented seam
+  for a future `POST /api/v1/analytics/events`, see ARCHITECTURE.md §11).
+  Flips `FEATURES.DASHBOARD_APPOINTMENTS`, lighting up the sidebar/mobile nav
+  link (previously disabled with a "Soon" badge) and adding a "View all"
+  action to Dashboard Home's `AppointmentOverview`. See ADR-014 in
+  `docs/ARCHITECTURE.md`. ~70 new unit/integration tests, 9 new E2E tests
+  (serial, mirroring `listings.spec.ts`), 1 new page added to the
+  accessibility scan (zero violations).
+- Fixed a real bug found while building 6.4's own E2E spec, not shipped: the
+  Appointments table groups rows by scheduled date with an interleaved
+  single-cell header row (e.g. "Today") between actual appointment rows, and
+  the column header row carries its own "select all" checkbox — both
+  `page.getByRole("row").nth(1)` and a plain "row has a checkbox" filter could
+  land on the wrong row instead of a real appointment. Fixed by filtering for
+  a row containing its own "Actions for `<name>`" button, which only actual
+  appointment rows have.
+- Also updated two Phase 6.0 nav tests (`DashboardSidebar.test.tsx`,
+  `DashboardMobileNav.test.tsx`) and one Phase 6.1 E2E test
+  (`dashboard.spec.ts`) that asserted Appointments was the next still-gated
+  nav destination — now that Phase 6.4 shipped it live, those assertions
+  point at Analytics instead, the same adjustment Phase 6.2 made for My
+  Properties.
+
 ## In Progress
 
 - Nothing currently in flight.
@@ -211,12 +258,21 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   was reviewed before Phase 6.2 existed, and this phase doesn't touch it. A real
   backend serves both from one table; until that integration, publishing/
   deleting a listing in My Properties doesn't change what Dashboard Home shows.
+  Same split exists between `services/mocks/appointments.mock.ts`
+  (Appointments, Phase 6.4) and `dashboard.mock.ts`'s existing
+  `MOCK_APPOINTMENTS` (Dashboard Home's Appointment Overview widget, Phase 6.1).
 - `MOCK_LISTINGS` is a mutable module-level array (same idiom as
   `auth.mock.ts`), so `e2e/listings.spec.ts`'s mutating tests
   (publish/delete/bulk) must run serial (`test.describe.configure({ mode:
 "serial" })`) — concurrent workers would race on the same in-memory list and
   produce flaky row counts. `services/listing.service.test.ts`'s mutation tests
   snapshot/restore the array around each other for the same reason.
+  `MOCK_APPOINTMENTS` (Phase 6.4) and `e2e/appointments.spec.ts` /
+  `services/appointment.service.test.ts` follow the identical pattern.
+- `AppointmentTimeframe`'s `"overdue"` bucket is computed client-side against
+  `Date.now()` at query time (`matchesTimeframe` in `appointment.service.ts`)
+  — fine at mock scale; a real backend would likely compute this server-side
+  against one consistent clock rather than trusting each client's local time.
 - `FilterPanel` (properties) and `DeveloperFilterPanel` (developers) are
   structurally identical but not shared — deliberate (their fields differ enough
   that a shared abstraction would need render-prop-style configuration for two

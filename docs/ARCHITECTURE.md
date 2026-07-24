@@ -643,11 +643,18 @@ This migration is designed to be a **backend-only change**, which is why the sea
 
 ### Event Types
 
-| Event            | Triggered By                  | Stored In                            |
-| ---------------- | ----------------------------- | ------------------------------------ |
-| `property_view`  | GET /api/v1/properties/:id    | PropertyAnalytics (aggregated daily) |
-| `whatsapp_click` | POST /api/v1/analytics/events | PropertyAnalytics (aggregated daily) |
-| `property_liked` | POST /api/v1/favorites/:id    | PropertyFavorite count               |
+| Event                      | Triggered By                     | Stored In                             |
+| -------------------------- | --------------------------------- | -------------------------------------- |
+| `property_view`            | GET /api/v1/properties/:id        | PropertyAnalytics (aggregated daily)  |
+| `whatsapp_click`           | POST /api/v1/analytics/events     | PropertyAnalytics (aggregated daily)  |
+| `property_liked`           | POST /api/v1/favorites/:id        | PropertyFavorite count                |
+| `appointment_confirmed`    | POST /api/v1/analytics/events\*   | AppointmentAnalytics (planned)        |
+| `appointment_rescheduled`  | POST /api/v1/analytics/events\*   | AppointmentAnalytics (planned)        |
+| `appointment_completed`    | POST /api/v1/analytics/events\*   | AppointmentAnalytics (planned)        |
+| `appointment_cancelled`    | POST /api/v1/analytics/events\*   | AppointmentAnalytics (planned)        |
+| `appointment_no_show`      | POST /api/v1/analytics/events\*   | AppointmentAnalytics (planned)        |
+
+\* The appointment lifecycle events are emitted today via `frontend/lib/telemetry.ts`'s `trackAppointmentEvent` — a documented no-op seam (dev-only `console.debug`) called from every `appointmentService` mutation (Phase 6.4). No backend endpoint exists yet; wiring one is a one-line change inside that function, not a hunt through every call site.
 
 ### Aggregation Strategy
 
@@ -1180,6 +1187,34 @@ Layer 6: Data
 - ✅ Backend integration for media is a single-file swap: `services/upload.service.ts`'s `uploadFile`/`deleteUpload` stand in for `POST /api/v1/uploads/signature` + a direct-to-Cloudinary upload (ARCHITECTURE.md §7) and `DELETE /api/v1/uploads/:publicId`; `MediaUploader` and `useUploadQueue` never change.
 - ⚠️ `useAutosaveListing`'s `enabled` gate cancels a *scheduled* debounce timer immediately once Publish/Delete starts, but can't cancel a save whose network call was already mid-flight in the same tick — no `AbortController`-based cancellation exists yet. Acceptable at today's mock latency; revisit only if this surfaces against real backend latency.
 - ⚠️ A real testing lesson from this phase, not a product issue: Playwright's `getByText` does case-insensitive *substring* matching by default. `MediaUploader`'s own section description ("...the cover image.") satisfied an E2E wait for the "Cover" badge before any upload had actually finished, producing a flaky-looking failure that was actually a bad test assertion. Fixed with `{ exact: true }`; documented here so future specs don't rediscover it the hard way.
+
+---
+
+### ADR-014: Appointments — Centralized Action Policy, Independent Dataset, No-Op Telemetry Seam
+
+**Date:** July 24, 2026
+**Status:** Accepted
+**Decision:** Phase 6.4 builds the developer's appointment book (`/appointments`) as a full business workflow — lifecycle management, not just a list — reusing every dashboard primitive already established by My Properties (Phase 6.2) and the Property Editor (Phase 6.3) rather than inventing new ones: `DashboardPageContainer`, `Table`, `Dialog`, `Drawer`, `DropdownMenu`, `Pagination`, `FilterChips`, and the URL-driven-filters + React Query pattern from `ListingsView`.
+
+**Lifecycle as a graph, not a line:** `AppointmentStatus` extends the Phase 6.1 four-state enum (`REQUESTED`, `CONFIRMED`, `COMPLETED`, `CANCELLED`) with `RESCHEDULED` and `NO_SHOW` — both needed to represent a real viewing's outcome (a rescheduled booking isn't "still requested," and a booked visit that nobody attends isn't "cancelled," since the developer didn't cancel it). `COMPLETED`, `CANCELLED`, and `NO_SHOW` are terminal; `REQUESTED` can only move to `CONFIRMED` or `CANCELLED`; `CONFIRMED`/`RESCHEDULED` can move to `RESCHEDULE`, `COMPLETE`, `NO_SHOW`, or `CANCEL`. Mirrors the `STATUS_TRANSITIONS` graph pattern already proven by `listing.service.ts`.
+
+**`AppointmentActionPolicy` (`lib/appointmentActionPolicy.ts`) centralizes the business rules**, not `appointment.service.ts` — a pure-logic module the row action menu, the bulk actions toolbar, the details drawer, and the service's own transition validation all read from, so a rule change can't update one surface and silently miss another. It exposes `getActions(status)` (every action valid from a status), `getBulkActions()` (the fixed, bulk-safe subset), `isValidTransition(from, to)`, and `isTerminal(status)`. An `AppointmentActionContext { role?: UserRole }` parameter is threaded through today unused — reserved so a future role-based permission check (e.g. an ADMIN seeing every action, a read-only support role seeing none) is a change inside this one module, not a new parameter every call site has to learn.
+
+**Bulk actions are deliberately narrower than per-row actions:** the toolbar only ever offers Confirm and Cancel (`ACTION_DEFINITIONS[key].bulkSafe`) — Reschedule needs a per-row date/time input that can't sensibly batch, and Complete/No-Show are outcomes of one specific visit, not something to apply across a mixed selection. This is enforced at the policy layer, not just hidden in the UI, so `appointmentService.bulkUpdateStatus` can never be called with a target the toolbar wouldn't have offered.
+
+**Deliberately independent mock dataset:** matching the ADR-011/012 precedent (`MOCK_DASHBOARD_LISTINGS` vs `MOCK_LISTINGS`), `services/mocks/appointments.mock.ts`'s array is separate from `dashboard.service.ts`'s existing, already-shipped `MOCK_APPOINTMENTS` (Phase 6.1's Dashboard Home widget). A real backend serves both from one table; this phase doesn't touch the reviewed widget's data or its query key.
+
+**`ActivityTimeline` reused for per-appointment history**, not a new component: each mock appointment carries its own `history: ActivityItem[]`, appended to by every mutation (`appendHistory` in `appointment.service.ts`), and the details drawer renders it through the same `ActivityTimeline` Dashboard Home's Recent Activity section already uses — the component was already shape-driven (`ActivityItem[]` in, nothing else), so no changes were needed beyond extending `ActivityType`'s icon map for the four new appointment lifecycle events (`APPOINTMENT_CONFIRMED`, `APPOINTMENT_RESCHEDULED`, `APPOINTMENT_CANCELLED`, `APPOINTMENT_NO_SHOW`).
+
+**No-op telemetry seam:** `lib/telemetry.ts`'s `trackAppointmentEvent` is called from every status-changing mutation in `appointment.service.ts`, but only `console.debug`s outside production today — see §11's updated Event Types table. The seam exists so every call site is already correct and in place; wiring a real `POST /api/v1/analytics/events` endpoint later is a one-line change inside that one function.
+
+**A real bug found and fixed during implementation, not shipped:** the Appointments table groups rows by scheduled date with an interleaved single-cell header row (e.g. "Today", "Jul 26, 2026") between actual appointment rows — discovered while writing this phase's own E2E spec, where `page.getByRole("row").nth(1)` sometimes selected a date-group header instead of a data row, and a plain "has a checkbox" filter still matched the column header's own "select all" checkbox. Fixed by filtering for a row containing its own "Actions for `<name>`" button, which only real appointment rows have.
+
+**Consequences:**
+
+- ✅ Every future dashboard bulk-action surface (Notifications, once that phase ships) can reuse the same "policy exposes a narrower bulk subset than per-row actions" pattern without re-deriving it.
+- ✅ Role-based permissioning, when it eventually lands, is a change to `AppointmentActionPolicy` alone — every call site (row menu, bulk bar, drawer, service validation) already threads an (unused) context parameter through.
+- ⚠️ `AppointmentTimeframe`'s `"overdue"` bucket (still-`REQUESTED`, past-dated) is computed client-side against `Date.now()` at query time — acceptable at mock scale; a real backend would likely compute this server-side against a consistent clock instead of relying on every client's local time.
 
 ---
 

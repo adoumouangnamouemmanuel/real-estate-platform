@@ -1,10 +1,13 @@
 import {
   Building2,
   CalendarCheck,
+  CalendarClock,
   CalendarPlus,
+  CalendarX,
   Eye,
   Pencil,
   UserCog,
+  UserX,
   type LucideIcon,
 } from "lucide-react";
 
@@ -15,7 +18,11 @@ const ACTIVITY_ICON: Record<ActivityType, LucideIcon> = {
   LISTING_PUBLISHED: Building2,
   LISTING_UPDATED: Pencil,
   APPOINTMENT_REQUESTED: CalendarPlus,
+  APPOINTMENT_CONFIRMED: CalendarCheck,
+  APPOINTMENT_RESCHEDULED: CalendarClock,
   APPOINTMENT_COMPLETED: CalendarCheck,
+  APPOINTMENT_CANCELLED: CalendarX,
+  APPOINTMENT_NO_SHOW: UserX,
   PROPERTY_VIEWED: Eye,
   PROFILE_UPDATED: UserCog,
 };

@@ -81,12 +81,10 @@ test.describe("Dashboard shell", () => {
   }) => {
     await loginAsDeveloper(page);
 
-    // My Properties shipped in Phase 6.2 — Appointments is the next still-gated
-    // destination.
-    const appointments = page
-      .getByRole("button", { name: /Appointments/ })
-      .first();
-    await expect(appointments).toBeDisabled();
+    // My Properties shipped in Phase 6.2, Appointments in Phase 6.4 — Analytics
+    // is the next still-gated destination.
+    const analytics = page.getByRole("button", { name: /Analytics/ }).first();
+    await expect(analytics).toBeDisabled();
     // The "Soon" badge itself is only ever shown in the desktop sidebar's expanded
     // (lg+) state and the mobile "More" sheet — not the icon-only tablet rail or the
     // primary mobile tab bar — so assert presence in the DOM, not viewport-dependent

@@ -8,6 +8,27 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Added
 
+- **Frontend: Appointments (Phase 6.4).** The developer's appointment book at
+  `/appointments` — full lifecycle management, not just a list. Status graph
+  extended to six states (`REQUESTED` → `CONFIRMED`/`RESCHEDULED` →
+  `COMPLETED`/`CANCELLED`/`NO_SHOW`), with a new `AppointmentActionPolicy`
+  (`lib/appointmentActionPolicy.ts`) centralizing which actions are valid from
+  each status — read by the row action menu, the bulk actions toolbar, the
+  details drawer, and the service's own transition validation, so a rule
+  change can't drift between surfaces. Bulk actions are deliberately narrower
+  than per-row actions (Confirm/Cancel only — Reschedule needs a per-row date
+  input, Complete/No-Show are single-visit outcomes). Filtering, searching,
+  sorting, pagination, date-grouped rows, a status-count summary doubling as
+  a one-click filter, a details drawer reusing the existing `ActivityTimeline`
+  for per-appointment history, and a reschedule dialog. New `appointmentService`
+  (mock-backed, its own dataset — distinct from Phase 6.1's Dashboard Home
+  widget data) and `hooks/useAppointments.ts`. Appointment lifecycle events
+  are emitted through a new no-op telemetry seam (`lib/telemetry.ts`) for
+  future analytics wiring. Flips `FEATURES.DASHBOARD_APPOINTMENTS`, lighting
+  up the sidebar/mobile nav link and Dashboard Home's "View all" action. See
+  ADR-014 in `docs/ARCHITECTURE.md`. ~70 new unit/integration tests, 9 new E2E
+  tests, 1 new page added to the accessibility scan (zero violations).
+
 - **Frontend: Property Editor (Phase 6.3).** Create (`/listings/new`) and edit
   (`/listings/[slug]/edit`) share one `ListingForm`. Autosave-as-draft while
   `status === "DRAFT"` (debounced, PATCHes only the fields that actually

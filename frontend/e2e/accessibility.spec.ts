@@ -126,6 +126,35 @@ test.describe("Accessibility (axe)", () => {
     ).toEqual([]);
   });
 
+  test("Appointments has no automatically detectable WCAG violations", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").pressSequentially("developer@byte.africa");
+    await page
+      .getByLabel("Password", { exact: true })
+      .pressSequentially("Password123");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL("/dashboard");
+
+    await page
+      .getByRole("navigation", { name: "Dashboard" })
+      .first()
+      .getByRole("link", { name: "Appointments" })
+      .click();
+    await expect(page).toHaveURL("/appointments");
+    await page.waitForLoadState("networkidle");
+
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+
+    expect(
+      results.violations,
+      JSON.stringify(results.violations, null, 2),
+    ).toEqual([]);
+  });
+
   test("Add Property (the Property Editor) has no automatically detectable WCAG violations", async ({
     page,
   }) => {

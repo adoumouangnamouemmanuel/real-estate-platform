@@ -23,6 +23,15 @@ export type {
 
 export { dashboardService } from "./dashboard.service";
 
+export { appointmentService } from "./appointment.service";
+export type {
+  AppointmentFilters,
+  AppointmentSort,
+  AppointmentStatusCounts,
+  AppointmentTimeframe,
+  GetAppointmentsParams,
+} from "./appointment.service";
+
 export {
   canDeleteListing,
   DELETABLE_STATUSES,

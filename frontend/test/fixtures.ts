@@ -1,4 +1,5 @@
 import type {
+  Appointment,
   Developer,
   DeveloperProfile,
   Property,
@@ -44,6 +45,20 @@ export function makePropertyDetail(
     address: "1 Test Street",
     amenities: ["Parking", "24/7 Security"],
     developer: makeDeveloper(),
+    ...overrides,
+  };
+}
+
+export function makeAppointment(
+  overrides: Partial<Appointment> = {},
+): Appointment {
+  return {
+    id: "ap1",
+    propertyId: "p1",
+    propertyTitle: "Test Property",
+    clientName: "Test Client",
+    scheduledFor: "2026-07-25T10:00:00.000Z",
+    status: "REQUESTED",
     ...overrides,
   };
 }

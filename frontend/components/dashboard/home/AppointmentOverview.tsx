@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CalendarCheck } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
@@ -8,6 +9,8 @@ import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { AppointmentStatusBadge } from "@/components/dashboard/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isFeatureEnabled } from "@/constants/features";
+import { ROUTES } from "@/constants/routes";
 import { useAppointmentOverview } from "@/hooks/useDashboard";
 import { formatDateTime, formatRelativeTime } from "@/lib/formatters";
 import type { Appointment } from "@/types";
@@ -66,6 +69,16 @@ export function AppointmentOverview() {
       title="Appointments"
       description="Viewings across your listings."
       icon={CalendarCheck}
+      action={
+        isFeatureEnabled("DASHBOARD_APPOINTMENTS") ? (
+          <Link
+            href={ROUTES.APPOINTMENTS}
+            className="text-primary text-sm font-medium hover:underline"
+          >
+            View all
+          </Link>
+        ) : undefined
+      }
     >
       {isError ? (
         <ErrorState

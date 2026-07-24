@@ -40,11 +40,20 @@ describe("DashboardSidebar", () => {
     );
   });
 
+  it("renders Appointments as a live link now that Phase 6.4 has shipped", () => {
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: /Appointments/ })).toHaveAttribute(
+      "href",
+      "/appointments",
+    );
+  });
+
   it("renders not-yet-shipped destinations as disabled, with a Soon badge, not as broken links", () => {
     render(<DashboardSidebar />);
 
-    const appointments = screen.getByRole("button", { name: /Appointments/ });
-    expect(appointments).toBeDisabled();
+    const analytics = screen.getByRole("button", { name: /Analytics/ });
+    expect(analytics).toBeDisabled();
     expect(screen.getAllByText("Soon").length).toBeGreaterThan(0);
   });
 
