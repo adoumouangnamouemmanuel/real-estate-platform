@@ -538,7 +538,16 @@ export function buildWhatsAppMessage(property: {
 | `PROPERTY_VIEWED_MILESTONE` | Property reaches 10, 50, 100, 500 views | In-app         |
 | `APPOINTMENT_REQUESTED`     | Guest schedules a visit                 | In-app + Email |
 | `APPOINTMENT_CONFIRMED`     | Developer confirms appointment          | Email to guest |
+| `APPOINTMENT_CANCELLED`     | Either party cancels a booked visit     | In-app + Email |
+| `APPOINTMENT_RESCHEDULED`   | Developer reschedules a visit           | In-app + Email |
+| `APPOINTMENT_COMPLETED`     | Developer marks a visit complete        | In-app         |
+| `APPOINTMENT_NO_SHOW`       | Developer marks a visit as no-show      | In-app         |
+| `LISTING_PUBLISHED`         | A draft listing goes live               | In-app         |
+| `LISTING_SUSPENDED`         | A listing is suspended                  | In-app         |
+| `DRAFT_REMINDER`            | A draft has had no activity for N days  | In-app         |
 | `DEVELOPER_VERIFIED`        | Admin verifies developer account        | In-app + Email |
+
+The eight appointment/listing/draft types (added in Phase 6.6, see ADR-015) are the frontend's `NotificationType` union (`frontend/types/index.ts`) — a real backend produces them from the same mutations that already enqueue `notificationQueue.add(...)` jobs elsewhere in this document (appointment status changes, listing publish/suspend). A generic `SYSTEM` type (not tied to any single trigger — performance summaries, account events) rounds out the frontend union.
 
 ### Notification Flow
 
@@ -577,6 +586,8 @@ For MVP, notification delivery uses **polling** (React Query refetch interval) r
 - No persistent connection overhead on a single VPS
 - Notification latency of 30s is acceptable for the use case (likes, views)
 - WebSockets can be added in v2 when concurrent user load justifies it
+
+The frontend already implements this exact cadence today, against the mock service: `hooks/useNotifications.ts`'s `useUnreadNotificationCount` runs on a 30s `refetchInterval` — the nav badge and page header both stay current without any component polling logic of their own. This is also the identified real-time extension point (see ADR-015): a future WebSocket push handler only needs to write into this one query's cache entry (`queryClient.setQueryData`/`invalidateQueries` on the `["notifications", "unread-count"]` key) — no component here would need to change.
 
 ---
 
@@ -1215,6 +1226,34 @@ Layer 6: Data
 - ✅ Every future dashboard bulk-action surface (Notifications, once that phase ships) can reuse the same "policy exposes a narrower bulk subset than per-row actions" pattern without re-deriving it.
 - ✅ Role-based permissioning, when it eventually lands, is a change to `AppointmentActionPolicy` alone — every call site (row menu, bulk bar, drawer, service validation) already threads an (unused) context parameter through.
 - ⚠️ `AppointmentTimeframe`'s `"overdue"` bucket (still-`REQUESTED`, past-dated) is computed client-side against `Date.now()` at query time — acceptable at mock scale; a real backend would likely compute this server-side against a consistent clock instead of relying on every client's local time.
+
+---
+
+### ADR-015: Notifications — Shared Platform Seam, Granular Type + Derived Category, Lifecycle Modeled as an Enum
+
+**Date:** July 24, 2026
+**Status:** Accepted
+**Decision:** Phase 6.6 builds `notificationService` as the one seam every current and future module reads/writes notifications through — not "a notifications page" bolted onto the dashboard, but the same infrastructure a Notifications page, the Dashboard Home preview widget, and the nav badge all already share. Nothing outside `notification.service.ts` may import `notifications.mock.ts` directly, mirroring how `appointmentService`/`listingService` are the only consumers of their own mock arrays.
+
+**Widened `NotificationType`, same move as ADR-014's `AppointmentStatus`:** the Phase 6.1 `Notification.type` was a coarse 4-value enum (`APPOINTMENT | LISTING | MESSAGE | SYSTEM`) used only to pick a preview icon. It's now a granular 10-value union — `APPOINTMENT_REQUESTED/CONFIRMED/CANCELLED/RESCHEDULED/COMPLETED/NO_SHOW`, `LISTING_PUBLISHED/SUSPENDED`, `DRAFT_REMINDER`, `SYSTEM` — matching what a real event actually is, not just which section it belongs to. One pre-existing inconsistency was fixed while widening it: the old `MESSAGE` type (an "enquiry" notification) represented in-app messaging, which **ADR-006 already rules out entirely** (WhatsApp-first, no in-app chat). Nothing in this app has ever been able to produce a `MESSAGE` notification legitimately; it's gone, and the one Phase 6.1 mock row that used it now reads as a `DRAFT_REMINDER` instead.
+
+**Category is derived, never stored:** the filter bar groups by a coarser `NotificationCategory` (`APPOINTMENT`/`LISTING`/`SYSTEM`), computed from `NotificationType` via one lookup table (`NOTIFICATION_CATEGORY` in `notification.service.ts`) — the same "one place a mapping can be wrong" reasoning behind `AppointmentActionPolicy`. A notification is never inconsistent with its own category because there's no separate category field to drift.
+
+**Lifecycle is a single enum, not two booleans — a deliberate deviation from the literal request.** The requested lifecycle (Unread → Read → Archived) reads as a strict progression, not two independent flags. The obvious non-breaking alternative — keep `read: boolean`, add an optional `archivedAt?: string` — would let an invalid state exist structurally (archived-but-unread) and require every reader to know an unwritten rule ("archived implies read"). `status: "UNREAD" | "READ" | "ARCHIVED"` can't represent that invalid state and reads better everywhere a switch/filter touches it. This *is* a breaking rename of an existing Phase 6.1 field, but the blast radius was exactly one widget (`NotificationsPreview.tsx`), its test, and five mock rows in `dashboard.mock.ts` — small and contained enough that the cleaner model won out over strict backward compatibility. `ARCHIVED` is fully designed in (the type, the service, the filter parser all tolerate it) but nothing produces or exposes it yet — no archive action, no archive tab — per this phase's explicit "design for it, don't build the UI" instruction.
+
+**Card list, not `Table`, for the same reason `NotificationsPreview` already chose one:** notifications are heterogeneous inbox items (icon, title, body, timestamp), not comparable tabular rows. `Table`/`Pagination`/`Drawer`/`DashboardSection`/`FilterChips` are all reused as-is; `Table` specifically is not, despite being listed as a candidate for reuse — the wrong semantic fit here, matching the precedent Dashboard Home already set for this exact data shape.
+
+**Navigation: nav badge only, no top-bar bell.** Dashboard Home's `NotificationsPreview` widget already gives a persistent quick-glance surface from the page every session starts on; a second always-visible top-bar dropdown would duplicate it for marginal benefit, and no other module (Appointments, My Properties) has an equivalent top-bar mini-view either. Since "Notifications" falls outside the mobile bottom bar's primary 3 destinations (into the "More" sheet), the "More" tab itself carries an aggregate unread dot so mobile users get a signal without an extra tap — see `DashboardMobileNav.tsx`.
+
+**Real-time extension point:** `useUnreadNotificationCount` (`hooks/useNotifications.ts`) polls every 30s — the exact cadence already documented in §9's "Why Polling, Not WebSockets" — against its own query key (`["notifications", "unread-count"]`). A future WebSocket push handler needs only to call `queryClient.setQueryData`/`invalidateQueries` on that one key; the nav badge, the page header, and any future consumer update automatically, with zero component changes.
+
+**A real bug found and fixed during implementation, not shipped:** `markAsRead` called `findNotificationOrThrow` (which throws synchronously on an unknown id) from inside a plain arrow function typed to return a `Promise`, not an `async` function — so an unknown id threw synchronously at call time instead of yielding a rejected promise, breaking any `await expect(...).rejects` caller. Caught by this method's own "rejects an unknown id" test, fixed by making the method `async`. The identical shape exists in `appointment.service.ts`'s `updateStatus`/`reschedule` (calling `findAppointmentOrThrow` from non-`async` arrows) but is untested and unreachable through the current UI (no call site ever passes an id that isn't already a real row's) — left as-is rather than opportunistically touching Phase 6.4 code in this phase; noted in TODO.md.
+
+**Consequences:**
+
+- ✅ Any future module that needs to notify a developer (Analytics thresholds, Profile/Company changes) extends `NotificationType` and the one `NOTIFICATION_CATEGORY` lookup — never touches a component to add a new kind of notification.
+- ✅ Real-time delivery, when it lands, is a change inside `notificationService`'s query layer alone — every UI surface (badge, list, drawer) already reads through React Query and re-renders on cache updates without modification.
+- ⚠️ The identical "synchronous throw from a non-`async` Promise-returning arrow" bug pattern is now known to exist in `appointment.service.ts` too (untested, unreachable via UI) — see TODO.md's Technical Debt for the specific methods, left unfixed to keep this phase's footprint to Notifications.
 
 ---
 

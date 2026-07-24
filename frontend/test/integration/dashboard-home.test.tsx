@@ -70,11 +70,11 @@ const appointment: Appointment = {
 
 const notification: Notification = {
   id: "n1",
-  type: "APPOINTMENT",
+  type: "APPOINTMENT_REQUESTED",
   title: "New viewing request",
   body: "Someone requested a viewing.",
   createdAt: "2026-07-23T10:00:00.000Z",
-  read: false,
+  status: "UNREAD",
 };
 
 const activity: ActivityItem = {

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { NotificationCategory } from "@/services";
 import type { AppointmentStatus, PropertyStatus } from "@/types";
 
 /**
@@ -94,3 +95,30 @@ export const APPOINTMENT_STATUS_LABEL: Record<AppointmentStatus, string> =
       label,
     ]),
   ) as Record<AppointmentStatus, string>;
+
+const NOTIFICATION_CATEGORY: Record<
+  NotificationCategory,
+  { label: string; tone: StatusTone }
+> = {
+  APPOINTMENT: { label: "Appointment", tone: "positive" },
+  LISTING: { label: "Listing", tone: "info" },
+  SYSTEM: { label: "System", tone: "muted" },
+};
+
+export function NotificationCategoryBadge({
+  category,
+}: {
+  category: NotificationCategory;
+}) {
+  const { label, tone } = NOTIFICATION_CATEGORY[category];
+  return <StatusBadge label={label} tone={tone} />;
+}
+
+/** Single source of truth for a notification category's display label — reused by the Notifications filter bar so it can't drift from the badge text. */
+export const NOTIFICATION_CATEGORY_LABEL: Record<NotificationCategory, string> =
+  Object.fromEntries(
+    Object.entries(NOTIFICATION_CATEGORY).map(([category, { label }]) => [
+      category,
+      label,
+    ]),
+  ) as Record<NotificationCategory, string>;

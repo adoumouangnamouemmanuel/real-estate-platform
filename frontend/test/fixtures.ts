@@ -2,6 +2,7 @@ import type {
   Appointment,
   Developer,
   DeveloperProfile,
+  Notification,
   Property,
   PropertyDetail,
 } from "@/types";
@@ -59,6 +60,20 @@ export function makeAppointment(
     clientName: "Test Client",
     scheduledFor: "2026-07-25T10:00:00.000Z",
     status: "REQUESTED",
+    ...overrides,
+  };
+}
+
+export function makeNotification(
+  overrides: Partial<Notification> = {},
+): Notification {
+  return {
+    id: "notif1",
+    type: "APPOINTMENT_REQUESTED",
+    title: "New viewing request",
+    body: "Someone requested a viewing.",
+    createdAt: "2026-07-24T10:00:00.000Z",
+    status: "UNREAD",
     ...overrides,
   };
 }

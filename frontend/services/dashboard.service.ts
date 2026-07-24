@@ -45,7 +45,9 @@ export const dashboardService = {
       appointmentRequests: MOCK_APPOINTMENTS.filter(
         (a) => a.status === "REQUESTED",
       ).length,
-      unreadNotifications: MOCK_NOTIFICATIONS.filter((n) => !n.read).length,
+      unreadNotifications: MOCK_NOTIFICATIONS.filter(
+        (n) => n.status === "UNREAD",
+      ).length,
       totalPropertyViews: MOCK_TOTAL_PROPERTY_VIEWS,
     });
   },

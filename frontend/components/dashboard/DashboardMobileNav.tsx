@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/drawer";
 import { ROUTES } from "@/constants/routes";
 import { isFeatureEnabled } from "@/constants/features";
+import { useUnreadNotificationCount } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
 import { DASHBOARD_NAV_ITEMS, MOBILE_PRIMARY_NAV_COUNT } from "./dashboard-nav";
@@ -34,12 +35,24 @@ function isItemActive(pathname: string, href: string): boolean {
 export function DashboardMobileNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { data: unreadCount } = useUnreadNotificationCount();
+  const hasUnread = Boolean(unreadCount);
 
   const primaryItems = DASHBOARD_NAV_ITEMS.slice(0, MOBILE_PRIMARY_NAV_COUNT);
   const moreItems = DASHBOARD_NAV_ITEMS.slice(MOBILE_PRIMARY_NAV_COUNT);
   const moreIsActive = moreItems.some((item) =>
     isItemActive(pathname, item.href),
   );
+  // Notifications lives in the "More" sheet on mobile (outside the primary 3
+  // tabs) — an aggregate dot on "More" itself gives a glance-able signal
+  // without reordering already-shipped primary destinations.
+  const moreHasUnread =
+    hasUnread &&
+    moreItems.some(
+      (item) =>
+        item.href === ROUTES.NOTIFICATIONS &&
+        (!item.flag || isFeatureEnabled(item.flag)),
+    );
 
   return (
     <nav
@@ -88,8 +101,19 @@ export function DashboardMobileNav() {
             moreIsActive ? "text-primary" : "text-muted-foreground",
           )}
         >
-          <MoreHorizontal className="size-5" aria-hidden />
+          <span className="relative">
+            <MoreHorizontal className="size-5" aria-hidden />
+            {moreHasUnread && (
+              <span
+                aria-hidden
+                className="bg-primary border-background absolute -top-0.5 -right-0.5 size-2 rounded-full border"
+              />
+            )}
+          </span>
           More
+          {moreHasUnread && (
+            <span className="sr-only">, unread notifications</span>
+          )}
         </DrawerTrigger>
         <DrawerContent>
           <DrawerHeader>
@@ -119,6 +143,9 @@ export function DashboardMobileNav() {
                 );
               }
 
+              const showUnreadBadge =
+                item.href === ROUTES.NOTIFICATIONS && hasUnread;
+
               return (
                 <Link
                   key={item.href}
@@ -126,14 +153,21 @@ export function DashboardMobileNav() {
                   aria-current={active ? "page" : undefined}
                   onClick={() => setMoreOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
+                    "flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
                     active
                       ? "bg-accent text-accent-foreground"
                       : "hover:bg-accent hover:text-accent-foreground",
                   )}
                 >
-                  <Icon className="size-4.5" aria-hidden />
-                  {item.label}
+                  <span className="flex items-center gap-3">
+                    <Icon className="size-4.5" aria-hidden />
+                    {item.label}
+                  </span>
+                  {showUnreadBadge && (
+                    <Badge variant="default" className="tabular-nums">
+                      {unreadCount}
+                    </Badge>
+                  )}
                 </Link>
               );
             })}

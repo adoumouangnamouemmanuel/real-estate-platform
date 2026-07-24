@@ -153,7 +153,31 @@ export interface AppointmentOverview {
   completed: Appointment[];
 }
 
-export type NotificationType = "APPOINTMENT" | "LISTING" | "MESSAGE" | "SYSTEM";
+/**
+ * Granular per-event types — every future type is additive here, same as
+ * AppointmentStatus/ActivityType (see ADR-014, ADR-015). Deliberately no
+ * "MESSAGE"/enquiry type: ADR-006 rules out in-app messaging entirely
+ * (WhatsApp-first), so nothing in this app ever produces one.
+ */
+export type NotificationType =
+  | "APPOINTMENT_REQUESTED"
+  | "APPOINTMENT_CONFIRMED"
+  | "APPOINTMENT_CANCELLED"
+  | "APPOINTMENT_RESCHEDULED"
+  | "APPOINTMENT_COMPLETED"
+  | "APPOINTMENT_NO_SHOW"
+  | "LISTING_PUBLISHED"
+  | "LISTING_SUSPENDED"
+  | "DRAFT_REMINDER"
+  | "SYSTEM";
+
+/**
+ * A strict progression, not two independent flags — see ADR-015. ARCHIVED is
+ * designed in now (so filtering/counting logic never has to change shape
+ * later) but nothing produces or exposes it yet: no archive action, no
+ * archive tab.
+ */
+export type NotificationStatus = "UNREAD" | "READ" | "ARCHIVED";
 
 export interface Notification {
   id: string;
@@ -162,7 +186,9 @@ export interface Notification {
   body: string;
   /** ISO 8601 timestamp. */
   createdAt: string;
-  read: boolean;
+  status: NotificationStatus;
+  /** Optional deep link (e.g. back to the triggering appointment or listing). */
+  link?: string;
 }
 
 export type ActivityType =

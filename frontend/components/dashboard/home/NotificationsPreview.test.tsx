@@ -20,11 +20,11 @@ const getNotifications = vi.mocked(dashboardService.getNotifications);
 function makeNotification(overrides: Partial<Notification> = {}): Notification {
   return {
     id: "n1",
-    type: "APPOINTMENT",
+    type: "APPOINTMENT_REQUESTED",
     title: "New viewing request",
     body: "Someone requested a viewing.",
     createdAt: "2026-07-23T10:00:00.000Z",
-    read: false,
+    status: "UNREAD",
     ...overrides,
   };
 }
@@ -34,8 +34,8 @@ describe("NotificationsPreview", () => {
 
   it("marks unread notifications non-visually", async () => {
     getNotifications.mockResolvedValue([
-      makeNotification({ id: "n1", title: "Unread one", read: false }),
-      makeNotification({ id: "n2", title: "Read one", read: true }),
+      makeNotification({ id: "n1", title: "Unread one", status: "UNREAD" }),
+      makeNotification({ id: "n2", title: "Read one", status: "READ" }),
     ]);
 
     renderWithQueryClient(<NotificationsPreview />);

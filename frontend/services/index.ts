@@ -50,3 +50,14 @@ export type {
 
 export { uploadService } from "./upload.service";
 export type { UploadedFile } from "./upload.service";
+
+export {
+  NOTIFICATION_CATEGORY,
+  notificationService,
+} from "./notification.service";
+export type {
+  GetNotificationsParams,
+  NotificationCategory,
+  NotificationFilters,
+  NotificationSort,
+} from "./notification.service";

@@ -8,6 +8,28 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Added
 
+- **Frontend: Notification System (Phase 6.6).** A shared notification
+  platform, not just a page: `notificationService` is the one seam the new
+  `/notifications` inbox, the Dashboard Home preview widget, and a new nav
+  unread badge all read/write through. `NotificationType` widened from Phase
+  6.1's 4 coarse categories to a granular 10-value union (appointment
+  requested/confirmed/cancelled/rescheduled/completed/no-show, listing
+  published/suspended, draft reminder, system) — the old `MESSAGE` type (an
+  in-app "enquiry" notification ADR-006 already rules out) is gone. A
+  `NotificationCategory` derived from type (never stored) drives filtering.
+  Lifecycle modeled as `status: "UNREAD" | "READ" | "ARCHIVED"` rather than a
+  boolean — `ARCHIVED` is fully designed in but has no UI yet, per spec. Card
+  list, not a table, matching the pattern the Dashboard Home widget already
+  set for this data shape. Filtering, pagination, a details drawer, mark
+  one/mark all as read, and a 30s-polling unread count (matching the cadence
+  ARCHITECTURE.md §9 already documented) that doubles as the identified
+  real-time extension point. Nav badge on the sidebar item and an aggregate
+  dot on the mobile "More" tab; no top-bar bell — the Dashboard Home widget
+  already covers the "quick glance" need. Flips
+  `FEATURES.DASHBOARD_NOTIFICATIONS`. See ADR-015 in `docs/ARCHITECTURE.md`.
+  ~45 new unit/integration tests, 8 new E2E tests, 1 new page added to the
+  accessibility scan (zero violations).
+
 - **Frontend: Product UX Review (Phase 6.5).** A no-new-features review of the
   full authenticated experience (login → Dashboard Home → My Properties →
   Property Editor → Appointments) now that those four modules form the
@@ -155,6 +177,11 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Fixed
 
+- `notificationService.markAsRead` called a helper that throws synchronously
+  on an unknown id from a plain arrow function typed to return a `Promise` —
+  so an unknown id threw immediately at call time instead of yielding a
+  rejected promise, breaking any caller awaiting `.rejects`. Caught by the
+  method's own unit test; fixed by making it `async`.
 - My Properties' "Edit listing" row action was a disabled placeholder with no
   `href` wired at all — built in Phase 6.2 before the editor existed, and
   never revisited when Phase 6.3 flipped the flag that would make it live.

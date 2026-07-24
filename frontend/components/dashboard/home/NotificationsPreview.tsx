@@ -1,14 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Bell,
-  CalendarClock,
-  Info,
-  MessageSquare,
-  Tag,
-  type LucideIcon,
-} from "lucide-react";
+import { Bell } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
@@ -20,31 +13,23 @@ import { ROUTES } from "@/constants/routes";
 import { useDashboardNotifications } from "@/hooks/useDashboard";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/formatters";
-import type { Notification, NotificationType } from "@/types";
-
-const NOTIFICATION_ICON: Record<NotificationType, LucideIcon> = {
-  APPOINTMENT: CalendarClock,
-  LISTING: Tag,
-  MESSAGE: MessageSquare,
-  SYSTEM: Info,
-};
+import { NOTIFICATION_ICON } from "@/lib/notificationIcons";
+import type { Notification } from "@/types";
 
 function NotificationRow({ notification }: { notification: Notification }) {
   const Icon = NOTIFICATION_ICON[notification.type];
+  const isUnread = notification.status === "UNREAD";
 
   return (
     <li
-      className={cn(
-        "flex gap-3 rounded-lg p-2",
-        !notification.read && "bg-muted/50",
-      )}
+      className={cn("flex gap-3 rounded-lg p-2", isUnread && "bg-muted/50")}
     >
       <span className="bg-muted text-muted-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
         <Icon className="size-4" aria-hidden />
       </span>
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="flex items-center gap-1.5 text-sm font-medium">
-          {!notification.read && (
+          {isUnread && (
             <>
               <span
                 className="size-2 shrink-0 rounded-full bg-sky-500"

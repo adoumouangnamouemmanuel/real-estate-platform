@@ -233,6 +233,49 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   Everything else surfaced was Medium/Low and is documented below, not
   implemented, per this phase's explicit scope.
 
+- **Phase 6.6 — Notification System**: `/notifications` (`NotificationsView`)
+  gives a developer a shared notification inbox — not a page bolted on, but
+  the one seam (`notificationService`) the Dashboard Home preview widget, the
+  new page, and a nav badge all read/write through. `NotificationType`
+  widened from Phase 6.1's 4 coarse categories to a 10-value granular union
+  (`APPOINTMENT_REQUESTED/CONFIRMED/CANCELLED/RESCHEDULED/COMPLETED/NO_SHOW`,
+  `LISTING_PUBLISHED/SUSPENDED`, `DRAFT_REMINDER`, `SYSTEM`), same move as
+  `AppointmentStatus` in 6.4. The old `MESSAGE` type — an in-app "enquiry"
+  notification — is gone: ADR-006 already rules out in-app messaging
+  entirely, so nothing could legitimately produce one. A coarse
+  `NotificationCategory` (Appointment/Listing/System) drives the filter bar,
+  derived from type via one lookup table (`NOTIFICATION_CATEGORY`), never
+  stored — same "one place a mapping can be wrong" reasoning as
+  `AppointmentActionPolicy`. Lifecycle modeled as `status: "UNREAD" | "READ" |
+"ARCHIVED"` (a deliberate deviation from the literal ask, explained in
+  ADR-015) rather than `read: boolean` + a bolted-on archive timestamp —
+  ARCHIVED is fully designed in but nothing produces or shows it yet, per the
+  explicit "design for it, don't build the UI" instruction. Card list, not a
+  `Table`, for the same reason `NotificationsPreview` already chose one —
+  notifications are heterogeneous inbox items, not comparable tabular rows.
+  Nav badge only (sidebar item + an aggregate dot on the mobile "More" tab,
+  since Notifications falls outside the primary 3 destinations there) — no
+  top-bar bell, since the Dashboard Home widget already covers "quick glance"
+  and no other module has an equivalent top-bar surface either.
+  `useUnreadNotificationCount` polls every 30s, matching the cadence
+  ARCHITECTURE.md §9 already documented for the real backend — the concrete
+  real-time extension point: a future WebSocket handler only needs to write
+  into that one query's cache entry. Flips `FEATURES.DASHBOARD_NOTIFICATIONS`.
+  See ADR-015 in `docs/ARCHITECTURE.md`. ~45 new unit/integration tests, 8 new
+  E2E tests (serial, mirroring `appointments.spec.ts`), 1 new page added to
+  the accessibility scan (zero violations).
+- Fixed a real bug found while building 6.6's own service tests, not shipped:
+  `markAsRead` called `findNotificationOrThrow` (which throws synchronously
+  on an unknown id) from a plain arrow function typed to return a `Promise`,
+  not an `async` function — so an unknown id threw synchronously at call
+  time instead of yielding a rejected promise. Fixed by making the method
+  `async`. See the Technical Debt entry below for the identical
+  untested/unreachable pattern in `appointment.service.ts`.
+- Also updated `DashboardSidebar.test.tsx`/`DashboardMobileNav.test.tsx` to
+  wrap renders in a `QueryClientProvider` and mock
+  `notificationService.getUnreadCount` — both components now read the unread
+  count for their new badge.
+
 ## In Progress
 
 - Nothing currently in flight.
@@ -326,6 +369,31 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   existing view tests like `properties-listing` — doesn't. Same reason the
   properties/developers domains test error states at the view level. Not a
   product bug; purely a test-harness timing artifact.
+- `services/mocks/notifications.mock.ts` (Notifications, Phase 6.6) is
+  deliberately independent from `dashboard.mock.ts`'s existing
+  `MOCK_NOTIFICATIONS` (Dashboard Home's preview widget, Phase 6.1) — same
+  reasoning as the listings/appointments dataset splits above. `MOCK_NOTIFICATIONS`
+  in `notifications.mock.ts` is a mutable module-level array, so
+  `e2e/notifications.spec.ts`'s mutating tests (mark as read, mark all as
+  read) run serial, and `services/notification.service.test.ts`'s mutation
+  tests snapshot/restore the array around each other, following the identical
+  pattern `listing.service.test.ts`/`appointment.service.test.ts` already use.
+- `appointment.service.ts`'s `updateStatus` and `reschedule` call
+  `findAppointmentOrThrow` (a synchronous throw on an unknown id) from plain
+  arrow functions typed to return a `Promise`, the same bug class
+  `notification.service.ts`'s `markAsRead` had until Phase 6.6 fixed it (see
+  ADR-015). Left as-is here: untested, and unreachable through the current
+  UI — no call site ever passes an id that isn't already a real row's.
+  Revisit (add `async`, add a "rejects an unknown id" test) if either method
+  ever gains a call site that could pass an unverified id.
+- Two pre-existing test flakes surfaced (not introduced) while validating
+  Phase 6.6 under the full suite: `ActivityTimeline.test.tsx`'s "machine-
+  readable `<time>`" test hardcodes an absolute date and drifts against the
+  real system clock as sessions cross midnight; two
+  `test/integration/listing-editor.test.tsx` autosave-timing assertions
+  occasionally miss their `waitFor` window only under heavy parallel test-file
+  contention (both pass cleanly in isolation). Neither is a product bug;
+  worth a dedicated look if they start failing in CI rather than just locally.
 
 ## Bugs
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { isFeatureEnabled } from "@/constants/features";
+import { useUnreadNotificationCount } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
 import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
@@ -22,6 +23,8 @@ function isItemActive(pathname: string, href: string): boolean {
  */
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { data: unreadCount } = useUnreadNotificationCount();
+  const hasUnread = Boolean(unreadCount);
 
   return (
     <aside className="border-border bg-sidebar hidden shrink-0 border-r md:flex md:w-16 lg:w-60">
@@ -33,6 +36,8 @@ export function DashboardSidebar() {
           const Icon = item.icon;
           const enabled = !item.flag || isFeatureEnabled(item.flag);
           const active = isItemActive(pathname, item.href);
+          const showUnreadBadge =
+            enabled && item.href === ROUTES.NOTIFICATIONS && hasUnread;
 
           if (!enabled) {
             return (
@@ -67,8 +72,23 @@ export function DashboardSidebar() {
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
-              <Icon className="size-4.5 shrink-0" aria-hidden />
-              <span className="hidden lg:inline">{item.label}</span>
+              <span className="relative shrink-0">
+                <Icon className="size-4.5" aria-hidden />
+                {showUnreadBadge && (
+                  <span
+                    aria-hidden
+                    className="bg-primary border-sidebar absolute -top-1 -right-1 size-2 rounded-full border lg:hidden"
+                  />
+                )}
+              </span>
+              <span className="hidden flex-1 items-center justify-between gap-2 lg:flex">
+                {item.label}
+                {showUnreadBadge && (
+                  <Badge variant="default" className="tabular-nums">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </span>
             </Link>
           );
         })}
