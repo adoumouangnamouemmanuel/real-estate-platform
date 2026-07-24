@@ -56,6 +56,32 @@ describe("Dashboard shell (real store, RequireAuth + chrome + Home page composed
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it("renders a skip-to-content link targeting the main landmark", () => {
+    useAuthStore.getState().setAuth(
+      {
+        id: "u2",
+        fullName: "Kwame Mensah",
+        email: "developer@byte.africa",
+        role: "DEVELOPER",
+      },
+      "token",
+    );
+    useAuthStore.getState().setBootstrapped();
+
+    renderWithQueryClient(
+      <RequireAuth role="DEVELOPER">
+        <DashboardShell>
+          <DashboardHomePage />
+        </DashboardShell>
+      </RequireAuth>,
+    );
+
+    const skipLink = screen.getByRole("link", { name: "Skip to main content" });
+    const targetId = skipLink.getAttribute("href")?.slice(1);
+    expect(targetId).toBeTruthy();
+    expect(document.getElementById(targetId!)).toBe(screen.getByRole("main"));
+  });
+
   it("never renders the dashboard for a signed-in USER — redirects to /forbidden instead", () => {
     useAuthStore.getState().setAuth(
       {

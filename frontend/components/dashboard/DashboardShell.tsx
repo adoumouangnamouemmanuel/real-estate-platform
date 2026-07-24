@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { SkipToContentLink } from "@/components/common/SkipToContentLink";
 import { DashboardMobileNav } from "@/components/dashboard/DashboardMobileNav";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopBar } from "@/components/dashboard/DashboardTopBar";
@@ -13,10 +14,17 @@ import { DashboardTopBar } from "@/components/dashboard/DashboardTopBar";
 export function DashboardShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
+      <SkipToContentLink targetId="dashboard-main-content" />
       <DashboardTopBar />
       <div className="flex flex-1">
         <DashboardSidebar />
-        <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+        <main
+          id="dashboard-main-content"
+          tabIndex={-1}
+          className="flex min-w-0 flex-1 flex-col outline-none"
+        >
+          {children}
+        </main>
       </div>
       <DashboardMobileNav />
     </div>

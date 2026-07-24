@@ -8,6 +8,19 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Added
 
+- **Frontend: Product UX Review (Phase 6.5).** A no-new-features review of the
+  full authenticated experience (login → Dashboard Home → My Properties →
+  Property Editor → Appointments) now that those four modules form the
+  complete daily workflow. New `SkipToContentLink`
+  (`components/common/SkipToContentLink.tsx`), wired into `DashboardShell` —
+  every dashboard page previously required a keyboard user to tab through the
+  top bar and full sidebar/mobile nav before reaching page content (WCAG
+  2.4.1, Bypass Blocks), a gap automated axe scans don't reliably catch.
+  Remaining findings (Quick Actions/nav terminology drift, a shared badge tone
+  between two appointment statuses, breadcrumb scope, bundle-size visibility,
+  reduced-motion support) are Medium/Low and documented in `TODO.md` for
+  future iteration rather than implemented in this pass.
+
 - **Frontend: Appointments (Phase 6.4).** The developer's appointment book at
   `/appointments` — full lifecycle management, not just a list. Status graph
   extended to six states (`REQUESTED` → `CONFIRMED`/`RESCHEDULED` →

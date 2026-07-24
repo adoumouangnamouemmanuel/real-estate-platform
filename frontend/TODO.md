@@ -214,6 +214,25 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   point at Analytics instead, the same adjustment Phase 6.2 made for My
   Properties.
 
+- **Phase 6.5 — Product UX Review**: a no-new-features pass across the whole
+  authenticated experience (login → Dashboard Home → My Properties →
+  Property Editor → Appointments), evaluating navigation, workflow
+  consistency, visual/interaction consistency, responsiveness, accessibility,
+  and performance now that those four modules represent the full daily
+  workflow. Method: code-level comparison across the four modules, a live
+  keyboard/focus pass, and Playwright screenshots across mobile/tablet/desktop
+  viewports — two initial candidate findings (the Property Editor's sticky
+  publish bar, the mobile bottom nav) turned out to be `fullPage` screenshot
+  stitching artifacts on `position: sticky`/`fixed` elements, not real bugs;
+  ruled out with a real scripted scroll instead of trusting the stitched
+  screenshot. One Critical/High-value fix shipped: `SkipToContentLink`
+  (`components/common/SkipToContentLink.tsx`), wired into `DashboardShell` —
+  no page in the dashboard previously offered a way for a keyboard user to
+  bypass the top bar and sidebar/mobile nav to reach page content (WCAG 2.4.1,
+  Bypass Blocks), and axe's automated scan doesn't reliably catch this gap.
+  Everything else surfaced was Medium/Low and is documented below, not
+  implemented, per this phase's explicit scope.
+
 ## In Progress
 
 - Nothing currently in flight.
@@ -329,3 +348,34 @@ Living tracker for frontend work. Update this alongside feature work, not after 
 - No visual regression testing (Playwright screenshot comparison or similar).
   Worth adding once the design system stabilizes further — premature while the
   UI is still evolving quickly.
+
+### Phase 6.5 UX review — Medium/Low findings deferred, not implemented
+
+- **[Medium]** Dashboard Home's Quick Actions panel labels the My Properties
+  destination "View Listings" (`components/dashboard/home/QuickActions.tsx`,
+  Phase 6.0), while the sidebar/mobile nav and the page itself call it "My
+  Properties" (Phase 6.2). Same destination, two different names depending on
+  where a developer looks. Low engineering cost to fix (rename the Quick
+  Action label); deferred since it doesn't block or confuse any actual
+  workflow, just a minor product-cohesion polish item.
+- **[Medium]** `RESCHEDULED` and `COMPLETED` appointment statuses render with
+  the same badge tone (`info`/blue) in `AppointmentStatusBadge`
+  (`components/dashboard/StatusBadge.tsx`) — distinguishable by label text
+  (WCAG 1.4.1 is satisfied, per that component's own documented rationale),
+  but the badge system's color signal is diluted between two otherwise
+  unrelated statuses. Worth giving `RESCHEDULED` its own tone in a future pass.
+- **[Low]** Breadcrumbs (`DashboardPageHeader`'s `breadcrumbs` prop) currently
+  only appear on the Property Editor's create/edit routes — the one place with
+  real list→detail hierarchy today. My Properties, Appointments, and Dashboard
+  Home correctly have none (no parent to breadcrumb to). Worth revisiting once
+  a module gains its own nested detail view (e.g. a future Notifications
+  sub-page) to keep the pattern applied consistently as hierarchy grows.
+- **[Low]** No bundle-size visibility — the build output doesn't print a
+  route-by-route First Load JS table (Turbopack's summary is coarser than
+  webpack's), so the actual weight of the heaviest client route
+  (`/listings/new`, carrying React Hook Form + Zod + `MediaUploader`) versus
+  the rest isn't quantified. Consider `@next/bundle-analyzer` once real
+  performance concerns emerge, rather than pre-optimizing blind.
+- **[Low]** No `prefers-reduced-motion` handling for Dialog/Drawer transition
+  animations (base-ui's defaults). Common, low-severity gap; revisit if a
+  user-reported motion-sensitivity issue ever surfaces.
