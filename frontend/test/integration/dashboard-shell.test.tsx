@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import DashboardHomePage from "@/app/(dashboard)/dashboard/page";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { useAuthStore } from "@/store/authStore";
+import { renderWithQueryClient } from "@/test/renderWithQueryClient";
 
 const replace = vi.fn();
 
@@ -30,7 +31,7 @@ describe("Dashboard shell (real store, RequireAuth + chrome + Home page composed
     );
     useAuthStore.getState().setBootstrapped();
 
-    render(
+    renderWithQueryClient(
       <RequireAuth role="DEVELOPER">
         <DashboardShell>
           <DashboardHomePage />
@@ -47,11 +48,10 @@ describe("Dashboard shell (real store, RequireAuth + chrome + Home page composed
       screen.getByLabelText("Account menu for Kwame Mensah"),
     ).toBeInTheDocument();
 
-    // Page content: no analytics data yet, honest empty state instead.
-    expect(
-      screen.getByRole("heading", { name: "Dashboard" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Your dashboard is ready")).toBeInTheDocument();
+    // Page content: the Dashboard Home welcome header greets the developer by name.
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /Kwame/,
+    );
 
     expect(replace).not.toHaveBeenCalled();
   });
@@ -68,7 +68,7 @@ describe("Dashboard shell (real store, RequireAuth + chrome + Home page composed
     );
     useAuthStore.getState().setBootstrapped();
 
-    render(
+    renderWithQueryClient(
       <RequireAuth role="DEVELOPER">
         <DashboardShell>
           <DashboardHomePage />
@@ -77,8 +77,8 @@ describe("Dashboard shell (real store, RequireAuth + chrome + Home page composed
     );
 
     expect(replace).toHaveBeenCalledWith("/forbidden");
-    expect(
-      screen.queryByText("Your dashboard is ready"),
-    ).not.toBeInTheDocument();
+    // RequireAuth renders its loading fallback for a wrong-role user, so the
+    // Dashboard Home content (the welcome greeting) never mounts.
+    expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
   });
 });

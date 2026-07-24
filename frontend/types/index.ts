@@ -46,6 +46,12 @@ export interface Property {
   region: string;
   status: PropertyStatus;
   media: PropertyMedia[];
+  /**
+   * ISO 8601 last-updated timestamp. Optional because the public catalogue's
+   * list endpoint doesn't surface it; the developer's own dashboard listings do,
+   * which is what the Recent Listings widget orders by and displays.
+   */
+  updatedAt?: string;
 }
 
 /** The list/card shape — also what a property embeds for its developer. */
@@ -90,4 +96,76 @@ export interface PropertyDetail extends Property {
   address: string;
   amenities: string[];
   developer: Developer;
+}
+
+// --- Developer Dashboard (Phase 6.1) -----------------------------------------
+// These model the developer-facing dashboard's own data. Each maps to a future
+// backend endpoint the mock dashboard service stands in for (see
+// services/dashboard.service.ts) — backend integration replaces the service, not
+// these shapes or the components that consume them.
+
+export type AppointmentStatus =
+  "REQUESTED" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+
+/** A property viewing a prospective buyer/renter has requested or booked. */
+export interface Appointment {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  clientName: string;
+  /** ISO 8601 timestamp of the visit. */
+  scheduledFor: string;
+  status: AppointmentStatus;
+}
+
+/** The three buckets the Appointment Overview widget renders as tabs. */
+export interface AppointmentOverview {
+  upcoming: Appointment[];
+  requested: Appointment[];
+  completed: Appointment[];
+}
+
+export type NotificationType = "APPOINTMENT" | "LISTING" | "MESSAGE" | "SYSTEM";
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  /** ISO 8601 timestamp. */
+  createdAt: string;
+  read: boolean;
+}
+
+export type ActivityType =
+  | "LISTING_PUBLISHED"
+  | "LISTING_UPDATED"
+  | "APPOINTMENT_REQUESTED"
+  | "APPOINTMENT_COMPLETED"
+  | "PROPERTY_VIEWED"
+  | "PROFILE_UPDATED";
+
+/** One event on the Activity Timeline. */
+export interface ActivityItem {
+  id: string;
+  type: ActivityType;
+  message: string;
+  /** ISO 8601 timestamp. */
+  timestamp: string;
+}
+
+/** The six headline KPIs on the dashboard home. */
+export interface DashboardMetrics {
+  totalProperties: number;
+  activeListings: number;
+  draftListings: number;
+  appointmentRequests: number;
+  unreadNotifications: number;
+  totalPropertyViews: number;
+}
+
+/** Identity/brand shown in the welcome header — distinct from the numeric metrics. */
+export interface DashboardSummary {
+  developerName: string;
+  companyName: string;
 }

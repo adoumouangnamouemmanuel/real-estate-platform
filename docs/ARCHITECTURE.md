@@ -1110,5 +1110,26 @@ Layer 6: Data
 
 ---
 
+### ADR-011: Dashboard Home — One Data Seam, Per-Widget States, Server-Composed
+
+**Date:** July 23, 2026
+**Status:** Accepted
+**Decision:** Phase 6.1 builds the Developer Dashboard Home on the Phase 6.0 shell without altering it. The page (`app/(dashboard)/dashboard/page.tsx`) is a Server Component that lays out the grid and composes seven widgets: a welcome header, six KPI tiles, Recent Listings, Appointment Overview, Notifications preview, Quick Actions, and an Activity Timeline. All dashboard data flows through a single new `dashboardService` (mock-backed, one method per future endpoint), consumed via per-widget React Query hooks in `hooks/useDashboard.ts`. No widget calls Axios or a mock directly — same contract as `propertyService`/`developerService` (ADR-007).
+
+**Why one service, many hooks:** each widget maps to its own future endpoint (`GET /api/v1/dashboard/{summary,metrics,listings,appointments,notifications,activity}`) and owns its own loading/empty/error state, so a slow or failing section never blocks the rest of the page. React Query's stable query keys also let the welcome header and the KPI grid share a single `metrics` fetch rather than requesting it twice. Backend integration is a change inside `dashboardService` and nowhere else — the mock data (`services/mocks/dashboard.mock.ts`) models one authenticated developer's own workspace, distinct from the public cross-developer catalogue.
+
+**Server vs Client split:** presentational primitives (`DashboardSection`, `StatusBadge`, `ActivityTimeline`, `QuickActions`) carry no `"use client"` and stay server-renderable; only the data-fetching widgets and interactive pieces (tabs) are Client Components. The page itself statically prerenders (confirmed in the build output), with the client widgets hydrating and fetching. The welcome greeting reads the name from the in-memory auth store (instant, no flash) while company/summary come through the service.
+
+**New reusable primitives (not one-offs):** `DashboardSection` (the single titled-card shell every widget renders inside, with a semantic `<h2>`), `StatusBadge` with domain wrappers `PropertyStatusBadge`/`AppointmentStatusBadge` (label carries meaning; a coloured dot is supplementary and `aria-hidden`, keeping the monochrome brand WCAG 1.4.1-clean), and `ActivityTimeline` (shape-driven, so backend integration only swaps what fills it). KPIs reuse the existing `StatCard`; `Property` gained one additive optional field (`updatedAt`) rather than a parallel listing type. Quick Actions and the listing/notification "View all"/"Edit" affordances reuse the shell's feature-flag idiom (ADR-010): each points at a real route and renders disabled with a "Soon" badge until its phase (`DASHBOARD_PROPERTIES` etc.) flips — never a link to a page that doesn't exist yet.
+
+**Consequences:**
+
+- ✅ Phase 6.2+ modules (My Properties, Appointments, Notifications, Profile) flip their flag and add a page; the home widgets' "View all"/"Edit"/Quick-Action links light up automatically with no home-page changes.
+- ✅ Every widget satisfies the accessibility bar (semantic headings, keyboard-operable tabs/menus, and explicit loading/empty/error states); the existing dashboard axe scan now covers the full overview at zero violations.
+- ⚠️ **Roadmap renumber:** the earlier roadmap listed "My Properties + Property Editor" as Phase 6.1. The approved dashboard spec makes **Dashboard Home** 6.1 and shifts My Properties to 6.2 — a naming change, not a scope change.
+- ⚠️ Per-widget **error-state** tests live in the full-page integration test, not the light per-widget unit tests: a rejected React Query fetch in a very light render trips a node/vitest unhandled-rejection false positive (the error is, in fact, stored in query state) that a heavier tree doesn't — the same reason the properties/developers domains assert error states at the view level. Documented in `TODO.md`; not a product defect.
+
+---
+
 _ByTe Real Estate Platform — ARCHITECTURE.md_
 _Maintained by Emmanuel (CTO). Update this document when any architectural decision changes._

@@ -20,3 +20,5 @@ export type {
   DeveloperSort,
   GetDevelopersParams,
 } from "./developer.service";
+
+export { dashboardService } from "./dashboard.service";

@@ -16,21 +16,64 @@ async function loginAsDeveloper(page: import("@playwright/test").Page) {
 }
 
 test.describe("Dashboard shell", () => {
-  test("a developer lands on the dashboard after login and sees the shell chrome", async ({
+  test("a developer lands on the dashboard after login and sees the home overview", async ({
     page,
   }) => {
     await loginAsDeveloper(page);
 
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Dashboard" }),
-    ).toBeVisible();
-    await expect(page.getByText("Your dashboard is ready")).toBeVisible();
+    // Welcome header greets the signed-in developer by name.
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Kwame",
+    );
+    // Sidebar marks Dashboard Home as the current page.
     await expect(
       page
         .getByRole("navigation", { name: "Dashboard" })
         .first()
         .getByRole("link", { name: "Dashboard", exact: true }),
     ).toHaveAttribute("aria-current", "page");
+  });
+
+  test("the home page renders every overview section with real data", async ({
+    page,
+  }) => {
+    await loginAsDeveloper(page);
+
+    // KPI cards.
+    await expect(page.getByText("Total Properties")).toBeVisible();
+    await expect(page.getByText("Total Property Views")).toBeVisible();
+
+    // Recent Listings: a known mock listing appears in the listings table.
+    await expect(
+      page.getByRole("heading", { name: "Recent Listings" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("table").getByText("Luxury 3BR Apartment in East Legon"),
+    ).toBeVisible();
+
+    // Appointments, Notifications, Quick Actions, Activity all present.
+    await expect(
+      page.getByRole("heading", { name: "Appointments" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Notifications" }),
+    ).toBeVisible();
+    await expect(page.getByText("Add Property")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Recent Activity" }),
+    ).toBeVisible();
+  });
+
+  test("the appointment overview switches between its tabs", async ({
+    page,
+  }) => {
+    await loginAsDeveloper(page);
+
+    await page.getByRole("tab", { name: /Requested/ }).click();
+    await expect(page.getByRole("tab", { name: /Requested/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 
   test("not-yet-shipped nav destinations are visibly disabled, not broken links", async ({

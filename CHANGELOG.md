@@ -8,6 +8,25 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Added
 
+- **Frontend: Developer Dashboard Home (Phase 6.1).** The developer's post-login
+  overview, built on the Phase 6.0 shell (not a redesign of it): a welcome header
+  (time-of-day greeting, company, current date, and a one-line pending-work
+  summary), six KPI tiles on the existing `StatCard`, Recent Listings (status
+  badges, last-updated, per-row actions), an Appointment Overview with
+  upcoming/requested/completed tabs, a Notifications preview with unread/read/empty
+  states, a Quick Actions panel, and a reusable Activity Timeline. Introduces three
+  reusable dashboard primitives — `DashboardSection` (titled `<h2>` card),
+  `StatusBadge` (`PropertyStatusBadge`/`AppointmentStatusBadge`), and
+  `ActivityTimeline` — plus a new mock-backed `dashboardService` and per-widget
+  React Query hooks (`hooks/useDashboard.ts`); no component calls Axios or a mock
+  directly. The page is a Server Component composing Client widgets that each own
+  their loading/empty/error state. Every destination the page links to that hasn't
+  shipped yet (Add Property, View Listings, Edit Company Profile) reuses the shell's
+  feature-flag idiom, rendering as a disabled "Soon" control rather than a broken
+  link. Adds six date/number formatters. See ADR-011 in `docs/ARCHITECTURE.md`.
+  ~30 new unit/integration tests and 3 new E2E tests; the dashboard accessibility
+  scan now covers the full overview (zero violations). Note: the roadmap's earlier
+  "Phase 6.1 = My Properties" is renumbered to 6.2 — Dashboard Home is 6.1.
 - **Frontend: Developer Dashboard shell (Phase 6.0).** `DashboardShell` with a
   persistent desktop sidebar (icon rail from `md`, full labels from `lg`) and a
   mobile bottom tab bar with a "More" sheet, driven by one shared nav config

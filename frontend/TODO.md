@@ -72,16 +72,35 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   login/register/logout — the access token still lives only in memory. See
   ADR-010.
 
+- **Phase 6.1 — Dashboard Home**: the developer's post-login overview, built on
+  the Phase 6.0 shell. Welcome header (time-of-day greeting, company, date, and a
+  pending-work summary), six KPI tiles on the existing `StatCard`, Recent Listings
+  (status badges + last-updated + per-row actions), Appointment Overview
+  (upcoming/requested/completed tabs), Notifications preview (unread/read/empty),
+  Quick Actions, and a reusable Activity Timeline. New reusable dashboard
+  primitives: `DashboardSection` (titled card, `<h2>`), `StatusBadge`
+  (`PropertyStatusBadge`/`AppointmentStatusBadge`), `ActivityTimeline`. All data
+  flows through a new `dashboardService` (mock-backed, `TODO(backend)`) via
+  per-widget React Query hooks (`hooks/useDashboard.ts`); no component touches a
+  mock or Axios. `page.tsx` is a Server Component composing Client widgets that
+  each own their loading/empty/error state. Six new date/number formatters. See
+  ADR-011 in `docs/ARCHITECTURE.md`. ~30 new unit/integration tests, 3 new E2E
+  tests; the dashboard accessibility scan covers the richer page (zero violations).
+
+  > **Phase renumbering:** the earlier roadmap slotted "My Properties + Property
+  > Editor" as Phase 6.1. The approved spec makes **Dashboard Home** 6.1; My
+  > Properties moves to 6.2. Names, not scope, changed.
+
 ## In Progress
 
 - Nothing currently in flight.
 
 ## Next Tasks
 
-- Phase 6.1 — My Properties + Property Editor: `PropertyTable`, `ListingForm`
+- Phase 6.2 — My Properties + Property Editor: `PropertyTable`, `ListingForm`
   (multi-section, autosave-as-draft), `MediaUploader`, flip
-  `FEATURES.DASHBOARD_PROPERTIES`. See the Phase 6 roadmap (§06) in the
-  approved dashboard spec.
+  `FEATURES.DASHBOARD_PROPERTIES` (which also lights up the Recent Listings
+  "View all"/"Edit" actions and the Quick Actions panel, already wired to it).
 - Wire `propertyService`/`developerService` to the real backend once
   `GET /api/v1/properties` and `GET /api/v1/developers` exist — every mock method
   has a `TODO(backend)` marking the endpoint it stands in for.
@@ -126,6 +145,14 @@ Living tracker for frontend work. Update this alongside feature work, not after 
 - Root-level `postcss.config.mjs` and `tsconfig.json` show as perpetually
   modified in `git status` with a zero-line diff (CRLF-normalization artifact
   from `core.autocrlf`) — cosmetic, harmless, not worth chasing further.
+- Dashboard-widget **error-state** assertions live in the full-page integration
+  test (`test/integration/dashboard-home.test.tsx`), not the per-widget unit
+  tests. A rejected React Query fetch in a very light component tree trips a
+  node/vitest unhandled-rejection false positive (React Query has, in fact,
+  stored the error in state); a heavier render — the whole page, or any of the
+  existing view tests like `properties-listing` — doesn't. Same reason the
+  properties/developers domains test error states at the view level. Not a
+  product bug; purely a test-harness timing artifact.
 
 ## Bugs
 
