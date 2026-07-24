@@ -141,6 +141,17 @@ describe("listingService mutations", () => {
     ).rejects.toThrow(/Cannot move/);
   });
 
+  it("updateListingStatus rejects an unknown id with a promise rejection, not a synchronous throw", async () => {
+    // Regression test: this method used to call findListingOrThrow (which
+    // throws synchronously) from a plain arrow function typed to return a
+    // Promise — an unknown id threw immediately at call time instead of
+    // yielding a rejected promise, breaking any caller awaiting `.rejects`.
+    // Fixed by making the method `async` (see ADR-015).
+    await expect(
+      listingService.updateListingStatus("no-such-id", "ACTIVE"),
+    ).rejects.toThrow(/not found/);
+  });
+
   it("deleteListing removes a deletable listing", async () => {
     snapshot = snapshotListings();
     const draft = MOCK_LISTINGS.find((item) => item.status === "DRAFT")!;
@@ -153,6 +164,12 @@ describe("listingService mutations", () => {
     const active = MOCK_LISTINGS.find((item) => item.status === "ACTIVE")!;
     await expect(listingService.deleteListing(active.id)).rejects.toThrow(
       /can't be deleted/,
+    );
+  });
+
+  it("deleteListing rejects an unknown id with a promise rejection, not a synchronous throw", async () => {
+    await expect(listingService.deleteListing("no-such-id")).rejects.toThrow(
+      /not found/,
     );
   });
 

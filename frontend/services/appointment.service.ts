@@ -220,7 +220,14 @@ export const appointmentService = {
       : Promise.reject(new Error("Appointment not found"));
   },
 
-  updateStatus: (
+  /**
+   * `async` (not a plain arrow returning a Promise) so that
+   * `findAppointmentOrThrow`'s synchronous throw on an unknown id becomes a
+   * proper rejected promise instead of an exception thrown at call time —
+   * the same bug class `notification.service.ts`'s `markAsRead` had (see
+   * ADR-015); fixed here for the same reason, with the same regression test.
+   */
+  updateStatus: async (
     id: string,
     status: AppointmentStatus,
   ): Promise<Appointment> => {
@@ -238,8 +245,15 @@ export const appointmentService = {
     return delay(appointment);
   },
 
-  /** Rescheduling always lands the appointment in RESCHEDULED, regardless of prior status (REQUESTED/CONFIRMED) — the new date is proposed by the developer either way. */
-  reschedule: (id: string, scheduledFor: string): Promise<Appointment> => {
+  /**
+   * Rescheduling always lands the appointment in RESCHEDULED, regardless of
+   * prior status (REQUESTED/CONFIRMED) — the new date is proposed by the
+   * developer either way. `async` for the same reason as `updateStatus`.
+   */
+  reschedule: async (
+    id: string,
+    scheduledFor: string,
+  ): Promise<Appointment> => {
     const appointment = findAppointmentOrThrow(id);
     if (AppointmentActionPolicy.isTerminal(appointment.status)) {
       return Promise.reject(

@@ -181,7 +181,12 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
   on an unknown id from a plain arrow function typed to return a `Promise` —
   so an unknown id threw immediately at call time instead of yielding a
   rejected promise, breaking any caller awaiting `.rejects`. Caught by the
-  method's own unit test; fixed by making it `async`.
+  method's own unit test; fixed by making it `async`. The identical pattern
+  was found in `appointmentService.updateStatus`/`reschedule` and
+  `listingService.updateListingStatus`/`deleteListing` during a cross-domain
+  consistency pass and fixed the same way, with matching regression tests —
+  "operate on an unknown id" now behaves consistently across all three
+  service-layer domains.
 - My Properties' "Edit listing" row action was a disabled placeholder with no
   `href` wired at all — built in Phase 6.2 before the editor existed, and
   never revisited when Phase 6.3 flipped the flag that would make it live.
@@ -198,7 +203,7 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 - A field cleared of its "dirty" state by autosave or an explicit save could
   stay dirty forever afterward, permanently and incorrectly triggering the
   unsaved-changes navigation guard. `form.reset(undefined, { keepValues: true
-  })` never updates React Hook Form's internal dirty-comparison baseline;
+})` never updates React Hook Form's internal dirty-comparison baseline;
   fixed by passing a freshly-read `form.getValues()` (not a pre-await
   snapshot) as the reset baseline.
 - The dashboard was unreachable in any real browser session — even

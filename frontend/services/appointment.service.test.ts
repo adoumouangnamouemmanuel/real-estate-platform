@@ -128,6 +128,17 @@ describe("appointmentService mutations", () => {
     ).rejects.toThrow(/Cannot move/);
   });
 
+  it("updateStatus rejects an unknown id with a promise rejection, not a synchronous throw", async () => {
+    // Regression test: updateStatus used to call findAppointmentOrThrow (which
+    // throws synchronously) from a plain arrow function typed to return a
+    // Promise — an unknown id threw immediately at call time instead of
+    // yielding a rejected promise, breaking any caller awaiting `.rejects`.
+    // Fixed by making the method `async` (see ADR-015).
+    await expect(
+      appointmentService.updateStatus("no-such-id", "CONFIRMED"),
+    ).rejects.toThrow(/not found/);
+  });
+
   it("reschedule moves an appointment to RESCHEDULED and records the previous date", async () => {
     snapshot = snapshotAppointments();
     const confirmed = MOCK_APPOINTMENTS.find(
@@ -152,6 +163,12 @@ describe("appointmentService mutations", () => {
     await expect(
       appointmentService.reschedule(cancelled.id, "2026-08-01T09:00:00.000Z"),
     ).rejects.toThrow(/can't be rescheduled/);
+  });
+
+  it("reschedule rejects an unknown id with a promise rejection, not a synchronous throw", async () => {
+    await expect(
+      appointmentService.reschedule("no-such-id", "2026-08-01T09:00:00.000Z"),
+    ).rejects.toThrow(/not found/);
   });
 
   it("bulkUpdateStatus applies to eligible rows and skips the rest", async () => {

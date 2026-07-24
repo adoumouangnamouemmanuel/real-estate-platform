@@ -269,12 +269,20 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   on an unknown id) from a plain arrow function typed to return a `Promise`,
   not an `async` function — so an unknown id threw synchronously at call
   time instead of yielding a rejected promise. Fixed by making the method
-  `async`. See the Technical Debt entry below for the identical
-  untested/unreachable pattern in `appointment.service.ts`.
+  `async`.
 - Also updated `DashboardSidebar.test.tsx`/`DashboardMobileNav.test.tsx` to
   wrap renders in a `QueryClientProvider` and mock
   `notificationService.getUnreadCount` — both components now read the unread
   count for their new badge.
+- **Post-6.6 consistency pass**: the identical bug (a synchronous throw from
+  a plain arrow function typed to return a `Promise`) was also present in
+  `appointment.service.ts`'s `updateStatus`/`reschedule` and
+  `listing.service.ts`'s `updateListingStatus`/`deleteListing` — all four
+  called their domain's `find*OrThrow` helper without `async`. Fixed all
+  four the same way, with the same "rejects an unknown id" regression test
+  pattern already used for `notificationService.markAsRead`. Service-layer
+  behavior for "operate on an unknown id" is now consistent across all three
+  domains (listings, appointments, notifications).
 
 ## In Progress
 
@@ -378,14 +386,6 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   read) run serial, and `services/notification.service.test.ts`'s mutation
   tests snapshot/restore the array around each other, following the identical
   pattern `listing.service.test.ts`/`appointment.service.test.ts` already use.
-- `appointment.service.ts`'s `updateStatus` and `reschedule` call
-  `findAppointmentOrThrow` (a synchronous throw on an unknown id) from plain
-  arrow functions typed to return a `Promise`, the same bug class
-  `notification.service.ts`'s `markAsRead` had until Phase 6.6 fixed it (see
-  ADR-015). Left as-is here: untested, and unreachable through the current
-  UI — no call site ever passes an id that isn't already a real row's.
-  Revisit (add `async`, add a "rejects an unknown id" test) if either method
-  ever gains a call site that could pass an unverified id.
 - Two pre-existing test flakes surfaced (not introduced) while validating
   Phase 6.6 under the full suite: `ActivityTimeline.test.tsx`'s "machine-
   readable `<time>`" test hardcodes an absolute date and drifts against the

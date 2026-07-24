@@ -213,7 +213,14 @@ export const listingService = {
     return delay(counts);
   },
 
-  updateListingStatus: (
+  /**
+   * `async` (not a plain arrow returning a Promise) so that
+   * `findListingOrThrow`'s synchronous throw on an unknown id becomes a
+   * proper rejected promise instead of an exception thrown at call time —
+   * the same bug class fixed in `notification.service.ts`'s `markAsRead` and
+   * `appointment.service.ts`'s `updateStatus`/`reschedule` (see ADR-015).
+   */
+  updateListingStatus: async (
     id: string,
     status: PropertyStatus,
   ): Promise<Property> => {
@@ -228,7 +235,8 @@ export const listingService = {
     return delay(listing);
   },
 
-  deleteListing: (id: string): Promise<void> => {
+  /** `async` for the same reason as `updateListingStatus`. */
+  deleteListing: async (id: string): Promise<void> => {
     const listing = findListingOrThrow(id);
     if (!canDeleteListing(listing.status)) {
       return Promise.reject(
