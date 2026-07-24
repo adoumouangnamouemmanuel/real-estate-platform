@@ -227,3 +227,105 @@ export interface DashboardSummary {
   developerName: string;
   companyName: string;
 }
+
+// --- Analytics (Phase 6.7) ----------------------------------------------------
+// A dedicated domain model, deliberately separate from DashboardMetrics: these
+// shapes are the *output* of pure calculation utilities (see
+// lib/analyticsCalculations.ts) over existing Property/Appointment data, not a
+// new backend entity of their own. See ADR-016 for the frontend/backend
+// aggregation split this model is designed around.
+
+export type AnalyticsPeriod = "7d" | "30d" | "90d";
+
+/**
+ * One stage of the appointment lifecycle funnel, in display order. Label-free
+ * on purpose: `AppointmentStatusBadge`'s `APPOINTMENT_STATUS_LABEL`
+ * (`components/dashboard/StatusBadge.tsx`) is already the one canonical
+ * status→label map every other surface reads from — this shape stays pure
+ * numbers so nothing in `lib/analyticsCalculations.ts` needs to duplicate it.
+ */
+export interface AppointmentFunnelStage {
+  status: AppointmentStatus;
+  count: number;
+}
+
+/**
+ * The appointment lifecycle read as a conversion funnel rather than a status
+ * filter — the same six-state graph ADR-014 already established, aggregated
+ * over a period instead of browsed one row at a time.
+ */
+export interface AppointmentFunnel {
+  period: AnalyticsPeriod;
+  stages: AppointmentFunnelStage[];
+  totalRequested: number;
+  /** (Confirmed + Cancelled + Completed + No Show) / Requested — how much of the funnel a developer has actually acted on. */
+  responseRate: number;
+  /** Completed / (Confirmed + Completed + No Show) — of visits that happened or were supposed to, how many completed. */
+  completionRate: number;
+  cancellationRate: number;
+  noShowRate: number;
+  /** Average hours between a request and its confirmation, for appointments confirmed within the period. Null when no appointment in the period has both timestamps. */
+  averageResponseHours: number | null;
+}
+
+/** Label-free for the same reason as `AppointmentFunnelStage` — `PROPERTY_STATUS_LABEL` in `StatusBadge.tsx` is the one canonical map. */
+export interface PortfolioStatusBreakdown {
+  status: PropertyStatus;
+  count: number;
+}
+
+/** Label-free — `PROPERTY_CATEGORIES` in `constants/categories.ts` is the one canonical map. */
+export interface PortfolioCategoryBreakdown {
+  category: PropertyCategory;
+  count: number;
+}
+
+/** Portfolio composition is always current-state — not period-filtered, since "what do I have right now" doesn't have a date range. */
+export interface PortfolioComposition {
+  totalListings: number;
+  byStatus: PortfolioStatusBreakdown[];
+  byCategory: PortfolioCategoryBreakdown[];
+}
+
+export type ActionNeededType =
+  | "OVERDUE_APPOINTMENTS"
+  | "STALE_DRAFTS"
+  | "HIGH_CANCELLATION_RATE";
+
+export type ActionNeededSeverity = "high" | "medium";
+
+/**
+ * "What should I act on today" — always current-state, like
+ * PortfolioComposition, never period-filtered. A first-class feature (see
+ * ADR-016), not a decorative banner: every item deep-links straight into the
+ * already-filtered view that resolves it.
+ */
+export interface ActionNeededItem {
+  type: ActionNeededType;
+  severity: ActionNeededSeverity;
+  title: string;
+  description: string;
+  count: number;
+  href: string;
+}
+
+/** One StatCard-shaped headline number, with an optional real (not fabricated) trend series. */
+export interface AnalyticsStat {
+  key: string;
+  label: string;
+  value: number;
+  format: "number" | "percent" | "hours";
+  hint?: string;
+  /** Daily values, oldest first, one point per day in the period — only present where the underlying series is real (derived from timestamped history events), never interpolated to "look complete". */
+  trend?: number[];
+}
+
+/** The full Analytics page payload for a given period — one fetch, one shape, mirroring AppointmentOverview's precedent of a single composed response for a whole page section. */
+export interface AnalyticsSnapshot {
+  period: AnalyticsPeriod;
+  generatedAt: string;
+  actionNeeded: ActionNeededItem[];
+  stats: AnalyticsStat[];
+  funnel: AppointmentFunnel;
+  portfolio: PortfolioComposition;
+}

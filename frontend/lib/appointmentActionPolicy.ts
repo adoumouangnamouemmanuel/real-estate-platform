@@ -1,4 +1,4 @@
-import type { AppointmentStatus, UserRole } from "@/types";
+import type { Appointment, AppointmentStatus, UserRole } from "@/types";
 
 export type AppointmentActionKey =
   "CONFIRM" | "RESCHEDULE" | "COMPLETE" | "NO_SHOW" | "CANCEL";
@@ -97,3 +97,22 @@ export const AppointmentActionPolicy = {
     return AVAILABLE_ACTIONS[status].length === 0;
   },
 };
+
+/**
+ * Still awaiting action but the visit date has already passed — exported so
+ * `appointment.service.ts`'s own `"overdue"` timeframe filter and
+ * `lib/analyticsCalculations.ts`'s Action Needed calculation read from the
+ * same definition instead of two independently-maintained copies drifting
+ * apart. Requested-and-past-due only: a CONFIRMED/RESCHEDULED appointment
+ * whose date has passed is the developer's to mark Completed/No-Show, not an
+ * "overdue request" waiting on a decision.
+ */
+export function isOverdueAppointment(
+  appointment: Pick<Appointment, "status" | "scheduledFor">,
+  now: Date,
+): boolean {
+  return (
+    new Date(appointment.scheduledFor).getTime() < now.getTime() &&
+    appointment.status === "REQUESTED"
+  );
+}

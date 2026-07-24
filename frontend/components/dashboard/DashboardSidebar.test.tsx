@@ -102,12 +102,21 @@ describe("DashboardSidebar", () => {
     ).not.toHaveTextContent(/\d/);
   });
 
+  it("renders Analytics as a live link now that Phase 6.7 has shipped", () => {
+    getUnreadCount.mockResolvedValue(0);
+    renderWithQueryClient(<DashboardSidebar />);
+
+    expect(
+      screen.getByRole("link", { name: /Analytics/ }),
+    ).toHaveAttribute("href", "/analytics");
+  });
+
   it("renders not-yet-shipped destinations as disabled, with a Soon badge, not as broken links", () => {
     getUnreadCount.mockResolvedValue(0);
     renderWithQueryClient(<DashboardSidebar />);
 
-    const analytics = screen.getByRole("button", { name: /Analytics/ });
-    expect(analytics).toBeDisabled();
+    const profile = screen.getByRole("button", { name: /Profile & Company/ });
+    expect(profile).toBeDisabled();
     expect(screen.getAllByText("Soon").length).toBeGreaterThan(0);
   });
 

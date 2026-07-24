@@ -283,6 +283,69 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   pattern already used for `notificationService.markAsRead`. Service-layer
   behavior for "operate on an unknown id" is now consistent across all three
   domains (listings, appointments, notifications).
+- **Phase 6.7 — Analytics**: `/analytics` (`AnalyticsView`) is a cross-domain
+  read model over appointments and listings, not a new domain with its own
+  mock array — `analytics.service.ts` composes `listingService.getListings()`
+  and `appointmentService.getAppointments()`, then hands the results to a new
+  pure calculation module, `lib/analyticsCalculations.ts`
+  (`buildAppointmentFunnel`, `buildPortfolioComposition`, `buildActionNeeded`,
+  `buildAnalyticsStats`, `dailyEventCounts`) — zero service/React coupling,
+  directly unit-testable. `isOverdueAppointment` was extracted from
+  `appointment.service.ts` into `lib/appointmentActionPolicy.ts` as a shared
+  predicate so Appointments' own "overdue" timeframe filter and Analytics'
+  Action Needed read the same definition rather than two copies of the same
+  rule. Action Needed and Insights are first-class per this phase's brief:
+  `AnalyticsActionNeeded` renders above the fold with three possible flags
+  (`OVERDUE_APPOINTMENTS`, `STALE_DRAFTS`, `HIGH_CANCELLATION_RATE`, the last
+  gated on a minimum sample size of 5 requested appointments), each a real
+  deep link into the filtered view that explains it. Current-state
+  (`PortfolioComposition`, Action Needed) vs. period-scoped
+  (`AppointmentFunnel`, cohorted by each appointment's
+  `APPOINTMENT_REQUESTED` history timestamp) is a real split in the type
+  system. "One real chart" — every other stat is a reused `StatCard`
+  (`Sparkline`'s first second consumer) or a plain `Table`; the appointment
+  funnel is the only bar visualization, and it ships a toggle to an
+  equivalent, fully visible `<table>` with identical data rather than a
+  screen-reader-only summary. New `SwipeableStatRow` primitive (CSS
+  scroll-snap) for the mobile stat strip — the first horizontally-swipeable
+  pattern in this codebase. No polling (unlike Notifications' 30s interval) —
+  analytics isn't real-time-sensitive the way an unread count is.
+  Per-property view counts are a known, undisguised gap — the data model has
+  no per-listing view field, so "Top Properties by Views" is excluded rather
+  than fabricated; `analytics.service.ts` carries a `TODO(backend)` naming the
+  real `GET /api/v1/developers/me/analytics?period=` endpoint. Flips
+  `FEATURES.DEVELOPER_ANALYTICS`. See ADR-016 in `docs/ARCHITECTURE.md`. ~30
+  new unit tests (calculations, service, filters, 4 components), 5 new E2E
+  tests, 1 new page added to the accessibility scan (zero violations).
+- Also updated `DashboardSidebar.test.tsx` and `e2e/dashboard.spec.ts` to
+  point their "not-yet-shipped nav destination" assertions at Profile &
+  Company instead of Analytics, now that Phase 6.7 shipped it live — the same
+  adjustment every prior phase's flag-flip has required.
+- **Platform Readiness Review**: a no-new-features audit of the full 8-domain
+  platform (Auth, Dashboard, Properties, Property Editor, Appointments,
+  Notifications, Analytics) against backend-integration readiness — see
+  `docs/ARCHITECTURE.md`'s closing review section for the full report and a
+  production readiness score. Fixed directly (Critical/High, contained,
+  clear engineering value): `app/providers.tsx`'s `QueryClient` now has an
+  explicit `retry`/`staleTime` policy (skips retrying 4xx once requests go
+  through a real backend, instead of the TanStack default of blindly retrying
+  everything 3 times); `next.config.ts` gained baseline security headers
+  (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+  `Permissions-Policy` — a real CSP is deliberately deferred, see Technical
+  Debt); query-key consistency fixed in `useProperties`/`useDevelopers`
+  (bare string literals → exported `PROPERTIES_KEY`/`DEVELOPERS_KEY`
+  constants) and `useListingEditor` (now built from the same `LISTINGS_KEY`
+  export `useListings.ts` already had, instead of a second hardcoded
+  `["listings"]` literal that could silently drift from it); and a real
+  state-drift bug in `AppointmentsView`/`NotificationsView`, where the
+  details drawer and reschedule dialog held a snapshot `Appointment`/
+  `Notification` object captured at click time instead of deriving it from
+  the live query by id — an open panel could keep showing stale
+  status/read-state after a concurrent refetch. Every Medium/Low finding
+  (semantic-table accessibility gap, skeleton-loading duplication across 3
+  domains, CSRF documentation, `lib/api.ts` interceptor coverage, and more)
+  is recorded in Technical Debt below rather than implemented, per the
+  review's own scope.
 
 ## In Progress
 
@@ -394,6 +457,99 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   occasionally miss their `waitFor` window only under heavy parallel test-file
   contention (both pass cleanly in isolation). Neither is a product bug;
   worth a dedicated look if they start failing in CI rather than just locally.
+  A third instance of the identical E2E class (an `appointments.spec.ts` test
+  timing out on a menu click only under 6-worker parallel contention, passing
+  cleanly in isolation) surfaced again during the Platform Readiness Review
+  below — same root cause, not a new issue.
+
+### Platform Readiness Review (July 2026) — Medium/Low findings deferred, not implemented
+
+A full architecture/domain/API/state/design-system/accessibility/performance/
+security/testing/DX audit was run after Phase 6.7 shipped (see
+`docs/ARCHITECTURE.md`'s closing review section for the full report). Critical
+and High findings with clear, contained engineering value were fixed directly
+(React Query retry/staleTime defaults, query-key consistency in
+`useProperties`/`useDevelopers`/`useListingEditor`, a details-drawer/dialog
+state-drift bug in `AppointmentsView`/`NotificationsView` — see CHANGELOG.md).
+Everything below is Medium/Low and deliberately deferred:
+
+- **[High, deferred — needs a dedicated pass]** `ListingsTable`/`AppointmentsTable`
+  render rows as styled `<div>` grids, not semantic `<table>`/`<tr>`/`<td>` —
+  screen readers lose row/column/table-size announcements on the app's two
+  richest data views, even though `components/ui/table.tsx` already exists
+  and Analytics' own components use it. Not fixed in this pass: converting
+  two production tables with row selection, bulk actions, and responsive
+  behavior is a correctness-sensitive rewrite that deserves its own reviewed
+  phase, not a bundled fix inside a readiness audit.
+- **[Medium]** Three near-identical table/list loading-skeleton
+  implementations (`ListingsTableSkeleton`, `AppointmentsTableSkeleton`,
+  `NotificationsListSkeleton`) could collapse into one shared primitive — a
+  clear "third occurrence" extraction candidate per the project's own
+  precedent, but not urgent.
+- **[Medium]** `home/DashboardKpis.tsx`'s `StatCard` row still uses a plain
+  responsive grid, not `SwipeableStatRow` (built in Phase 6.7 for exactly this
+  "dense KPI row on mobile" problem) — an inconsistency worth a deliberate
+  decision, not an oversight to silently fix.
+- **[Medium]** The filter-bar pattern is now independently implemented across
+  5 domains (`ListingsFilterBar`, `AppointmentsFilterBar`,
+  `NotificationsFilterBar`, plus `FilterPanel`/`DeveloperFilterPanel`) at
+  similar size each — past the "third domain" extraction trigger this doc
+  already applies elsewhere (see `FilterPanel`/`DeveloperFilterPanel` note
+  above), but each is still domain-specific enough that forcing a shared
+  abstraction now risks a leaky one; revisit if a 6th domain needs a filter bar.
+- **[Medium]** `dashboard.service.ts` is the one domain whose read methods
+  (`getRecentListings(limit)`, `getNotifications(limit)`, etc.) return bare
+  arrays with an ad hoc `limit` param instead of the `{page,pageSize} →
+  PaginatedResult` shape every other domain service uses — harmless at
+  today's "top 5" widget scale, but an inconsistent contract shape a backend
+  integrator would need to special-case.
+- **[Medium]** No security-header documentation existed before this review;
+  baseline headers (`X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, `Permissions-Policy`) were added to `next.config.ts` as
+  part of the Critical/High fixes, but a real Content-Security-Policy is
+  deliberately still deferred — it needs to be scoped against the real
+  backend's origin and Cloudinary's asset domains once those are known,
+  rather than ship a guessed policy that's either broken or meaningless.
+- **[Medium]** CSRF handling is undocumented despite the architecture
+  committing to an `HttpOnly`/`SameSite=Strict` refresh cookie (ADR-010) —
+  `SameSite=Strict` mitigates most vectors, but there's no explicit written
+  reasoning, and no plan for what happens if the real backend's cookie config
+  ends up looser (`Lax`/`None`) for cross-subdomain reasons. Add a short CSRF
+  section to `docs/ARCHITECTURE.md` §6 once the backend's actual cookie
+  config is known.
+- **[Medium]** `lib/validation/*.ts` Zod schemas have no comment stating they
+  are UX-only and that the real backend must re-validate everything
+  server-side (unlike the auth/cookie assumptions, which are thoroughly
+  flagged) — cheap to add, not yet done.
+- **[Medium]** `lib/api.ts`'s silent-refresh-and-retry 401 interceptor has no
+  dedicated test file — the bootstrap-time refresh path is covered
+  (`session-lifecycle.test.tsx`), but "access token expires mid-session, next
+  request 401s and silently retries" is not. Worth covering once the real
+  backend's `/auth/refresh` contract is confirmed.
+- **[Low]** `register()`'s "an account with this email already exists"
+  message is enumeration-capable (unlike login/forgot-password, which are
+  already anti-enumeration-safe) — a deliberate, common trade-off, flagged
+  here as a residual risk rather than a defect.
+- **[Low]** The open-redirect guard (`lib/authRedirect.ts`) handles the
+  reported backslash/protocol-relative cases but hasn't been tested against
+  more exotic encodings (leading control characters, double-encoded
+  slashes) — no known bypass, worth a dedicated fuzz-style test pass.
+- **[Low]** `ListingsView`'s single-delete confirmation dialog holds a
+  `Property` snapshot (`deleteTarget.property`) captured at click time rather
+  than deriving it from the live query by id, the same class of staleness
+  bug fixed in `AppointmentsView`/`NotificationsView` this pass — lower
+  priority here because the dialog only displays a title for confirmation
+  (the mutation itself always targets the correct id), so at worst a stale
+  title is shown, not a wrong action taken.
+- **[Low]** Zero `next/dynamic`/`React.lazy` usage anywhere — dialogs, drawers,
+  and the Analytics chart all ship in the initial client bundle for any view
+  that imports them. Not measured against a real bundle-analyzer run, so
+  treat as a hypothesis to verify before investing in code-splitting.
+- **[Low]** No `React.memo` anywhere in `components/` — `AppointmentsView`/
+  `ListingsView` re-render their full subtree (filters, table, pagination) on
+  every row-selection toggle. Not a measured problem at current data volumes.
+- **[Low]** No `prefers-reduced-motion` handling anywhere (already flagged
+  pre-existing debt, re-confirmed still open during this review).
 
 ## Bugs
 

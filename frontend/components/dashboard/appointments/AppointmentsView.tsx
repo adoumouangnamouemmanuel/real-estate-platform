@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { FilterChips } from "@/components/common/FilterChips";
 import { Pagination } from "@/components/common/Pagination";
@@ -37,9 +37,20 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
   const updateParams = useFilterNavigation<GetAppointmentsParams>();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [detailsTarget, setDetailsTarget] = useState<Appointment | null>(null);
-  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(
-    null,
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [rescheduleId, setRescheduleId] = useState<string | null>(null);
+
+  // Derived from the live query result by id, not stored as a snapshot —
+  // otherwise an open drawer/dialog would keep showing the appointment's
+  // status/date as they were at click time even after a refetch (e.g. another
+  // mutation invalidating this query) brought back newer data.
+  const detailsTarget = useMemo(
+    () => data?.items.find((item) => item.id === detailsId) ?? null,
+    [data, detailsId],
+  );
+  const rescheduleTarget = useMemo(
+    () => data?.items.find((item) => item.id === rescheduleId) ?? null,
+    [data, rescheduleId],
   );
 
   const updateStatus = useUpdateAppointmentStatus();
@@ -88,7 +99,7 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
 
   function handleAction(appointment: Appointment, action: AppointmentAction) {
     if (action.key === "RESCHEDULE") {
-      setRescheduleTarget(appointment);
+      setRescheduleId(appointment.id);
       return;
     }
     updateStatus.mutate({ id: appointment.id, status: action.target! });
@@ -105,7 +116,7 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
     if (!rescheduleTarget) return;
     reschedule.mutate(
       { id: rescheduleTarget.id, scheduledFor },
-      { onSuccess: () => setRescheduleTarget(null) },
+      { onSuccess: () => setRescheduleId(null) },
     );
   }
 
@@ -142,7 +153,7 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
         onToggleRow={handleToggleRow}
         onToggleAll={handleToggleAll}
         onAction={handleAction}
-        onViewDetails={setDetailsTarget}
+        onViewDetails={(appointment) => setDetailsId(appointment.id)}
         pendingIds={pendingIds}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={() =>
@@ -165,10 +176,10 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
       <AppointmentDetailsDrawer
         appointment={detailsTarget}
         onOpenChange={(open) => {
-          if (!open) setDetailsTarget(null);
+          if (!open) setDetailsId(null);
         }}
         onAction={(appointment, action) => {
-          setDetailsTarget(null);
+          setDetailsId(null);
           handleAction(appointment, action);
         }}
         isPending={updateStatus.isPending || reschedule.isPending}
@@ -177,7 +188,7 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
       <RescheduleDialog
         appointment={rescheduleTarget}
         onOpenChange={(open) => {
-          if (!open) setRescheduleTarget(null);
+          if (!open) setRescheduleId(null);
         }}
         onConfirm={handleConfirmReschedule}
         isPending={reschedule.isPending}

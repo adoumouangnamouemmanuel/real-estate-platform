@@ -6,7 +6,48 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ## [Unreleased]
 
+### Changed
+
+- **Frontend: Platform Readiness Review.** A no-new-features audit of the full
+  8-domain dashboard platform against backend-integration readiness. Fixed:
+  `app/providers.tsx`'s `QueryClient` now has an explicit `retry`/`staleTime`
+  policy (stops retrying 4xx responses once requests hit a real backend,
+  instead of blindly retrying every failure 3 times); `next.config.ts` gained
+  baseline security headers (`X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, `Permissions-Policy`); query-key consistency fixed in
+  `useProperties`/`useDevelopers`/`useListingEditor` (exported key constants
+  instead of ad hoc string literals that could drift from each other); and a
+  state-drift bug fixed in `AppointmentsView`/`NotificationsView`, where the
+  details drawer and reschedule dialog held an object snapshot from click
+  time instead of deriving it from the live query by id, so an open panel
+  could keep showing stale data after a concurrent refetch. See `TODO.md` for
+  the full findings list and everything deliberately deferred as Medium/Low.
+
 ### Added
+
+- **Frontend: Analytics (Phase 6.7).** A cross-domain read model at
+  `/analytics` over the appointments and listings domains — `analytics.service.ts`
+  composes the existing `listingService`/`appointmentService` rather than
+  owning its own dataset, then hands the results to a new pure calculation
+  module, `lib/analyticsCalculations.ts`, kept fully independent of the
+  service and presentation layers. `isOverdueAppointment` was extracted into
+  a shared predicate (`lib/appointmentActionPolicy.ts`) so Appointments'
+  "overdue" filter and Analytics' Action Needed can't define the rule
+  differently. Action Needed and Insights are first-class: an above-the-fold
+  section flags overdue appointment requests, stale drafts, and a high
+  cancellation rate (gated on a minimum sample size), each linking directly
+  into the filtered view that explains it. Current-state metrics (portfolio
+  composition, Action Needed) are kept structurally distinct from
+  period-scoped metrics (the appointment funnel and its response/completion/
+  cancellation/no-show rates, cohorted by request date). Every stat besides
+  the appointment funnel is a reused `StatCard`/`Sparkline` or a plain table —
+  the funnel is the one real chart, and it ships a toggle to an equivalent,
+  fully visible table with identical data rather than a screen-reader-only
+  summary. New `SwipeableStatRow` primitive brings the first horizontally-
+  swipeable (scroll-snap) mobile pattern to the dashboard. Flips
+  `FEATURES.DEVELOPER_ANALYTICS`. See ADR-016 in `docs/ARCHITECTURE.md`. ~30
+  new unit tests, 5 new E2E tests, 1 new page added to the accessibility scan
+  (zero violations).
 
 - **Frontend: Notification System (Phase 6.6).** A shared notification
   platform, not just a page: `notificationService` is the one seam the new

@@ -1,4 +1,7 @@
-import { AppointmentActionPolicy } from "@/lib/appointmentActionPolicy";
+import {
+  AppointmentActionPolicy,
+  isOverdueAppointment,
+} from "@/lib/appointmentActionPolicy";
 import { trackAppointmentEvent } from "@/lib/telemetry";
 import type {
   ActivityItem,
@@ -66,13 +69,7 @@ function matchesTimeframe(
   if (timeframe === "today") return isSameDay(scheduledFor, now);
   if (timeframe === "upcoming") return scheduledFor.getTime() > now.getTime();
 
-  // overdue: still awaiting action but the visit date has already passed
-  return (
-    scheduledFor.getTime() < now.getTime() &&
-    !AppointmentActionPolicy.isTerminal(item.status) &&
-    item.status !== "CONFIRMED" &&
-    item.status !== "RESCHEDULED"
-  );
+  return isOverdueAppointment(item, now);
 }
 
 function filterAppointments(

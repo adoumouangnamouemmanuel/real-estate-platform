@@ -61,3 +61,5 @@ export type {
   NotificationFilters,
   NotificationSort,
 } from "./notification.service";
+
+export { analyticsService } from "./analytics.service";

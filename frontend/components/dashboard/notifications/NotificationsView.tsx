@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { FilterChips } from "@/components/common/FilterChips";
 import { Pagination } from "@/components/common/Pagination";
@@ -17,7 +17,6 @@ import {
 } from "@/hooks/useNotifications";
 import { buildNotificationFilterChips } from "@/lib/notificationFilters";
 import type { GetNotificationsParams } from "@/services";
-import type { Notification } from "@/types";
 
 interface NotificationsViewProps {
   filters: GetNotificationsParams;
@@ -35,7 +34,15 @@ export function NotificationsView({ filters }: NotificationsViewProps) {
   const { data: unreadCount } = useUnreadNotificationCount();
   const updateParams = useFilterNavigation<GetNotificationsParams>();
 
-  const [detailsTarget, setDetailsTarget] = useState<Notification | null>(null);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+
+  // Derived from the live query result by id, not stored as a snapshot — see
+  // the identical fix in AppointmentsView for why (an open drawer must not
+  // keep showing a notification's read status as it was at click time).
+  const detailsTarget = useMemo(
+    () => data?.items.find((item) => item.id === detailsId) ?? null,
+    [data, detailsId],
+  );
 
   const markAsRead = useMarkNotificationRead();
   const markAllAsRead = useMarkAllNotificationsRead();
@@ -89,7 +96,7 @@ export function NotificationsView({ filters }: NotificationsViewProps) {
         isLoading={isLoading}
         isError={isError}
         error={error}
-        onOpenDetails={setDetailsTarget}
+        onOpenDetails={(notification) => setDetailsId(notification.id)}
         onMarkAsRead={(id) => markAsRead.mutate(id)}
         pendingIds={pendingIds}
         hasActiveFilters={hasActiveFilters}
@@ -109,10 +116,10 @@ export function NotificationsView({ filters }: NotificationsViewProps) {
       <NotificationDetailsDrawer
         notification={detailsTarget}
         onOpenChange={(open) => {
-          if (!open) setDetailsTarget(null);
+          if (!open) setDetailsId(null);
         }}
         onMarkAsRead={(id) => {
-          setDetailsTarget(null);
+          setDetailsId(null);
           markAsRead.mutate(id);
         }}
         isPending={markAsRead.isPending}

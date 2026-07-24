@@ -12,7 +12,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { listingService, type GetListingsParams } from "@/services";
 import type { PropertyStatus } from "@/types";
 
-const LISTINGS_KEY = ["listings"] as const;
+export const LISTINGS_KEY = ["listings"] as const;
 
 /** Keeps the previous page visible while the next page/filter loads, same as useProperties. */
 export function useListings(params: GetListingsParams = {}) {

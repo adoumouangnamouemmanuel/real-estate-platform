@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AppointmentActionPolicy } from "./appointmentActionPolicy";
+import { AppointmentActionPolicy, isOverdueAppointment } from "./appointmentActionPolicy";
 
 describe("AppointmentActionPolicy.getActions", () => {
   it("offers Confirm and Cancel for a REQUESTED appointment", () => {
@@ -69,5 +69,47 @@ describe("AppointmentActionPolicy.isTerminal", () => {
     expect(AppointmentActionPolicy.isTerminal("REQUESTED")).toBe(false);
     expect(AppointmentActionPolicy.isTerminal("CONFIRMED")).toBe(false);
     expect(AppointmentActionPolicy.isTerminal("RESCHEDULED")).toBe(false);
+  });
+});
+
+describe("isOverdueAppointment", () => {
+  const now = new Date("2026-07-24T12:00:00.000Z");
+
+  it("is overdue when REQUESTED and the scheduled date has passed", () => {
+    expect(
+      isOverdueAppointment(
+        { status: "REQUESTED", scheduledFor: "2026-07-20T10:00:00.000Z" },
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it("is not overdue when REQUESTED but still in the future", () => {
+    expect(
+      isOverdueAppointment(
+        { status: "REQUESTED", scheduledFor: "2026-07-28T10:00:00.000Z" },
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it("is not overdue once acted on, even if the date has passed (CONFIRMED)", () => {
+    expect(
+      isOverdueAppointment(
+        { status: "CONFIRMED", scheduledFor: "2026-07-20T10:00:00.000Z" },
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it("is not overdue for terminal statuses even with a past date", () => {
+    for (const status of ["COMPLETED", "CANCELLED", "NO_SHOW"] as const) {
+      expect(
+        isOverdueAppointment(
+          { status, scheduledFor: "2026-07-20T10:00:00.000Z" },
+          now,
+        ),
+      ).toBe(false);
+    }
   });
 });

@@ -2,17 +2,21 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { LISTINGS_KEY } from "@/hooks/useListings";
 import { listingService, type ListingPatch } from "@/services";
+
+const EDIT_KEY = [...LISTINGS_KEY, "edit"] as const;
 
 /**
  * Loads the developer's own full editable record for /listings/[slug]/edit.
- * A separate query key from the My Properties table's ["listings", params] —
+ * A separate query key from the My Properties table's [...LISTINGS_KEY, params] —
  * this fetches one record's full editable shape (address/amenities included),
- * not a filtered page of the list-view shape.
+ * not a filtered page of the list-view shape. Built from the same LISTINGS_KEY
+ * root so an invalidation of the root key can't miss this branch.
  */
 export function useListingForEdit(slug: string) {
   return useQuery({
-    queryKey: ["listings", "edit", slug],
+    queryKey: [...EDIT_KEY, slug],
     queryFn: () => listingService.getListingForEdit(slug),
   });
 }
@@ -29,8 +33,8 @@ export function useCreateListing() {
   return useMutation({
     mutationFn: (patch: ListingPatch) => listingService.createListing(patch),
     onSuccess: (listing) => {
-      queryClient.invalidateQueries({ queryKey: ["listings"] });
-      queryClient.setQueryData(["listings", "edit", listing.slug], listing);
+      queryClient.invalidateQueries({ queryKey: LISTINGS_KEY });
+      queryClient.setQueryData([...EDIT_KEY, listing.slug], listing);
     },
   });
 }
@@ -42,8 +46,8 @@ export function useUpdateListing() {
     mutationFn: ({ slug, patch }: { slug: string; patch: ListingPatch }) =>
       listingService.updateListing(slug, patch),
     onSuccess: (listing) => {
-      queryClient.invalidateQueries({ queryKey: ["listings"] });
-      queryClient.setQueryData(["listings", "edit", listing.slug], listing);
+      queryClient.invalidateQueries({ queryKey: LISTINGS_KEY });
+      queryClient.setQueryData([...EDIT_KEY, listing.slug], listing);
     },
   });
 }
