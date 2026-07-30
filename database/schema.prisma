@@ -7,10 +7,12 @@
 // confirmed with the project owner — and this schema uses cuid() string IDs
 // instead, consistent with the rest of the platform's ID strategy (no
 // sequential-ID enumeration in public URLs like /properties/:id).
+// binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 
 generator client {
   provider = "prisma-client-js"
   output   = "../backend/node_modules/.prisma/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "linux-musl"]
 }
 
 datasource db {

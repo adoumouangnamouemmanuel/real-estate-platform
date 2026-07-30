@@ -17,15 +17,15 @@ app.use(express.json());
 // Mount v1 routes
 app.use('/api/v1', apiRouter);
 
-/*
+// Message for the root route to confirm that the backend server is running
 app.get('/', (_req, res) => {
   res.json({
     status: 'ok',
-    message: 'ByTe backend is running',
-    docs: '/api/v1/auth/login',
+    message: 'Confirmed: Backend server is running...'
+    //docs: '/api/v1/auth/login',
   });
 });
-*/
+
 
 export { prompt };
 export default app;
