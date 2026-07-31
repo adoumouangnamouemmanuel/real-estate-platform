@@ -8,7 +8,7 @@ import express, { Application } from 'express';
 import apiRouter from './api/v1/index.js';
 
 const app: Application = express();
-const prompt: string = 'lumavov@app>$'; // Prompt for the console output
+const prompt: string = 'lumavok@app:'; // Prompt for the console output
 
 
 // Middleware configuration

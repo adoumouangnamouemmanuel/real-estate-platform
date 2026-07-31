@@ -21,7 +21,7 @@ async function startServer() {
     try {
         if (process.env.DATABASE_URL) {
             await prisma.$connect();
-            console.log(`${prompt} Connected to the database`);
+            console.log(`${prompt} Connected to the database!`);
         } else {
             console.warn(`${prompt} DATABASE_URL is not set; continuing without database connection.`);
         }

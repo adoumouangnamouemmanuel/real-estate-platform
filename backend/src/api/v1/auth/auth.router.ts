@@ -1,10 +1,11 @@
 import { Router } from 'express';
+import { prompt } from '../../../app.js';
 
-const prompt = 'lumavov@app>$';
 const authRouter = Router();
 
 authRouter.get('/login', (_req, res) => {
-    res.send(`${prompt} This is the Login route`);
+    console.log(`${prompt} login route accessed`);
+    res.send(`${prompt} login route`);
 });
 
 export default authRouter;
