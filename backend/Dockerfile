@@ -1,24 +1,19 @@
 FROM node:20-alpine
 WORKDIR /app
 
-# Install OpenSSL required by Prisma's query engine on Alpine
 RUN apk add --no-cache openssl
 
-# Copy backend package files
-COPY backend/package*.json ./
-RUN npm ci --development
+# Recreate the monorepo layout: database/ and backend/ as siblings under /app
+COPY backend/package*.json ./backend/
+RUN cd backend && npm ci --development
 
-# Copy database schema into the container
 COPY database ./database
+COPY backend/ ./backend/
 
-# Copy backend source files
-COPY backend/ .
+# Same command your local db:generate script runs — now resolves identically
+RUN cd database && npx prisma generate --schema=./schema.prisma
 
-# Generate the Prisma client inside /app/node_modules
-RUN npx prisma generate --schema=./database/schema.prisma
-
-# Expose the port your app runs on
+# step into backend and run the dev server
+WORKDIR /app/backend
 EXPOSE 3000
-
-# Start the application
 CMD ["npm", "run", "dev"]

@@ -37,8 +37,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - ./backend:/app/backend
+      - /app/backend/node_modules
     environment:
       - DATABASE_URL=postgresql://postgres:byte_secure_password123@postgres:5432/bytedb?schema=public
       - REDIS_URL=redis://redis:6379

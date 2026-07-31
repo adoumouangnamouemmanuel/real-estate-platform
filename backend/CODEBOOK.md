@@ -9,6 +9,11 @@
 #### Updates @prisma/client (that lives inside node_modules) so VS Code knows exactly what models exist
 `npx prisma generate`
 
+
+docker compose down -v
+docker compose build --no-cache backend
+docker compose up
+
 or, from backend/
 
 `npx prisma generate --schema=../database/schema.prisma`
