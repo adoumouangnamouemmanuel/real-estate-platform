@@ -1,3 +1,10 @@
+/** ------------------------ index.ts
+ * 
+ * Routing and configuration for the API v1 endpoints.
+ * 
+ * 
+ */
+
 import { Router } from 'express';
 import authRouter from './auth/auth.router.js';
 import developersRouter from './developers/developers.router.js';

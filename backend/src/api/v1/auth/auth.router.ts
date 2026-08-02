@@ -1,15 +1,10 @@
 import { Router } from 'express';
-import { prompt } from '../../../app.js';
-import { loginController } from './auth.controller.js';
-import { LoginSchema } from './auth.schema.js';
+import { testController, loginController, registerController } from './auth.controller.js';
 
 const authRouter = Router();
 
-authRouter.get('/login', (_req, res) => {
-    console.log(`${prompt} login route accessed`);
-    res.send(`${prompt} login route`);
-});
-
+authRouter.get('/login', testController);
 authRouter.post('/login', loginController);
+authRouter.post('/register', registerController);
 
 export default authRouter;

@@ -10,7 +10,6 @@ import apiRouter from './api/v1/index.js';
 const app: Application = express();
 const prompt: string = 'lumavok@app:'; // Prompt for the console output
 
-
 // Middleware configuration
 app.use(express.json());
 
@@ -21,8 +20,7 @@ app.use('/api/v1', apiRouter);
 app.get('/', (_req, res) => {
   res.json({
     status: 'ok',
-    message: 'Confirmed: Backend server is running...'
-    //docs: '/api/v1/auth/login',
+    message: `${prompt} You have reached our API Server v1.0.0`
   });
 });
 
