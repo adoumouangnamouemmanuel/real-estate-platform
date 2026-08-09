@@ -3,13 +3,14 @@ import type { Metadata } from "next";
 import { AnalyticsView } from "@/components/dashboard/analytics/AnalyticsView";
 import { DashboardPageContainer } from "@/components/dashboard/DashboardPageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { APP_NAME } from "@/constants/config";
 import {
   parseAnalyticsPeriod,
   type RawAnalyticsSearchParams,
 } from "@/lib/analyticsFilters";
 
 export const metadata: Metadata = {
-  title: "Analytics | ByTe",
+  title: `Analytics | ${APP_NAME}`,
   description: "Track appointment conversion and portfolio composition.",
 };
 

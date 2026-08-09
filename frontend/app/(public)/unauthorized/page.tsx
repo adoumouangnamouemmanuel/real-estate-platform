@@ -3,10 +3,11 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { buttonVariants } from "@/components/ui/button";
+import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
 
 export const metadata: Metadata = {
-  title: "Sign in required | ByTe",
+  title: `Sign in required | ${APP_NAME}`,
 };
 
 export default function UnauthorizedPage() {

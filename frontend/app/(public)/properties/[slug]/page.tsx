@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PropertyDetailView } from "@/components/property/PropertyDetailView";
+import { APP_NAME } from "@/constants/config";
 import { propertyService } from "@/services";
 
 interface PropertyDetailPageProps {
@@ -16,11 +17,11 @@ export async function generateMetadata({
   try {
     const property = await propertyService.getPropertyBySlug(slug);
     return {
-      title: `${property.title} | ByTe`,
+      title: `${property.title} | ${APP_NAME}`,
       description: property.description,
     };
   } catch {
-    return { title: "Property not found | ByTe" };
+    return { title: `Property not found | ${APP_NAME}` };
   }
 }
 

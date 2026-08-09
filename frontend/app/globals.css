@@ -14,15 +14,25 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* Brand: a deep ink-teal — the one deliberate hue in the system (see the
+     Premium Experience audit). Replaces the unstyled shadcn grayscale
+     default (every token previously had chroma 0). Flows through every
+     component that already reads --primary/--ring — no component changes
+     needed for this to take effect. */
+  --primary: oklch(0.32 0.06 217);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+  /* A single warm accent, used sparingly for premium/favorite/verified
+     signals only (StatusBadge "Verified", the active favorite heart) — never
+     for structural UI, so it stays a highlight, not a second brand color. */
+  --brand-gold: oklch(0.72 0.14 75);
+  --brand-gold-foreground: oklch(0.205 0.03 75);
   --destructive: oklch(0.577 0.245 27.325);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.32 0.06 217 / 0.5);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -30,12 +40,16 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  /* Was the unmodified grayscale default — the dashboard shell's active nav
+     state never picked up the brand teal introduced for the public site
+     (see the Dashboard UX audit). Aligned to --primary so the brand is
+     consistent across both surfaces. */
+  --sidebar-primary: oklch(0.32 0.06 217);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.32 0.06 217 / 0.5);
 }
 
 @theme inline {
@@ -74,6 +88,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-foreground: var(--brand-gold-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -103,18 +119,22 @@ body {
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* Lighter, desaturated-slightly variant of the same brand hue — keeps
+     enough contrast against the dark background without glowing. */
+  --primary: oklch(0.78 0.07 217);
+  --primary-foreground: oklch(0.145 0.02 217);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+  --brand-gold: oklch(0.78 0.13 75);
+  --brand-gold-foreground: oklch(0.205 0.03 75);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.78 0.07 217 / 0.5);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -122,12 +142,14 @@ body {
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  /* Was an unrelated blue-purple (the unmodified shadcn default) — aligned
+     to dark-mode --primary, same reasoning as the light-mode token above. */
+  --sidebar-primary: oklch(0.78 0.07 217);
+  --sidebar-primary-foreground: oklch(0.145 0.02 217);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.78 0.07 217 / 0.5);
 }
 
 @layer base {
@@ -139,5 +161,22 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Global safety net for the Premium Experience motion system (hover zoom,
+   card lift, gallery crossfade, scroll reveal): every one of those is
+   transform/opacity-only and driven by Tailwind's transition utilities, so
+   flattening duration to ~0 here is sufficient to satisfy
+   prefers-reduced-motion without needing a motion-reduce: variant on every
+   individual utility class. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

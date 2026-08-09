@@ -66,6 +66,24 @@ export interface Property {
    */
   address?: string;
   amenities?: string[];
+  /**
+   * Undefined for property types the field doesn't apply to (land, most
+   * commercial/office listings) rather than 0 — a studio has 0 bedrooms and a
+   * warehouse has none at all, and a card/detail page needs to tell those
+   * apart to decide whether to render the stat at all.
+   */
+  bedrooms?: number;
+  bathrooms?: number;
+  /** Floor/land area in square meters. */
+  areaSqm?: number;
+  /**
+   * A mock popularity signal (see services/favorite.service.ts) — aggregate
+   * count of everyone who has favorited this listing, distinct from whether
+   * *this* browser has. Sourced from `services/mocks/properties.mock.ts`
+   * today; a real backend would expose this as a computed column
+   * (`COUNT(*) FROM property_favorites`), never a value the frontend writes.
+   */
+  favoriteCount?: number;
 }
 
 /** The list/card shape — also what a property embeds for its developer. */
@@ -287,10 +305,20 @@ export interface PortfolioComposition {
   byCategory: PortfolioCategoryBreakdown[];
 }
 
+/**
+ * Additive across every domain that surfaces "what needs attention" — see
+ * ADR-016 (Analytics) and the Dashboard Home transformation. The first three
+ * values originated in Analytics; the last two are Dashboard Home's own
+ * (new appointment requests, suspended listings), computed from Dashboard
+ * Home's independent dataset (see lib/dashboardActionNeeded.ts) rather than
+ * Analytics'/Appointments' own copies.
+ */
 export type ActionNeededType =
   | "OVERDUE_APPOINTMENTS"
   | "STALE_DRAFTS"
-  | "HIGH_CANCELLATION_RATE";
+  | "HIGH_CANCELLATION_RATE"
+  | "NEW_APPOINTMENT_REQUESTS"
+  | "SUSPENDED_LISTINGS";
 
 export type ActionNeededSeverity = "high" | "medium";
 

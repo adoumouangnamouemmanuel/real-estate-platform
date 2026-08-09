@@ -346,6 +346,17 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   domains, CSRF documentation, `lib/api.ts` interceptor coverage, and more)
   is recorded in Technical Debt below rather than implemented, per the
   review's own scope.
+- **Rebrand: ByTe → Lumavok** — every visible occurrence of the app name
+  migrated to read from `constants/config.ts`'s `APP_NAME` instead of a
+  hardcoded literal, so a future rebrand is a one-line change. See
+  CHANGELOG.md for the full file list.
+- **Premium Public Experience Transformation** — homepage, `PropertyCard`,
+  and property detail page redesign; new `favoriteService`/`useFavorites`;
+  one deliberate brand hue introduced. Followed by a self-review (real
+  screenshots, not just source inspection) that found and fixed a
+  content-hiding scroll-reveal bug, three mismatched category images, a
+  false "Verified developers only" claim, a button-size inconsistency, and
+  an unbranded navbar link. See CHANGELOG.md for the full breakdown.
 
 ## In Progress
 
@@ -360,6 +371,16 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   (`filterProperties`, `sortProperties`, `filterDevelopers`, `sortDevelopers`) and
   to `useAuthBootstrap` — currently exercised only indirectly through the view
   integration tests. See the QA report's coverage table for the full gap list.
+- **Backend Integration Planning is complete** — see `docs/API_CONTRACT.md` (the
+  full per-service endpoint/DTO contract, meant to hand directly to backend
+  engineers) and `docs/BACKEND_INTEGRATION_ROADMAP.md` (the consolidated
+  `TODO(backend)` checklist, assumptions needing backend-team sign-off, a
+  recommended first-wave endpoint order, MVP/pre-production/nice-to-have
+  classification for all 39 endpoints, the auth-flow and media-upload review,
+  and a 6-phase migration plan from mocks to real APIs). Every individual
+  `TODO(backend)` comment in the code should be treated as a pointer into that
+  checklist, not tracked independently. **No mock has been replaced yet** —
+  waiting for approval before Phase A (Auth Foundation) begins.
 
 ## Blocked
 
@@ -500,7 +521,7 @@ Everything below is Medium/Low and deliberately deferred:
 - **[Medium]** `dashboard.service.ts` is the one domain whose read methods
   (`getRecentListings(limit)`, `getNotifications(limit)`, etc.) return bare
   arrays with an ad hoc `limit` param instead of the `{page,pageSize} →
-  PaginatedResult` shape every other domain service uses — harmless at
+PaginatedResult` shape every other domain service uses — harmless at
   today's "top 5" widget scale, but an inconsistent contract shape a backend
   integrator would need to special-case.
 - **[Medium]** No security-header documentation existed before this review;

@@ -3,13 +3,14 @@ import type { Metadata } from "next";
 import { AppointmentsView } from "@/components/dashboard/appointments/AppointmentsView";
 import { DashboardPageContainer } from "@/components/dashboard/DashboardPageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { APP_NAME } from "@/constants/config";
 import {
   parseAppointmentFilters,
   type RawAppointmentSearchParams,
 } from "@/lib/appointmentFilters";
 
 export const metadata: Metadata = {
-  title: "Appointments | ByTe",
+  title: `Appointments | ${APP_NAME}`,
   description: "Manage viewing requests and appointments.",
 };
 

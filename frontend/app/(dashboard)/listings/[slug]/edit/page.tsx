@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { DashboardPageContainer } from "@/components/dashboard/DashboardPageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { ListingForm } from "@/components/dashboard/listings/ListingForm";
+import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
 import { listingService } from "@/services";
 
@@ -18,9 +19,9 @@ export async function generateMetadata({
 
   try {
     const listing = await listingService.getListingForEdit(slug);
-    return { title: `Edit ${listing.title} | ByTe` };
+    return { title: `Edit ${listing.title} | ${APP_NAME}` };
   } catch {
-    return { title: "Listing not found | ByTe" };
+    return { title: `Listing not found | ${APP_NAME}` };
   }
 }
 

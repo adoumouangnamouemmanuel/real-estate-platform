@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/constants/config";
 import type { Notification } from "@/types";
 
 // TODO(backend): replace with GET /api/v1/developers/me/notifications once it
@@ -150,7 +151,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "notif15",
     type: "SYSTEM",
     title: "Account verified",
-    body: "Atlantic Properties is now a verified developer on ByTe.",
+    body: `Atlantic Properties is now a verified developer on ${APP_NAME}.`,
     createdAt: daysFromNow(-10),
     status: "READ",
   },

@@ -3,11 +3,12 @@ import Link from "next/link";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
 
 export const metadata: Metadata = {
-  title: "Create an account | ByTe",
-  description: "Create a free ByTe account.",
+  title: `Create an account | ${APP_NAME}`,
+  description: `Create a free ${APP_NAME} account.`,
 };
 
 export default function RegisterPage() {

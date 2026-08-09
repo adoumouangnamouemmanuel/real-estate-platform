@@ -1,10 +1,16 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { PropertyDetailView } from "@/components/property/PropertyDetailView";
 import { makeProperty, makePropertyDetail } from "@/test/fixtures";
+import { renderWithQueryClient } from "@/test/renderWithQueryClient";
 
 describe("Property details flow", () => {
+  // favoriteService persists to localStorage (see services/favorite.service.ts).
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
   it("renders description, amenities, developer contact, and related properties together", () => {
     const property = makePropertyDetail({
       title: "Luxury 3BR Apartment",
@@ -25,7 +31,7 @@ describe("Property details flow", () => {
       makeProperty({ id: "p2", title: "Similar Apartment" }),
     ];
 
-    render(
+    renderWithQueryClient(
       <PropertyDetailView
         property={property}
         relatedProperties={relatedProperties}
@@ -48,7 +54,9 @@ describe("Property details flow", () => {
   it("omits the Amenities section entirely when there are none", () => {
     const property = makePropertyDetail({ amenities: [] });
 
-    render(<PropertyDetailView property={property} relatedProperties={[]} />);
+    renderWithQueryClient(
+      <PropertyDetailView property={property} relatedProperties={[]} />,
+    );
 
     expect(
       screen.queryByRole("heading", { name: "Amenities" }),
@@ -58,7 +66,9 @@ describe("Property details flow", () => {
   it("omits the Similar Properties section when there are none", () => {
     const property = makePropertyDetail();
 
-    render(<PropertyDetailView property={property} relatedProperties={[]} />);
+    renderWithQueryClient(
+      <PropertyDetailView property={property} relatedProperties={[]} />,
+    );
 
     expect(
       screen.queryByRole("heading", { name: "Similar Properties" }),
@@ -68,7 +78,9 @@ describe("Property details flow", () => {
   it("shows a disabled WhatsApp CTA while FEATURES.WHATSAPP_CONTACT is off", () => {
     const property = makePropertyDetail();
 
-    render(<PropertyDetailView property={property} relatedProperties={[]} />);
+    renderWithQueryClient(
+      <PropertyDetailView property={property} relatedProperties={[]} />,
+    );
 
     const button = screen.getByRole("button", {
       name: /Contact on WhatsApp \(coming soon\)/,
@@ -77,7 +89,7 @@ describe("Property details flow", () => {
   });
 
   it("shows '/ month' next to the price only for RENT listings", () => {
-    const { rerender } = render(
+    const { rerender } = renderWithQueryClient(
       <PropertyDetailView
         property={makePropertyDetail({ listingType: "RENT", price: 3000 })}
         relatedProperties={[]}

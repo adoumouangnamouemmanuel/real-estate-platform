@@ -3,11 +3,12 @@ import Link from "next/link";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
+import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
 
 export const metadata: Metadata = {
-  title: "Forgot password | ByTe",
-  description: "Reset your ByTe account password.",
+  title: `Forgot password | ${APP_NAME}`,
+  description: `Reset your ${APP_NAME} account password.`,
 };
 
 export default function ForgotPasswordPage() {

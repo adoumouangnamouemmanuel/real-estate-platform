@@ -1,20 +1,23 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { makeProperty } from "@/test/fixtures";
+import { renderWithQueryClient } from "@/test/renderWithQueryClient";
 
 import { PropertyGrid } from "./PropertyGrid";
 
 describe("PropertyGrid", () => {
   it("shows skeleton placeholders and an accessible loading announcement while loading", () => {
-    render(<PropertyGrid properties={[]} isLoading isError={false} />);
+    renderWithQueryClient(
+      <PropertyGrid properties={[]} isLoading isError={false} />,
+    );
 
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.getByText("Loading properties…")).toBeInTheDocument();
   });
 
   it("shows an error state and surfaces the error message instead of the grid", () => {
-    render(
+    renderWithQueryClient(
       <PropertyGrid
         properties={[]}
         isLoading={false}
@@ -29,13 +32,15 @@ describe("PropertyGrid", () => {
   });
 
   it("shows an empty state when there are no properties and nothing is loading or erroring", () => {
-    render(<PropertyGrid properties={[]} isLoading={false} isError={false} />);
+    renderWithQueryClient(
+      <PropertyGrid properties={[]} isLoading={false} isError={false} />,
+    );
 
     expect(screen.getByText("No properties found")).toBeInTheDocument();
   });
 
   it("uses the custom empty description when provided", () => {
-    render(
+    renderWithQueryClient(
       <PropertyGrid
         properties={[]}
         isLoading={false}
@@ -55,7 +60,7 @@ describe("PropertyGrid", () => {
       makeProperty({ id: "p2", title: "Second Property" }),
     ];
 
-    render(
+    renderWithQueryClient(
       <PropertyGrid
         properties={properties}
         isLoading={false}
@@ -69,7 +74,7 @@ describe("PropertyGrid", () => {
   });
 
   it("prioritizes the error state over loading and data", () => {
-    render(
+    renderWithQueryClient(
       <PropertyGrid
         properties={[makeProperty()]}
         isLoading

@@ -3,13 +3,14 @@ import type { Metadata } from "next";
 import { DashboardPageContainer } from "@/components/dashboard/DashboardPageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { NotificationsView } from "@/components/dashboard/notifications/NotificationsView";
+import { APP_NAME } from "@/constants/config";
 import {
   parseNotificationFilters,
   type RawNotificationSearchParams,
 } from "@/lib/notificationFilters";
 
 export const metadata: Metadata = {
-  title: "Notifications | ByTe",
+  title: `Notifications | ${APP_NAME}`,
   description: "Review your latest updates across appointments and listings.",
 };
 

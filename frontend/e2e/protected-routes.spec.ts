@@ -35,11 +35,11 @@ test.describe("Protected routes", () => {
   }) => {
     await page.goto("/unauthorized");
     await expect(page.getByText("Sign in required")).toBeVisible();
-    await expect(page.getByRole("link", { name: "ByTe" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Lumavok" })).toBeVisible();
     await expect(page.getByText("All rights reserved")).toBeVisible();
 
     await page.goto("/forbidden");
     await expect(page.getByText("Access denied")).toBeVisible();
-    await expect(page.getByRole("link", { name: "ByTe" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Lumavok" })).toBeVisible();
   });
 });

@@ -63,3 +63,6 @@ export type {
 } from "./notification.service";
 
 export { analyticsService } from "./analytics.service";
+
+export { favoriteService } from "./favorite.service";
+export type { FavoritesState } from "./favorite.service";

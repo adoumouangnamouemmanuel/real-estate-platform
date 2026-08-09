@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { APP_NAME } from "@/constants/config";
 import { authService } from "@/services";
 import { useAuthStore } from "@/store/authStore";
 
@@ -23,7 +24,10 @@ const login = vi.mocked(authService.login);
 /** Mirrors app/(auth)/login/page.tsx's actual composition, since the async page itself can't be unit-tested. */
 function LoginPage() {
   return (
-    <AuthCard title="Welcome back" description="Sign in to your ByTe account">
+    <AuthCard
+      title="Welcome back"
+      description={`Sign in to your ${APP_NAME} account`}
+    >
       <LoginForm />
     </AuthCard>
   );
@@ -36,10 +40,10 @@ describe("Login flow (page-level composition)", () => {
     useAuthStore.getState().clearAuth();
   });
 
-  it("renders the ByTe wordmark, heading, and form together", () => {
+  it("renders the app wordmark, heading, and form together", () => {
     render(<LoginPage />);
 
-    expect(screen.getByText("ByTe")).toBeInTheDocument();
+    expect(screen.getByText(APP_NAME)).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { level: 1, name: "Welcome back" }),
     ).toBeInTheDocument();

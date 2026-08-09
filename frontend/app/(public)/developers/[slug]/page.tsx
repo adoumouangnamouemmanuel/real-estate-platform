@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { DeveloperProfileView } from "@/components/developer/DeveloperProfileView";
+import { APP_NAME } from "@/constants/config";
 import { developerService } from "@/services";
 
 interface DeveloperProfilePageProps {
@@ -16,11 +17,11 @@ export async function generateMetadata({
   try {
     const developer = await developerService.getDeveloperBySlug(slug);
     return {
-      title: `${developer.name} | ByTe`,
+      title: `${developer.name} | ${APP_NAME}`,
       description: developer.bio,
     };
   } catch {
-    return { title: "Developer not found | ByTe" };
+    return { title: `Developer not found | ${APP_NAME}` };
   }
 }
 

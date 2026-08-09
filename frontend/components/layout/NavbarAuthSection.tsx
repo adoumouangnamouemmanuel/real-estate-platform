@@ -24,8 +24,8 @@ export function NavbarAuthSection() {
   }
 
   return (
-    <Link href={ROUTES.LOGIN} className="text-sm font-medium hover:underline">
+    <Button variant="outline" size="sm" render={<Link href={ROUTES.LOGIN} />}>
       Log in
-    </Link>
+    </Button>
   );
 }

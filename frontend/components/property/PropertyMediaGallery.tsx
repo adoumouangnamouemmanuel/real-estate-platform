@@ -20,7 +20,7 @@ export function PropertyMediaGallery({
 
   if (media.length === 0) {
     return (
-      <div className="bg-muted text-muted-foreground flex aspect-[16/9] w-full items-center justify-center rounded-lg">
+      <div className="bg-muted text-muted-foreground flex aspect-[16/9] w-full items-center justify-center rounded-xl">
         <Building2 className="size-12" aria-hidden />
       </div>
     );
@@ -30,13 +30,17 @@ export function PropertyMediaGallery({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="bg-muted relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+      <div className="bg-muted relative aspect-[16/9] w-full overflow-hidden rounded-xl">
+        {/* Keyed by index so switching photos re-mounts the image and replays
+            the fade-in (tw-animate-css, already installed for radix-derived
+            primitives elsewhere) instead of the swap being instant. */}
         <Image
+          key={activeIndex}
           src={activeImage.url}
           alt={`${title} — photo ${activeIndex + 1} of ${media.length}`}
           fill
           sizes="(min-width: 1024px) 900px, 100vw"
-          className="object-cover"
+          className="animate-in fade-in object-cover duration-300"
           priority
         />
       </div>
@@ -55,7 +59,7 @@ export function PropertyMediaGallery({
               aria-label={`Photo ${index + 1} of ${media.length}`}
               onClick={() => setActiveIndex(index)}
               className={cn(
-                "bg-muted relative size-16 shrink-0 overflow-hidden rounded-md border-2 outline-none",
+                "bg-muted relative size-16 shrink-0 overflow-hidden rounded-md border-2 transition-transform duration-150 outline-none hover:scale-105",
                 index === activeIndex ? "border-primary" : "border-transparent",
               )}
             >

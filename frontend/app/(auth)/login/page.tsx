@@ -3,11 +3,12 @@ import Link from "next/link";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
 
 export const metadata: Metadata = {
-  title: "Log in | ByTe",
-  description: "Sign in to your ByTe account.",
+  title: `Log in | ${APP_NAME}`,
+  description: `Sign in to your ${APP_NAME} account.`,
 };
 
 interface LoginPageProps {
@@ -20,7 +21,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <AuthCard
       title="Welcome back"
-      description="Sign in to your ByTe account"
+      description={`Sign in to your ${APP_NAME} account`}
       footer={
         <>
           Don&apos;t have an account?{" "}

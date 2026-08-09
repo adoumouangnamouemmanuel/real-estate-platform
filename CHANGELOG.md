@@ -8,6 +8,51 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Changed
 
+- **Premium Public Experience Transformation + Review.** Redesigned the
+  homepage (immersive hero, category explorer, Featured/Trending/Land
+  sections, a restrained trust section), `PropertyCard` (real demo imagery,
+  bed/bath/area stats, a favorite/save action, a "Popular" signal grounded in
+  a new mock `favoriteCount`), and the property detail page (sticky contact
+  panel, favorite + native-share actions, a crossfading gallery). Added a new
+  `favoriteService` (mock, `localStorage`-backed, documented
+  `TODO(backend)` seam) and `useFavorites` hook. Introduced one deliberate
+  brand hue (a deep ink-teal `--primary`) replacing the unstyled grayscale
+  shadcn default. A follow-up self-review (using real screenshots, not just
+  source inspection) then found and fixed: a scroll-reveal animation that
+  left property cards genuinely invisible for up to ~900ms after scrolling
+  (removed entirely); three category images that visually misrepresented
+  their property type after actually opening and inspecting each one (a
+  residential house/interior/villa labeled "commercial," a heritage palace
+  labeled "land," a retail store labeled "office"); a false "Verified
+  developers only" hero claim contradicted by the mock data (one of three
+  mock developers is unverified); a Share/Favorite button size mismatch on
+  the detail page; and an unbranded "Log in" navbar link.
+
+- **Rebrand: ByTe → Lumavok (frontend, user-facing only).** Every visible
+  occurrence of the app name — Navbar, Footer, dashboard top bar, browser
+  titles, metadata descriptions, auth page copy, WhatsApp deep-link message
+  templates, a mock notification body, and the README introduction — now
+  reads "Lumavok". `constants/config.ts`'s `APP_NAME` was already the single
+  source of truth for the one component that used it (`AuthCard`); every
+  other hardcoded literal was migrated to import and interpolate `APP_NAME`
+  instead, so a future rebrand is a one-line constant change. No repository,
+  folder, package name, import path, variable, service, API route, or other
+  internal technical identifier was renamed (e.g. `byte.africa` test-account
+  emails and the Cloudinary `byte-demo`/`byte/listings/...` mock identifiers
+  are unchanged, as are `docs/ByTe_RealEstate_Roadmap.md`'s actual filename).
+
+- **Backend Integration Planning.** Added `docs/API_CONTRACT.md` (a full
+  per-service endpoint/DTO contract — current mock methods, future REST
+  endpoints, request/response shapes, pagination/filter/sort models, error
+  responses, and auth requirements for all 8 domains — meant to hand directly
+  to backend engineers) and `docs/BACKEND_INTEGRATION_ROADMAP.md` (every
+  `TODO(backend)` marker consolidated into one checklist, assumptions
+  requiring backend-team validation, a recommended first-wave endpoint order,
+  MVP/pre-production/nice-to-have classification for all 39 endpoints, an
+  authentication-flow and file-upload review, and a 6-phase roadmap for
+  migrating from mocks to real APIs one domain at a time). No mock
+  implementation was changed — this is planning only, pending approval.
+
 - **Frontend: Platform Readiness Review.** A no-new-features audit of the full
   8-domain dashboard platform against backend-integration readiness. Fixed:
   `app/providers.tsx`'s `QueryClient` now has an explicit `retry`/`staleTime`

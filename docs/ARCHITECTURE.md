@@ -1328,6 +1328,8 @@ Scoring rationale — this is a frontend-completeness and integration-safety sco
 
 **What would move the score:** writing real service-layer/hook unit tests for the untested five services and the `lib/api.ts` interceptor; a dedicated phase to convert `ListingsTable`/`AppointmentsTable` to semantic markup; and, once the real backend exists, confirming the cookie contract `proxy.ts`/`mockSessionCookie.ts` currently assume and replacing the client-side aggregation in Analytics/Dashboard Home with real server endpoints.
 
+**Backend Integration Planning** (the natural next step after this review) is a separate, dedicated pair of documents rather than a section here: `docs/API_CONTRACT.md` (full per-service endpoint/DTO contract for backend engineers) and `docs/BACKEND_INTEGRATION_ROADMAP.md` (consolidated `TODO(backend)` checklist, assumptions needing backend-team sign-off, endpoint prioritization, auth/media review, and a 6-phase mock-to-real migration plan). No mock has been replaced — that work waits on approval of those documents.
+
 ---
 
 _ByTe Real Estate Platform — ARCHITECTURE.md_

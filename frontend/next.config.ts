@@ -2,11 +2,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Property and developer media is served from Cloudinary — see docs/ARCHITECTURE.md §7.
     remotePatterns: [
+      // Property and developer media is served from Cloudinary in production — see docs/ARCHITECTURE.md §7.
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      // Demo/mock property photography only (services/mocks/properties.mock.ts) —
+      // real, licensed Unsplash photography standing in for real listings until
+      // real developer-uploaded media exists. Never a production image source.
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
         pathname: "/**",
       },
     ],

@@ -3,10 +3,11 @@ import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { InvalidResetLink } from "@/components/auth/InvalidResetLink";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
+import { APP_NAME } from "@/constants/config";
 
 export const metadata: Metadata = {
-  title: "Reset password | ByTe",
-  description: "Choose a new password for your ByTe account.",
+  title: `Reset password | ${APP_NAME}`,
+  description: `Choose a new password for your ${APP_NAME} account.`,
 };
 
 interface ResetPasswordPageProps {

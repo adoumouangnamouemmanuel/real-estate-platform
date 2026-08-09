@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { APP_NAME } from "@/constants/config";
 
 import { Providers } from "./providers";
 
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ByTe",
+  title: APP_NAME,
   description: "Property discovery and trust platform for African markets.",
 };
 

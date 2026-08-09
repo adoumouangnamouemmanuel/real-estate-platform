@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/constants/config";
 import type { ListingType } from "@/types";
 
 const MOCK_LATENCY_MS = 400;
@@ -15,7 +16,7 @@ export function buildWhatsAppMessage(property: {
   const action = property.listingType === "SALE" ? "purchase" : "rent";
   return (
     `Hi, I'm interested in the ${action} of your property: ` +
-    `"${property.title}" in ${property.city}, listed on ByTe. ` +
+    `"${property.title}" in ${property.city}, listed on ${APP_NAME}. ` +
     `Can we discuss the details?`
   );
 }
@@ -24,7 +25,7 @@ export function buildWhatsAppMessage(property: {
 export function buildDeveloperWhatsAppMessage(developer: {
   name: string;
 }): string {
-  return `Hi, I'd like to know more about listings from ${developer.name} on ByTe.`;
+  return `Hi, I'd like to know more about listings from ${developer.name} on ${APP_NAME}.`;
 }
 
 /**

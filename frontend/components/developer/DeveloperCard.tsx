@@ -14,7 +14,7 @@ export function DeveloperCard({ developer }: DeveloperCardProps) {
   return (
     <Link
       href={ROUTES.DEVELOPER_DETAIL(developer.slug)}
-      className="group border-border hover:border-primary/40 flex flex-col gap-3 rounded-lg border p-4 transition-colors"
+      className="group bg-card ring-border flex flex-col gap-3 rounded-xl p-4 ring-1 transition-shadow duration-300 hover:shadow-lg"
     >
       <div className="flex items-center gap-3">
         <DeveloperAvatar

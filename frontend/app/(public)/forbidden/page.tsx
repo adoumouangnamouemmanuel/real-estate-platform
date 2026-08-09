@@ -3,10 +3,11 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { buttonVariants } from "@/components/ui/button";
+import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
 
 export const metadata: Metadata = {
-  title: "Access denied | ByTe",
+  title: `Access denied | ${APP_NAME}`,
 };
 
 export default function ForbiddenPage() {

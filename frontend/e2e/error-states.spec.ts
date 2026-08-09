@@ -9,7 +9,7 @@ test.describe("Not-found handling", () => {
     await expect(page.getByText("Page not found")).toBeVisible();
     // The (public) layout's chrome should still wrap the 404 — proves it's our
     // not-found.tsx, not Next's unstyled default.
-    await expect(page.getByRole("link", { name: "ByTe" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Lumavok" })).toBeVisible();
     await expect(page.getByText("All rights reserved")).toBeVisible();
   });
 
@@ -17,7 +17,7 @@ test.describe("Not-found handling", () => {
     await page.goto("/developers/this-slug-does-not-exist");
 
     await expect(page.getByText("Page not found")).toBeVisible();
-    await expect(page.getByRole("link", { name: "ByTe" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Lumavok" })).toBeVisible();
   });
 
   test("the 404 page's 'Back to home' link returns to the homepage", async ({

@@ -1,6 +1,6 @@
-# ByTe Frontend
+# Lumavok Frontend
 
-The Next.js web application for ByTe — a property discovery and trust platform for African
+The Next.js web application for Lumavok — a property discovery and trust platform for African
 markets. Public browsing, developer dashboards, and admin moderation all live in this workspace.
 See [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and
 [`docs/ByTe_RealEstate_Roadmap.md`](../docs/ByTe_RealEstate_Roadmap.md) at the repo root for the

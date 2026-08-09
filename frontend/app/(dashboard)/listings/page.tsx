@@ -6,6 +6,7 @@ import { DashboardPageContainer } from "@/components/dashboard/DashboardPageCont
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { ListingsView } from "@/components/dashboard/listings/ListingsView";
 import { Button } from "@/components/ui/button";
+import { APP_NAME } from "@/constants/config";
 import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
 import {
@@ -14,7 +15,7 @@ import {
 } from "@/lib/listingFilters";
 
 export const metadata: Metadata = {
-  title: "My Properties | ByTe",
+  title: `My Properties | ${APP_NAME}`,
   description: "Manage your property portfolio.",
 };
 

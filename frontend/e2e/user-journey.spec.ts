@@ -80,7 +80,7 @@ test.describe("Homepage → Search → Listing → Details → Developer journey
   }) => {
     for (const path of ["/", "/properties", "/developers", "/search"]) {
       await page.goto(path);
-      await expect(page.getByRole("link", { name: "ByTe" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Lumavok" })).toBeVisible();
       await expect(page.getByText("All rights reserved")).toBeVisible();
     }
   });

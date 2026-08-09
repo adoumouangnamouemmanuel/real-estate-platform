@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 
 import { DevelopersView } from "@/components/developer/DevelopersView";
+import { APP_NAME } from "@/constants/config";
 import {
   parseDeveloperFilters,
   type RawDeveloperSearchParams,
 } from "@/lib/developerFilters";
 
 export const metadata: Metadata = {
-  title: "Developers | ByTe",
+  title: `Developers | ${APP_NAME}`,
   description: "Browse verified property developers across African markets.",
 };
 

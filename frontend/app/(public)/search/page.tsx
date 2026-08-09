@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 
 import { PropertiesView } from "@/components/property/PropertiesView";
+import { APP_NAME } from "@/constants/config";
 import {
   parsePropertyFilters,
   type RawPropertySearchParams,
 } from "@/lib/propertyFilters";
 
 export const metadata: Metadata = {
-  title: "Search | ByTe",
+  title: `Search | ${APP_NAME}`,
   description: "Search property listings across African markets.",
 };
 

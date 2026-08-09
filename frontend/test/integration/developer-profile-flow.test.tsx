@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DeveloperProfileView } from "@/components/developer/DeveloperProfileView";
 import { makeDeveloperProfile, makeProperty } from "@/test/fixtures";
+import { renderWithQueryClient } from "@/test/renderWithQueryClient";
 
 describe("Developer profile flow", () => {
   it("renders bio, stats, contact, and active listings together", () => {
@@ -19,7 +20,7 @@ describe("Developer profile flow", () => {
       makeProperty({ id: "p1", title: "Active Listing" }),
     ];
 
-    render(
+    renderWithQueryClient(
       <DeveloperProfileView
         developer={developer}
         activeListings={activeListings}
@@ -41,7 +42,7 @@ describe("Developer profile flow", () => {
   it("renders Featured Properties only when there are featured listings", () => {
     const developer = makeDeveloperProfile();
 
-    const { rerender } = render(
+    const { rerender } = renderWithQueryClient(
       <DeveloperProfileView
         developer={developer}
         activeListings={[]}
@@ -70,7 +71,7 @@ describe("Developer profile flow", () => {
       socialLinks: { website: "https://example.com" },
     });
 
-    render(
+    renderWithQueryClient(
       <DeveloperProfileView
         developer={developer}
         activeListings={[]}
@@ -88,7 +89,7 @@ describe("Developer profile flow", () => {
   });
 
   it("shows the map placeholder while FEATURES.MAP_VIEW is off", () => {
-    render(
+    renderWithQueryClient(
       <DeveloperProfileView
         developer={makeDeveloperProfile()}
         activeListings={[]}
@@ -100,7 +101,7 @@ describe("Developer profile flow", () => {
   });
 
   it("shows the empty-listings message when the developer has no active listings", () => {
-    render(
+    renderWithQueryClient(
       <DeveloperProfileView
         developer={makeDeveloperProfile()}
         activeListings={[]}

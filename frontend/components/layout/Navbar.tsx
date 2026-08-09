@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { NavbarAuthSection } from "@/components/layout/NavbarAuthSection";
+import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
 
 const NAV_LINKS = [
@@ -17,7 +18,7 @@ export function Navbar() {
           href={ROUTES.HOME}
           className="text-lg font-semibold tracking-tight"
         >
-          ByTe
+          {APP_NAME}
         </Link>
         <ul className="flex flex-wrap items-center gap-6 text-sm">
           {NAV_LINKS.map((link) => (

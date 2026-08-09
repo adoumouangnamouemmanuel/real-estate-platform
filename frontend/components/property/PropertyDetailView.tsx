@@ -1,13 +1,15 @@
-import { MessageCircle } from "lucide-react";
+import { Bath, Bed, MessageCircle, Ruler } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ShareButton } from "@/components/common/ShareButton";
 import { WhatsAppCTA } from "@/components/common/WhatsAppCTA";
 import { DeveloperInfoCard } from "@/components/developer/DeveloperInfoCard";
+import { FavoriteButton } from "@/components/property/FavoriteButton";
 import { PropertyAmenities } from "@/components/property/PropertyAmenities";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { PropertyLocation } from "@/components/property/PropertyLocation";
 import { PropertyMediaGallery } from "@/components/property/PropertyMediaGallery";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/constants/features";
 import { formatPrice } from "@/lib/formatters";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
@@ -28,14 +30,24 @@ export function PropertyDetailView({
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
-          <header className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">
-                {property.listingType === "SALE" ? "For Sale" : "For Rent"}
-              </Badge>
-              <span className="text-muted-foreground text-sm">
-                {property.city}, {property.region}
-              </span>
+          <header className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">
+                  {property.listingType === "SALE" ? "For Sale" : "For Rent"}
+                </Badge>
+                <span className="text-muted-foreground text-sm">
+                  {property.city}, {property.region}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShareButton title={property.title} className="size-11" />
+                <FavoriteButton
+                  propertyId={property.id}
+                  propertyTitle={property.title}
+                  size="lg"
+                />
+              </div>
             </div>
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
               {property.title}
@@ -49,6 +61,31 @@ export function PropertyDetailView({
                 </span>
               )}
             </p>
+
+            {(property.bedrooms !== undefined ||
+              property.bathrooms !== undefined ||
+              property.areaSqm !== undefined) && (
+              <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
+                {property.bedrooms !== undefined && (
+                  <span className="flex items-center gap-1.5">
+                    <Bed className="size-4" aria-hidden />
+                    {property.bedrooms} Bedrooms
+                  </span>
+                )}
+                {property.bathrooms !== undefined && (
+                  <span className="flex items-center gap-1.5">
+                    <Bath className="size-4" aria-hidden />
+                    {property.bathrooms} Bathrooms
+                  </span>
+                )}
+                {property.areaSqm !== undefined && (
+                  <span className="flex items-center gap-1.5">
+                    <Ruler className="size-4" aria-hidden />
+                    {property.areaSqm} m²
+                  </span>
+                )}
+              </div>
+            )}
           </header>
 
           <section className="flex flex-col gap-2">
@@ -71,7 +108,7 @@ export function PropertyDetailView({
           </section>
         </div>
 
-        <aside className="flex flex-col gap-4">
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:h-fit lg:self-start">
           <h2 className="text-lg font-semibold">Contact</h2>
           <DeveloperInfoCard developer={property.developer} />
           {isFeatureEnabled("WHATSAPP_CONTACT") ? (
