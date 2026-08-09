@@ -114,8 +114,7 @@ test.describe("Property Editor (Phase 6.3)", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("DRAFT");
 
     const firstRow = page.getByRole("row").nth(1);
-    await firstRow.getByRole("button", { name: /Actions for/ }).click();
-    await page.getByRole("menuitem", { name: "Edit listing" }).click();
+    await firstRow.getByRole("link", { name: /Edit/ }).click();
 
     await expect(page).toHaveURL(/\/listings\/.+\/edit/);
     await page.getByRole("button", { name: "Delete" }).click();
@@ -136,8 +135,7 @@ test.describe("Property Editor (Phase 6.3)", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("ACTIVE");
 
     const firstRow = page.getByRole("row").nth(1);
-    await firstRow.getByRole("button", { name: /Actions for/ }).click();
-    await page.getByRole("menuitem", { name: "Edit listing" }).click();
+    await firstRow.getByRole("link", { name: /Edit/ }).click();
 
     await expect(page).toHaveURL(/\/listings\/.+\/edit/);
     // Published listings show an explicit Save button, no autosave status text.

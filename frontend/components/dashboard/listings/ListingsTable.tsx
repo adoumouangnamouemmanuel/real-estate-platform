@@ -1,12 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { MoreHorizontal } from "lucide-react";
+import { Building2, MoreHorizontal, Pencil } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { PropertyStatusBadge } from "@/components/dashboard/StatusBadge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -97,50 +98,56 @@ function RowActions({
   const deletable = canDeleteListing(property.status);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`Actions for ${property.title}`}
-        disabled={disabled}
-        className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+    <div className="flex items-center justify-end gap-1">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        disabled={disabled || !canEdit}
+        aria-label={`Edit ${property.title}`}
+        title={canEdit ? "Edit listing" : "Edit listing (soon)"}
+        {...(canEdit
+          ? { render: <Link href={ROUTES.EDIT_LISTING(property.slug)} /> }
+          : {})}
       >
-        <MoreHorizontal />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          render={<Link href={ROUTES.PROPERTY_DETAIL(property.slug)} />}
+        <Pencil />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={`Actions for ${property.title}`}
+          disabled={disabled}
+          className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
         >
-          View listing
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={!canEdit}
-          {...(canEdit
-            ? { render: <Link href={ROUTES.EDIT_LISTING(property.slug)} /> }
-            : {})}
-        >
-          {canEdit ? "Edit listing" : "Edit listing (soon)"}
-        </DropdownMenuItem>
-        {transitions.length > 0 && <DropdownMenuSeparator />}
-        {transitions.map((transition) => (
+          <MoreHorizontal />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
           <DropdownMenuItem
-            key={transition.target}
-            onClick={() => onStatusChange(property, transition)}
+            render={<Link href={ROUTES.PROPERTY_DETAIL(property.slug)} />}
           >
-            {transition.label}
+            View listing
           </DropdownMenuItem>
-        ))}
-        {deletable && (
-          <>
-            <DropdownMenuSeparator />
+          {transitions.length > 0 && <DropdownMenuSeparator />}
+          {transitions.map((transition) => (
             <DropdownMenuItem
-              variant="destructive"
-              onClick={() => onDeleteRequest(property)}
+              key={transition.target}
+              onClick={() => onStatusChange(property, transition)}
             >
-              Delete
+              {transition.label}
             </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          ))}
+          {deletable && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => onDeleteRequest(property)}
+              >
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
@@ -239,12 +246,31 @@ export function ListingsTable({
               />
             </TableCell>
             <TableCell>
-              <span className="block max-w-[28ch] truncate font-medium">
-                {property.title}
-              </span>
-              <span className="text-muted-foreground text-xs">
-                {property.city}, {property.region}
-              </span>
+              <div className="flex items-center gap-3">
+                <div className="bg-muted relative size-10 shrink-0 overflow-hidden rounded-md">
+                  {property.media[0] ? (
+                    <Image
+                      src={property.media[0].url}
+                      alt=""
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="text-muted-foreground flex h-full w-full items-center justify-center">
+                      <Building2 className="size-4" aria-hidden />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <span className="block max-w-[24ch] truncate font-medium">
+                    {property.title}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {property.city}, {property.region}
+                  </span>
+                </div>
+              </div>
             </TableCell>
             <TableCell className="text-muted-foreground">
               {property.listingType === "SALE" ? "For Sale" : "For Rent"}
@@ -291,21 +317,43 @@ function ListingsTableSkeleton() {
           </TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody>
-        <TableRow>
-          <TableCell colSpan={COLUMN_COUNT} className="p-0">
-            <div
-              role="status"
-              aria-live="polite"
-              className="flex flex-col gap-2 p-4"
-            >
-              <span className="sr-only">Loading properties…</span>
-              {Array.from({ length: 6 }).map((_, index) => (
-                <Skeleton key={index} className="h-10 w-full" aria-hidden />
-              ))}
-            </div>
+      <TableBody role="status" aria-live="polite">
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="sr-only">
+            Loading properties…
           </TableCell>
         </TableRow>
+        {Array.from({ length: 6 }).map((_, index) => (
+          <TableRow key={index} aria-hidden className="hover:bg-transparent">
+            <TableCell className="px-4">
+              <Skeleton className="size-4 rounded-sm" />
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-10 shrink-0 rounded-md" />
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-14" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-20" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-16" />
+            </TableCell>
+            <TableCell className="px-4">
+              <Skeleton className="ml-auto h-7 w-14" />
+            </TableCell>
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   );

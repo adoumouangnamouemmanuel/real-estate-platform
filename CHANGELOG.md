@@ -8,6 +8,19 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Changed
 
+- **My Properties Polish.** Added a real property thumbnail (existing demo
+  imagery, `next/image`) to each row in the listings table. Promoted Edit
+  to a direct, always-visible icon button per row instead of requiring the
+  "…" menu to be opened first — View, status transitions, and Delete remain
+  in that menu, with Delete still visually separated and destructive-styled.
+  Replaced the single-bar loading skeleton with row-shaped skeletons that
+  mirror the real table's columns. Fixed a real accessibility gap found via
+  live DOM inspection: `<th>` elements had no `scope="col"` — fixed at the
+  shared `TableHead` primitive so every table in the app benefits, not just
+  this one. Added a subtle fade/slide-in to the bulk actions bar's
+  appearance (respects `prefers-reduced-motion` via the existing global
+  override).
+
 - **Dashboard Home Transformation.** Reordered the developer dashboard's
   landing page around Understand → Manage → Act: a new `DashboardActionNeeded`
   section (new appointment requests, overdue requests, stale drafts,

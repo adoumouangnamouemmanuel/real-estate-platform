@@ -30,7 +30,7 @@ export function ListingsBulkActionsBar({
     <div
       role="toolbar"
       aria-label="Bulk actions"
-      className="border-border bg-muted/50 flex flex-wrap items-center gap-3 rounded-lg border p-3"
+      className="border-border bg-muted/50 animate-in fade-in slide-in-from-top-1 flex flex-wrap items-center gap-3 rounded-lg border p-3 duration-200"
     >
       <span className="text-sm font-medium">{selectedCount} selected</span>
       <div className="ml-auto flex flex-wrap gap-2">

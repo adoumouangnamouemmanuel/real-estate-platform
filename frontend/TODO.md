@@ -363,6 +363,11 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   row, and two real bugs fixed along the way: the shared `Tabs` primitive's
   broken orientation variant, and the dashboard sidebar's active-nav-state
   color never having picked up the brand teal. See CHANGELOG.md for detail.
+- **My Properties Polish** — property thumbnails in the listings table, a
+  direct always-visible Edit action per row (previously buried in the "…"
+  menu), a table-shaped loading skeleton, and a `scope="col"` fix on the
+  shared `TableHead` primitive (benefits every table in the app). See
+  CHANGELOG.md for detail.
 
 ## In Progress
 
