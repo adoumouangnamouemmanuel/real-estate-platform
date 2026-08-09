@@ -32,6 +32,13 @@ export function useRecentListings(limit = 5) {
   });
 }
 
+export function useDashboardActionNeeded() {
+  return useQuery({
+    queryKey: ["dashboard", "action-needed"],
+    queryFn: () => dashboardService.getActionNeeded(),
+  });
+}
+
 export function useAppointmentOverview() {
   return useQuery({
     queryKey: ["dashboard", "appointments"],

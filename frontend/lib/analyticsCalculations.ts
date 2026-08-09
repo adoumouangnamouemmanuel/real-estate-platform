@@ -29,7 +29,8 @@ const PERIOD_DAYS: Record<AnalyticsPeriod, number> = {
 };
 
 /** Stale draft threshold — a draft untouched this long shows up in Action Needed. Not user-configurable today; revisit if that's ever requested. */
-const STALE_DRAFT_DAYS = 5;
+/** Exported so Dashboard Home's own Action Needed (lib/dashboardActionNeeded.ts) can't define "stale" differently. */
+export const STALE_DRAFT_DAYS = 5;
 
 /** Minimum requested-cohort size before a cancellation rate is trustworthy enough to flag — otherwise "1 of 2 cancelled" reads as a 50% crisis. */
 const MIN_SAMPLE_FOR_CANCELLATION_FLAG = 5;
@@ -170,7 +171,7 @@ export function buildPortfolioComposition(
   };
 }
 
-function isStaleDraft(property: Property, now: Date): boolean {
+export function isStaleDraft(property: Property, now: Date): boolean {
   if (property.status !== "DRAFT" || !property.updatedAt) return false;
   const ageMs = now.getTime() - new Date(property.updatedAt).getTime();
   return ageMs > STALE_DRAFT_DAYS * 24 * 60 * 60 * 1000;

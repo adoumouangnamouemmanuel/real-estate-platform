@@ -7,8 +7,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
 import type { FeatureFlag } from "@/constants/features";
@@ -54,51 +54,52 @@ const QUICK_ACTIONS: QuickAction[] = [
   },
 ];
 
-const TILE_BASE =
-  "flex items-center gap-3 rounded-lg border p-3 text-sm font-medium transition-colors";
-
+/**
+ * A compact inline row, not its own card — a dedicated equal-height panel
+ * for 4 small buttons left a large dead white area next to Recent Listings
+ * (see the Dashboard UX audit). Sits directly under the welcome header
+ * instead, where "jump straight to what you need" reads as a toolbar, not a
+ * destination in its own right.
+ */
 export function QuickActions() {
   return (
-    <DashboardSection
-      title="Quick Actions"
-      description="Jump straight to what you need."
+    <div
+      aria-label="Quick actions"
+      className="flex flex-wrap items-center gap-2"
     >
-      <ul className="grid gap-3 sm:grid-cols-2">
-        {QUICK_ACTIONS.map((action) => {
-          const Icon = action.icon;
-          const enabled = !action.flag || isFeatureEnabled(action.flag);
+      {QUICK_ACTIONS.map((action, index) => {
+        const Icon = action.icon;
+        const enabled = !action.flag || isFeatureEnabled(action.flag);
 
+        if (!enabled) {
           return (
-            <li key={action.label}>
-              {enabled ? (
-                <Link
-                  href={action.href}
-                  className={`${TILE_BASE} border-border hover:border-primary/40 hover:bg-muted/50`}
-                >
-                  <Icon
-                    className="text-muted-foreground size-4.5"
-                    aria-hidden
-                  />
-                  {action.label}
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  title={`${action.label} — coming soon`}
-                  className={`${TILE_BASE} border-border text-muted-foreground w-full justify-between opacity-60`}
-                >
-                  <span className="flex items-center gap-3">
-                    <Icon className="size-4.5" aria-hidden />
-                    {action.label}
-                  </span>
-                  <Badge variant="outline">Soon</Badge>
-                </button>
-              )}
-            </li>
+            <Button
+              key={action.label}
+              type="button"
+              variant="outline"
+              disabled
+              title={`${action.label} — coming soon`}
+              className="gap-2"
+            >
+              <Icon aria-hidden />
+              {action.label}
+              <Badge variant="outline">Soon</Badge>
+            </Button>
           );
-        })}
-      </ul>
-    </DashboardSection>
+        }
+
+        return (
+          <Button
+            key={action.label}
+            variant={index === 0 ? "default" : "outline"}
+            render={<Link href={action.href} />}
+            className="gap-2"
+          >
+            <Icon aria-hidden />
+            {action.label}
+          </Button>
+        );
+      })}
+    </div>
   );
 }

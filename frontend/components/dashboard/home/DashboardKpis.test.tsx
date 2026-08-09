@@ -28,7 +28,7 @@ const metrics = {
 describe("DashboardKpis", () => {
   beforeEach(() => getMetrics.mockReset());
 
-  it("renders all six KPI tiles once metrics resolve", async () => {
+  it("renders the four portfolio-health KPI tiles once metrics resolve", async () => {
     getMetrics.mockResolvedValue(metrics);
 
     renderWithQueryClient(<DashboardKpis />);
@@ -38,9 +38,19 @@ describe("DashboardKpis", () => {
     );
     expect(screen.getByText("Active Listings")).toBeInTheDocument();
     expect(screen.getByText("Draft Listings")).toBeInTheDocument();
-    expect(screen.getByText("Appointment Requests")).toBeInTheDocument();
-    expect(screen.getByText("Unread Notifications")).toBeInTheDocument();
     expect(screen.getByText("Total Property Views")).toBeInTheDocument();
+  });
+
+  it("does not duplicate the time-sensitive counts DashboardActionNeeded now owns", async () => {
+    getMetrics.mockResolvedValue(metrics);
+
+    renderWithQueryClient(<DashboardKpis />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Total Properties")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Appointment Requests")).not.toBeInTheDocument();
+    expect(screen.queryByText("Unread Notifications")).not.toBeInTheDocument();
   });
 
   it("compacts the large view count", async () => {

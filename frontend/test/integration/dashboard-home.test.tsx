@@ -26,6 +26,7 @@ vi.mock("@/services", async (importOriginal) => {
       getSummary: vi.fn(),
       getMetrics: vi.fn(),
       getRecentListings: vi.fn(),
+      getActionNeeded: vi.fn(),
       getAppointmentOverview: vi.fn(),
       getNotifications: vi.fn(),
       getActivity: vi.fn(),
@@ -109,6 +110,16 @@ describe("Dashboard Home page (all widgets composed)", () => {
     });
     svc.getMetrics.mockResolvedValue(metrics);
     svc.getRecentListings.mockResolvedValue([listing]);
+    svc.getActionNeeded.mockResolvedValue([
+      {
+        type: "NEW_APPOINTMENT_REQUESTS",
+        severity: "medium",
+        title: "2 new appointment requests",
+        description: "Confirm or decline these viewing requests.",
+        count: 2,
+        href: "/appointments?status=REQUESTED",
+      },
+    ]);
     svc.getAppointmentOverview.mockResolvedValue({
       upcoming: [appointment],
       requested: [],
@@ -129,6 +140,7 @@ describe("Dashboard Home page (all widgets composed)", () => {
       expect(screen.getByText("Total Properties")).toBeInTheDocument(),
     );
     expect(screen.getByText("Atlantic Properties")).toBeInTheDocument();
+    expect(screen.getByText("2 new appointment requests")).toBeInTheDocument();
     expect(
       screen.getByText("Luxury 3BR Apartment in East Legon"),
     ).toBeInTheDocument();
@@ -146,6 +158,7 @@ describe("Dashboard Home page (all widgets composed)", () => {
     svc.getSummary.mockRejectedValue(new Error("down"));
     svc.getMetrics.mockRejectedValue(new Error("down"));
     svc.getRecentListings.mockRejectedValue(new Error("down"));
+    svc.getActionNeeded.mockRejectedValue(new Error("down"));
     svc.getAppointmentOverview.mockRejectedValue(new Error("down"));
     svc.getNotifications.mockRejectedValue(new Error("down"));
     svc.getActivity.mockRejectedValue(new Error("down"));
@@ -157,6 +170,9 @@ describe("Dashboard Home page (all widgets composed)", () => {
         screen.getByText("Couldn't load your metrics."),
       ).toBeInTheDocument(),
     );
+    expect(
+      screen.getByText("Couldn't load what needs your attention."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Couldn't load your listings."),
     ).toBeInTheDocument();

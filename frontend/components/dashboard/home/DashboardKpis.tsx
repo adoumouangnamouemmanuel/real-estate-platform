@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  Bell,
   BadgeCheck,
   Building2,
-  CalendarClock,
   Eye,
   FileText,
   type LucideIcon,
@@ -25,6 +23,14 @@ interface KpiSpec {
   compact?: boolean;
 }
 
+/**
+ * Portfolio-health stats only — time-sensitive counts (appointment requests,
+ * unread notifications) moved to DashboardActionNeeded/the Notifications
+ * panel, where they're actionable rather than just a number sitting next to
+ * "Total Properties" with identical visual weight (see the Dashboard UX
+ * audit). Every tile here answers "what do I have," never "what do I need
+ * to do."
+ */
 const KPIS: KpiSpec[] = [
   {
     key: "totalProperties",
@@ -45,18 +51,6 @@ const KPIS: KpiSpec[] = [
     hint: "Not yet published",
   },
   {
-    key: "appointmentRequests",
-    label: "Appointment Requests",
-    icon: CalendarClock,
-    hint: "Awaiting your response",
-  },
-  {
-    key: "unreadNotifications",
-    label: "Unread Notifications",
-    icon: Bell,
-    hint: "Since you last checked",
-  },
-  {
     key: "totalPropertyViews",
     label: "Total Property Views",
     icon: Eye,
@@ -65,7 +59,7 @@ const KPIS: KpiSpec[] = [
   },
 ];
 
-const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
+const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-4";
 
 /** The six headline KPI tiles, built on the shared StatCard primitive. */
 export function DashboardKpis() {

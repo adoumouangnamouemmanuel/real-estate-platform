@@ -357,6 +357,12 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   content-hiding scroll-reveal bug, three mismatched category images, a
   false "Verified developers only" claim, a button-size inconsistency, and
   an unbranded navbar link. See CHANGELOG.md for the full breakdown.
+- **Dashboard Home Transformation** — a new `DashboardActionNeeded` section
+  (shared `ActionNeededList`, promoted out of Analytics), a trimmed 4-tile
+  KPI grid, thumbnail imagery in Recent Listings, a compact `QuickActions`
+  row, and two real bugs fixed along the way: the shared `Tabs` primitive's
+  broken orientation variant, and the dashboard sidebar's active-nav-state
+  color never having picked up the brand teal. See CHANGELOG.md for detail.
 
 ## In Progress
 

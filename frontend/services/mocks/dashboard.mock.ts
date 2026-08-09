@@ -1,3 +1,4 @@
+import { buildPropertyMedia } from "@/lib/demoImagery";
 import type {
   ActivityItem,
   Appointment,
@@ -50,7 +51,7 @@ export const MOCK_DASHBOARD_LISTINGS: Property[] = [
     city: "Accra",
     region: "Greater Accra",
     status: "ACTIVE",
-    media: [],
+    media: buildPropertyMedia("apartment", 0, 1),
     updatedAt: hoursFromNow(-2),
   },
   {
@@ -65,7 +66,7 @@ export const MOCK_DASHBOARD_LISTINGS: Property[] = [
     city: "Ada Foah",
     region: "Greater Accra",
     status: "RESERVED",
-    media: [],
+    media: buildPropertyMedia("house", 0, 1),
     updatedAt: hoursFromNow(-20),
   },
   {
@@ -79,7 +80,7 @@ export const MOCK_DASHBOARD_LISTINGS: Property[] = [
     city: "Accra",
     region: "Greater Accra",
     status: "ACTIVE",
-    media: [],
+    media: buildPropertyMedia("office", 0, 1),
     updatedAt: hoursFromNow(-28),
   },
   {
@@ -94,7 +95,7 @@ export const MOCK_DASHBOARD_LISTINGS: Property[] = [
     city: "Accra",
     region: "Greater Accra",
     status: "DRAFT",
-    media: [],
+    media: buildPropertyMedia("apartment", 1, 1),
     updatedAt: daysFromNow(-2),
   },
   {
@@ -108,7 +109,7 @@ export const MOCK_DASHBOARD_LISTINGS: Property[] = [
     city: "Tema",
     region: "Greater Accra",
     status: "DRAFT",
-    media: [],
+    media: buildPropertyMedia("house", 1, 1),
     updatedAt: daysFromNow(-4),
   },
   {
@@ -122,7 +123,7 @@ export const MOCK_DASHBOARD_LISTINGS: Property[] = [
     city: "Accra",
     region: "Greater Accra",
     status: "SOLD",
-    media: [],
+    media: buildPropertyMedia("apartment", 2, 1),
     updatedAt: daysFromNow(-6),
   },
 ];

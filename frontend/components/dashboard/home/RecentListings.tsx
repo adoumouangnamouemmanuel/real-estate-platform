@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Building2, MoreHorizontal } from "lucide-react";
 
@@ -107,12 +108,31 @@ export function RecentListings() {
             {data.map((property) => (
               <TableRow key={property.id}>
                 <TableCell className="px-4">
-                  <span className="block max-w-[22ch] truncate font-medium">
-                    {property.title}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    {property.city} · {formatPrice(property.price)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-muted relative size-10 shrink-0 overflow-hidden rounded-md">
+                      {property.media[0] ? (
+                        <Image
+                          src={property.media[0].url}
+                          alt=""
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="text-muted-foreground flex h-full w-full items-center justify-center">
+                          <Building2 className="size-4" aria-hidden />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block max-w-[20ch] truncate font-medium">
+                        {property.title}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {property.city} · {formatPrice(property.price)}
+                      </span>
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <PropertyStatusBadge status={property.status} />

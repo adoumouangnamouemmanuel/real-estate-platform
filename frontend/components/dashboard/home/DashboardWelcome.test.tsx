@@ -11,17 +11,15 @@ vi.mock("@/services", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services")>();
   return {
     ...actual,
-    dashboardService: { getSummary: vi.fn(), getMetrics: vi.fn() },
+    dashboardService: { getSummary: vi.fn() },
   };
 });
 
 const getSummary = vi.mocked(dashboardService.getSummary);
-const getMetrics = vi.mocked(dashboardService.getMetrics);
 
 describe("DashboardWelcome", () => {
   beforeEach(() => {
     getSummary.mockReset();
-    getMetrics.mockReset();
     useAuthStore.getState().setAuth(
       {
         id: "u2",
@@ -38,14 +36,6 @@ describe("DashboardWelcome", () => {
       developerName: "Kwame Mensah",
       companyName: "Atlantic Properties",
     });
-    getMetrics.mockResolvedValue({
-      totalProperties: 6,
-      activeListings: 2,
-      draftListings: 2,
-      appointmentRequests: 2,
-      unreadNotifications: 3,
-      totalPropertyViews: 3742,
-    });
 
     renderWithQueryClient(<DashboardWelcome />);
 
@@ -54,18 +44,10 @@ describe("DashboardWelcome", () => {
     );
   });
 
-  it("surfaces the company name and the pending-work summary from the service", async () => {
+  it("surfaces the company name from the service", async () => {
     getSummary.mockResolvedValue({
       developerName: "Kwame Mensah",
       companyName: "Atlantic Properties",
-    });
-    getMetrics.mockResolvedValue({
-      totalProperties: 6,
-      activeListings: 2,
-      draftListings: 2,
-      appointmentRequests: 1,
-      unreadNotifications: 3,
-      totalPropertyViews: 3742,
     });
 
     renderWithQueryClient(<DashboardWelcome />);
@@ -73,8 +55,5 @@ describe("DashboardWelcome", () => {
     await waitFor(() =>
       expect(screen.getByText("Atlantic Properties")).toBeInTheDocument(),
     );
-    // Singular noun when exactly one request is pending.
-    expect(screen.getByText("1 new appointment request")).toBeInTheDocument();
-    expect(screen.getByText("3 unread notifications")).toBeInTheDocument();
   });
 });

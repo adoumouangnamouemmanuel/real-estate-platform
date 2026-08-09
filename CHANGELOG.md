@@ -8,6 +8,28 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Changed
 
+- **Dashboard Home Transformation.** Reordered the developer dashboard's
+  landing page around Understand → Manage → Act: a new `DashboardActionNeeded`
+  section (new appointment requests, overdue requests, stale drafts,
+  suspended listings — computed by `lib/dashboardActionNeeded.ts`, reusing
+  Analytics' own `isOverdueAppointment`/`isStaleDraft` predicates and
+  severity thresholds so the two surfaces can't define "overdue"/"stale"
+  differently) now renders directly under the welcome header, above the KPI
+  grid. `AnalyticsActionNeeded` was promoted into a shared
+  `components/dashboard/ActionNeededList.tsx` rather than duplicated.
+  `DashboardKpis` trimmed from six tiles to four (dropped the two
+  time-sensitive counts now owned by Action Needed); `DashboardWelcome` no
+  longer duplicates them in its own summary sentence. `QuickActions` is now a
+  compact inline button row instead of a tall, mostly-empty card.
+  `RecentListings` rows show a real property thumbnail. Also fixed two
+  pre-existing bugs found via the audit's actual screenshots: the shared
+  `Tabs` primitive's `data-horizontal`/`data-vertical` Tailwind variants
+  targeted the wrong attribute name (`data-orientation` sets the value, not
+  the attribute name), so `AppointmentOverview`'s tabs rendered as a row
+  instead of stacking; and `--sidebar-primary`/`--sidebar-ring` were never
+  updated when the brand teal was introduced, leaving the dashboard shell's
+  active nav state on the old grayscale default.
+
 - **Premium Public Experience Transformation + Review.** Redesigned the
   homepage (immersive hero, category explorer, Featured/Trending/Land
   sections, a restrained trust section), `PropertyCard` (real demo imagery,

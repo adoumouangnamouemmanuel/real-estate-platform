@@ -1,6 +1,6 @@
 "use client";
 
-import { AnalyticsActionNeeded } from "@/components/dashboard/analytics/AnalyticsActionNeeded";
+import { ActionNeededList } from "@/components/dashboard/ActionNeededList";
 import { AnalyticsPeriodSelector } from "@/components/dashboard/analytics/AnalyticsPeriodSelector";
 import { AnalyticsStatsRow } from "@/components/dashboard/analytics/AnalyticsStatsRow";
 import { AppointmentFunnelChart } from "@/components/dashboard/analytics/AppointmentFunnelChart";
@@ -38,9 +38,10 @@ export function AnalyticsView({ period }: AnalyticsViewProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <AnalyticsActionNeeded
+      <ActionNeededList
         items={data?.actionNeeded ?? []}
         isLoading={isLoading}
+        emptyDescription="You're caught up on appointments and drafts."
       />
 
       <div className="flex justify-end">

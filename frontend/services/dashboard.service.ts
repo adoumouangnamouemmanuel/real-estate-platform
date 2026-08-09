@@ -1,4 +1,6 @@
+import { buildDashboardActionNeeded } from "@/lib/dashboardActionNeeded";
 import type {
+  ActionNeededItem,
   ActivityItem,
   AppointmentOverview,
   DashboardMetrics,
@@ -54,6 +56,21 @@ export const dashboardService = {
 
   getRecentListings: (limit = 5): Promise<Property[]> =>
     delay(MOCK_DASHBOARD_LISTINGS.slice(0, limit)),
+
+  /**
+   * "What needs my attention today" — the dashboard home's own first-class
+   * feature (see the Dashboard UX audit), computed via
+   * lib/dashboardActionNeeded.ts over this domain's own listings/appointments
+   * rather than Analytics'/Appointments' separate copies.
+   */
+  getActionNeeded: (): Promise<ActionNeededItem[]> =>
+    delay(
+      buildDashboardActionNeeded(
+        MOCK_DASHBOARD_LISTINGS,
+        MOCK_APPOINTMENTS,
+        new Date(),
+      ),
+    ),
 
   getAppointmentOverview: (): Promise<AppointmentOverview> => {
     const bySoonest = (
