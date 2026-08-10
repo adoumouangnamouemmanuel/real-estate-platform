@@ -77,9 +77,9 @@ describe("validateForPublish", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors.some((message) => message.includes("photo"))).toBe(
-        true,
-      );
+      expect(
+        result.errors.some((issue) => issue.message.includes("photo")),
+      ).toBe(true);
     }
   });
 
