@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { NotificationCategoryBadge } from "@/components/dashboard/StatusBadge";
@@ -44,8 +46,8 @@ function NotificationCard({
   return (
     <li
       className={cn(
-        "border-border flex gap-3 rounded-lg border p-3",
-        isUnread && "bg-muted/50",
+        "border-border flex gap-3 rounded-lg border border-l-4 p-3 transition-colors",
+        isUnread ? "bg-muted/50 border-l-primary" : "border-l-transparent",
       )}
     >
       <span className="bg-muted text-muted-foreground mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full">
@@ -61,7 +63,7 @@ function NotificationCard({
           {isUnread && (
             <>
               <span
-                className="size-2 shrink-0 rounded-full bg-sky-500"
+                className="bg-primary size-2 shrink-0 rounded-full"
                 aria-hidden
               />
               <span className="sr-only">Unread: </span>
@@ -82,16 +84,27 @@ function NotificationCard({
         </time>
       </button>
 
-      {isUnread && (
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={isPending}
-          onClick={() => onMarkAsRead(notification.id)}
-        >
-          Mark as read
-        </Button>
-      )}
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        {notification.link && (
+          <Button
+            variant="outline"
+            size="sm"
+            render={<Link href={notification.link} />}
+          >
+            View
+          </Button>
+        )}
+        {isUnread && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isPending}
+            onClick={() => onMarkAsRead(notification.id)}
+          >
+            Mark as read
+          </Button>
+        )}
+      </div>
     </li>
   );
 }

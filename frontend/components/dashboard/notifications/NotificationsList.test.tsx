@@ -57,6 +57,28 @@ describe("NotificationsList", () => {
     ).toHaveLength(1);
   });
 
+  it("offers a direct View link when a notification carries a deep link, for both read and unread cards", () => {
+    const withLink: Notification = makeNotification({
+      id: "n3",
+      title: "Linked one",
+      status: "READ",
+      link: "/appointments",
+    });
+    renderList({ notifications: [unread, withLink] });
+
+    const viewLinks = screen.getAllByRole("link", { name: "View" });
+    expect(viewLinks).toHaveLength(1);
+    expect(viewLinks[0]).toHaveAttribute("href", "/appointments");
+  });
+
+  it("shows no View link when a notification has no deep link", () => {
+    renderList();
+
+    expect(
+      screen.queryByRole("link", { name: "View" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("dispatches onOpenDetails when a card is clicked", async () => {
     const user = userEvent.setup();
     const onOpenDetails = vi.fn();
