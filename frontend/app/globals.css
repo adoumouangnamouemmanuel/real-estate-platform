@@ -50,6 +50,13 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.32 0.06 217 / 0.5);
+  /* The dashboard shell's layout contract for the mobile bottom nav (see
+     DashboardShell): its own height, the bottom clearance every dashboard
+     page's <main> reserves below `md`, and the offset any page-level sticky/
+     fixed bottom element (e.g. ListingPublishBar) must add on top of its own
+     `bottom-0` so the nav never renders over it. One number, three
+     consumers — change it here, not in each consumer. */
+  --dashboard-mobile-nav-h: 3.5rem;
 }
 
 @theme inline {
@@ -97,6 +104,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --spacing-dashboard-mobile-nav: var(--dashboard-mobile-nav-h);
 }
 
 @utility container-page {

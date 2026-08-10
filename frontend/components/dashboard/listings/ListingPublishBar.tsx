@@ -51,7 +51,7 @@ export function ListingPublishBar({
   onBack,
 }: ListingPublishBarProps) {
   return (
-    <div className="bg-background/95 border-border sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 backdrop-blur-sm">
+    <div className="bg-background/95 border-border sticky bottom-dashboard-mobile-nav z-10 flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 backdrop-blur-sm md:bottom-0">
       <div className="flex items-center gap-3">
         <Button type="button" variant="ghost" size="sm" onClick={onBack}>
           Back to My Properties

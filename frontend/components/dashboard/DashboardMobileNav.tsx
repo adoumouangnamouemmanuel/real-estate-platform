@@ -57,7 +57,7 @@ export function DashboardMobileNav() {
   return (
     <nav
       aria-label="Dashboard"
-      className="border-border bg-background fixed inset-x-0 bottom-0 z-40 flex border-t md:hidden"
+      className="border-border bg-background min-h-dashboard-mobile-nav fixed inset-x-0 bottom-0 z-40 flex border-t md:hidden"
     >
       {primaryItems.map((item) => {
         const Icon = item.icon;
