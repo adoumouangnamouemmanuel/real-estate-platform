@@ -57,7 +57,9 @@ export type ListingFormValues = z.infer<typeof listingSchema>;
  */
 export const publishListingSchema = listingSchema.extend({
   description: z.string().trim().min(1, "Add a description before publishing."),
-  price: z.number().positive("Add a price before publishing."),
+  price: z
+    .number({ error: "Add a price before publishing." })
+    .positive("Add a price before publishing."),
   listingType: z.enum(["SALE", "RENT"], {
     error: "Choose Sale or Rent before publishing.",
   }),
@@ -72,13 +74,21 @@ export const publishListingSchema = listingSchema.extend({
     .min(1, "Add at least one photo before publishing."),
 });
 
+export interface PublishValidationIssue {
+  /** The top-level ListingFormValues key this issue belongs to — lets the UI
+   * scroll/focus the exact field, not just show the message. */
+  field: keyof ListingFormValues;
+  message: string;
+}
+
 export type PublishValidationResult =
-  { success: true } | { success: false; errors: string[] };
+  { success: true } | { success: false; errors: PublishValidationIssue[] };
 
 /**
- * Runs the stricter publish profile and returns a flat, human-readable error
- * list — used to build the "here's what's missing" summary the Publish button
- * shows instead of scattering zod's raw issue objects through the UI.
+ * Runs the stricter publish profile and returns a flat, human-readable list of
+ * (field, message) pairs — used to build the "here's what's missing" summary
+ * the Publish button shows instead of scattering zod's raw issue objects
+ * through the UI, and to let that summary jump straight to each field.
  */
 export function validateForPublish(
   values: ListingFormValues,
@@ -88,6 +98,9 @@ export function validateForPublish(
 
   return {
     success: false,
-    errors: result.error.issues.map((issue) => issue.message),
+    errors: result.error.issues.map((issue) => ({
+      field: issue.path[0] as keyof ListingFormValues,
+      message: issue.message,
+    })),
   };
 }

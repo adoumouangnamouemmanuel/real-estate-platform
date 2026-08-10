@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch, type Control } from "react-hook-form";
 import { toast } from "sonner";
 
 import { NavigationGuardDialog } from "@/components/common/NavigationGuardDialog";
+import { PropertyStatusBadge } from "@/components/dashboard/StatusBadge";
 import { DeleteListingDialog } from "@/components/dashboard/listings/DeleteListingDialog";
 import { ListingAmenitiesSection } from "@/components/dashboard/listings/ListingAmenitiesSection";
 import { ListingBasicsSection } from "@/components/dashboard/listings/ListingBasicsSection";
@@ -19,11 +20,14 @@ import { ListingLocationSection } from "@/components/dashboard/listings/ListingL
 import { ListingPricingSection } from "@/components/dashboard/listings/ListingPricingSection";
 import { ListingPublishBar } from "@/components/dashboard/listings/ListingPublishBar";
 import { MediaUploader } from "@/components/dashboard/listings/MediaUploader";
-import { ROUTES } from "@/constants/routes";
-import { useAutosaveListing } from "@/hooks/useAutosaveListing";
+import {
+  useAutosaveListing,
+  type AutosaveStatus,
+} from "@/hooks/useAutosaveListing";
 import { useCreateListing, useUpdateListing } from "@/hooks/useListingEditor";
 import { useDeleteListing, useUpdateListingStatus } from "@/hooks/useListings";
 import { useNavigationGuard } from "@/hooks/useNavigationGuard";
+import { ROUTES } from "@/constants/routes";
 import { getErrorMessage } from "@/lib/errors";
 import {
   listingSchema,
@@ -36,7 +40,68 @@ import {
   type ListingPatch,
   type StatusTransition,
 } from "@/services";
-import type { Property } from "@/types";
+import type { Property, PropertyStatus } from "@/types";
+
+/**
+ * The editor header's status line: current listing status, always, plus one
+ * gap the always-visible sticky action bar can't otherwise cover — the
+ * moment right after a keystroke, before autosave has even started trying
+ * (dirty, but still "idle"). Once autosave actually starts ("saving"),
+ * fails ("error"), or the listing is clean, the sticky bar already shows
+ * that same information every time it's on screen, so this line goes quiet
+ * rather than repeating it in a second place with different wording.
+ */
+function ListingEditorStatusLine({
+  status,
+  isDirty,
+  autosaveStatus,
+}: {
+  status: PropertyStatus;
+  isDirty: boolean;
+  autosaveStatus: AutosaveStatus;
+}) {
+  const showUnsaved = isDirty && autosaveStatus === "idle";
+
+  return (
+    <div className="flex items-center gap-2">
+      <PropertyStatusBadge status={status} />
+      {showUnsaved && (
+        <span aria-live="polite" className="text-muted-foreground text-sm">
+          Unsaved changes
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Isolates the full-form `useWatch` subscription publish readiness needs
+ * into its own leaf component. Subscribing at the `ListingFormInner` level
+ * instead would re-render every section (including the heavier
+ * `MediaUploader`) on every single keystroke, for no benefit — only this bar
+ * needs the live values.
+ */
+function ListingPublishBarConnected({
+  control,
+  isDraft,
+  ...rest
+}: {
+  control: Control<ListingFormValues>;
+  isDraft: boolean;
+} & Omit<React.ComponentProps<typeof ListingPublishBar>, "publishReadiness">) {
+  const watchedValues = useWatch({ control }) as ListingFormValues;
+  const publishReadiness = isDraft
+    ? validateForPublish(watchedValues)
+    : undefined;
+
+  return (
+    <ListingPublishBar
+      isDraft={isDraft}
+      publishReadiness={publishReadiness}
+      {...rest}
+    />
+  );
+}
 
 interface ListingFormProps {
   mode: "create" | "edit";
@@ -170,13 +235,11 @@ function ListingFormInner({
     setAutosaveStatus(autosaveStatus);
   }, [autosaveStatus, setAutosaveStatus]);
 
-  // Drafts only block navigation while a save is actually in flight or has
-  // failed — autosave otherwise means there's rarely anything meaningfully
-  // unsaved. Published listings (explicit-save mode) block on any dirty state.
-  const shouldBlockNavigation = isDraft
-    ? form.formState.isDirty &&
-      (autosaveStatus === "saving" || autosaveStatus === "error")
-    : form.formState.isDirty;
+  // Blocks on any dirty state, draft or published: a draft is "dirty" only
+  // for the brief window between a keystroke and the debounced autosave
+  // actually firing (or failing), and leaving during exactly that window
+  // would otherwise silently drop the change with no warning at all.
+  const shouldBlockNavigation = form.formState.isDirty;
 
   const {
     isDialogOpen: isNavGuardOpen,
@@ -216,7 +279,7 @@ function ListingFormInner({
   const handlePublish = form.handleSubmit(async (values) => {
     const validation = validateForPublish(values);
     if (!validation.success) {
-      toast.error(validation.errors[0]);
+      toast.error(validation.errors[0].message);
       return;
     }
 
@@ -258,6 +321,12 @@ function ListingFormInner({
 
   return (
     <FormProvider {...form}>
+      <ListingEditorStatusLine
+        status={currentStatus}
+        isDirty={form.formState.isDirty}
+        autosaveStatus={autosaveStatus}
+      />
+
       <form
         onSubmit={(event) => event.preventDefault()}
         className="flex flex-col gap-6 pb-4"
@@ -269,10 +338,11 @@ function ListingFormInner({
         <MediaUploader />
       </form>
 
-      <ListingPublishBar
+      <ListingPublishBarConnected
+        control={form.control}
+        isDraft={isDraft}
         status={currentStatus}
         autosaveStatus={autosaveStatus}
-        isDraft={isDraft}
         isSaving={isSavingExplicit}
         isTransitioning={updateStatus.isPending || isPublishing}
         transitions={getAvailableTransitions(currentStatus)}

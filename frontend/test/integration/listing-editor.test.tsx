@@ -8,7 +8,11 @@ import { listingService, uploadService } from "@/services";
 import { renderWithQueryClient } from "@/test/renderWithQueryClient";
 import type { Property } from "@/types";
 
-const DEBOUNCE_MS = 30;
+// Long enough that a real-timer userEvent.type() sequence reliably finishes
+// before the debounce fires (a too-short value here made autosave's own
+// re-render occasionally land mid-keystroke under load, dropping a
+// character — a test-timing issue, not an application bug).
+const DEBOUNCE_MS = 150;
 
 const push = vi.fn();
 const replace = vi.fn();
