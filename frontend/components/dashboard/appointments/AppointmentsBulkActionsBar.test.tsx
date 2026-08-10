@@ -80,4 +80,34 @@ describe("AppointmentsBulkActionsBar", () => {
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
   });
+
+  it("disables an action when none of the selection is eligible for it", () => {
+    render(
+      <AppointmentsBulkActionsBar
+        selectedCount={2}
+        onClearSelection={vi.fn()}
+        onBulkStatus={vi.fn()}
+        isPending={false}
+        selectedStatuses={["COMPLETED", "CANCELLED"]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  });
+
+  it("keeps an action enabled when at least one selected appointment is eligible", () => {
+    render(
+      <AppointmentsBulkActionsBar
+        selectedCount={2}
+        onClearSelection={vi.fn()}
+        onBulkStatus={vi.fn()}
+        isPending={false}
+        selectedStatuses={["REQUESTED", "COMPLETED"]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Confirm" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).not.toBeDisabled();
+  });
 });

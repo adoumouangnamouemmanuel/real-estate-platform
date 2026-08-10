@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatDateTime } from "@/lib/formatters";
 import type { Appointment } from "@/types";
 
 interface RescheduleDialogProps {
@@ -61,21 +62,32 @@ export function RescheduleDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-4">
-            <label
-              htmlFor="reschedule-datetime"
-              className="text-muted-foreground mb-1 block text-xs"
-            >
-              New date &amp; time
-            </label>
-            <input
-              id="reschedule-datetime"
-              type="datetime-local"
-              required
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              className="border-border bg-background h-9 w-full rounded-md border px-2 text-sm"
-            />
+          <div className="flex flex-col gap-3 p-4">
+            {appointment && (
+              <p className="text-muted-foreground text-sm">
+                Currently scheduled for{" "}
+                <span className="text-foreground font-medium">
+                  {formatDateTime(appointment.scheduledFor)}
+                </span>
+                .
+              </p>
+            )}
+            <div>
+              <label
+                htmlFor="reschedule-datetime"
+                className="text-muted-foreground mb-1 block text-xs"
+              >
+                New date &amp; time
+              </label>
+              <input
+                id="reschedule-datetime"
+                type="datetime-local"
+                required
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                className="border-border bg-background h-9 w-full rounded-md border px-2 text-sm"
+              />
+            </div>
           </div>
 
           <DialogFooter>

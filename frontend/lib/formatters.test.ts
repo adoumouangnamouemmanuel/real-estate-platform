@@ -6,6 +6,7 @@ import {
   formatDateTime,
   formatFullDate,
   formatRelativeTime,
+  formatTime,
 } from "./formatters";
 
 describe("formatCompactNumber", () => {
@@ -33,6 +34,10 @@ describe("date formatters", () => {
   it("includes the time in a date-time", () => {
     expect(formatDateTime(iso)).toMatch(/Jul 23, 2026/);
     expect(formatDateTime(iso)).toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it("formats just the time, with no date", () => {
+    expect(formatTime(iso)).toMatch(/^\d{1,2}:\d{2}\s?[AP]M$/);
   });
 });
 

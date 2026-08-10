@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CalendarClock } from "lucide-react";
 
 import { FilterChips } from "@/components/common/FilterChips";
 import { Pagination } from "@/components/common/Pagination";
@@ -10,6 +11,7 @@ import { AppointmentsFilterBar } from "@/components/dashboard/appointments/Appoi
 import { AppointmentsStatusSummary } from "@/components/dashboard/appointments/AppointmentsStatusSummary";
 import { AppointmentsTable } from "@/components/dashboard/appointments/AppointmentsTable";
 import { RescheduleDialog } from "@/components/dashboard/appointments/RescheduleDialog";
+import { Button } from "@/components/ui/button";
 import { useFilterNavigation } from "@/hooks/useFilterNavigation";
 import {
   useAppointments,
@@ -24,6 +26,42 @@ import type { Appointment, AppointmentStatus } from "@/types";
 
 interface AppointmentsViewProps {
   filters: GetAppointmentsParams;
+}
+
+/**
+ * A quiet, one-line "these need a response" prompt for the URGENT tier of the
+ * page's information hierarchy — reuses the existing `timeframe=overdue`
+ * filter (already backed by `isOverdueAppointment`, see appointment.service.ts)
+ * rather than computing overdue-ness a second time here. Hides itself once
+ * the developer is already looking at the overdue view, or once there's
+ * nothing overdue.
+ */
+function OverdueBanner({
+  isActive,
+  onView,
+}: {
+  isActive: boolean;
+  onView: () => void;
+}) {
+  const { data } = useAppointments({ timeframe: "overdue", pageSize: 1 });
+  const count = data?.total ?? 0;
+
+  if (isActive || count === 0) return null;
+
+  return (
+    <div className="border-destructive/30 bg-destructive/5 flex items-center gap-3 rounded-lg border p-3">
+      <CalendarClock className="text-destructive size-5 shrink-0" aria-hidden />
+      <p className="flex-1 text-sm">
+        <span className="font-medium">
+          {count} viewing request{count === 1 ? "" : "s"}
+        </span>{" "}
+        past their scheduled date with no response yet.
+      </p>
+      <Button variant="outline" size="sm" onClick={onView}>
+        View overdue
+      </Button>
+    </div>
+  );
 }
 
 /**
@@ -51,6 +89,13 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
   const rescheduleTarget = useMemo(
     () => data?.items.find((item) => item.id === rescheduleId) ?? null,
     [data, rescheduleId],
+  );
+  const selectedStatuses = useMemo(
+    () =>
+      (data?.items ?? [])
+        .filter((item) => selectedIds.has(item.id))
+        .map((item) => item.status),
+    [data, selectedIds],
   );
 
   const updateStatus = useUpdateAppointmentStatus();
@@ -126,6 +171,11 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      <OverdueBanner
+        isActive={filters.timeframe === "overdue"}
+        onView={() => handleFilterChange({ timeframe: "overdue" })}
+      />
+
       <AppointmentsStatusSummary
         activeStatus={filters.status}
         onSelectStatus={(status) => handleFilterChange({ status })}
@@ -142,6 +192,7 @@ export function AppointmentsView({ filters }: AppointmentsViewProps) {
         onClearSelection={() => setSelectedIds(new Set())}
         onBulkStatus={handleBulkStatus}
         isPending={bulkUpdateStatus.isPending}
+        selectedStatuses={selectedStatuses}
       />
 
       <AppointmentsTable

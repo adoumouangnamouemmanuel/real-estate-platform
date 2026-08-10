@@ -49,6 +49,14 @@ export function formatDateTime(input: string | number | Date) {
   }).format(new Date(input));
 }
 
+/** "2:30 PM" — for rows already grouped under a date header, where repeating the date would be redundant. */
+export function formatTime(input: string | number | Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(input));
+}
+
 const RELATIVE_UNITS: { unit: Intl.RelativeTimeFormatUnit; ms: number }[] = [
   { unit: "year", ms: 1000 * 60 * 60 * 24 * 365 },
   { unit: "month", ms: 1000 * 60 * 60 * 24 * 30 },

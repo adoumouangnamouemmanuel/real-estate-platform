@@ -103,7 +103,7 @@ test.describe("Appointments (Phase 6.4)", () => {
     await expect(page).not.toHaveURL(/q=/);
   });
 
-  test("confirms a requested appointment from its row action menu", async ({
+  test("confirms a requested appointment from its direct row action", async ({
     page,
   }) => {
     await loginAsDeveloper(page);
@@ -114,8 +114,9 @@ test.describe("Appointments (Phase 6.4)", () => {
     const firstRow = firstDataRow(page);
     const clientCell = await firstRow.locator("td").nth(1).innerText();
 
-    await firstRow.getByRole("button", { name: /Actions for/ }).click();
-    await page.getByRole("menuitem", { name: "Confirm" }).click();
+    await firstRow
+      .getByRole("button", { name: /^Confirm appointment with/ })
+      .click();
     await expect(
       page.getByText(`Appointment with ${clientCell} updated.`),
     ).toBeVisible();

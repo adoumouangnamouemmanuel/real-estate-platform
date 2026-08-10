@@ -1,12 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { MoreHorizontal } from "lucide-react";
+import {
+  CalendarClock,
+  Check,
+  Clock,
+  Home,
+  MoreHorizontal,
+} from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { AppointmentStatusBadge } from "@/components/dashboard/StatusBadge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -25,9 +31,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getErrorMessage } from "@/lib/errors";
-import { formatDate, formatDateTime } from "@/lib/formatters";
+import { formatDate, formatDateTime, formatTime } from "@/lib/formatters";
 import {
   AppointmentActionPolicy,
+  isOverdueAppointment,
   type AppointmentAction,
 } from "@/lib/appointmentActionPolicy";
 import type { Appointment } from "@/types";
@@ -125,33 +132,58 @@ function RowActions({
   onViewDetails: (appointment: Appointment) => void;
   disabled: boolean;
 }) {
-  const actions = AppointmentActionPolicy.getActions(appointment.status);
+  const allActions = AppointmentActionPolicy.getActions(appointment.status);
+  // REQUESTED's only forward-moving action — surfaced as a direct button
+  // (the same "promote the one obvious next step" treatment My Properties'
+  // row Edit action got) since it's the single unambiguous "what do I do
+  // next" answer for a fresh request. CONFIRMED/RESCHEDULED offer several
+  // actions of comparable weight (Reschedule/Complete/No-show/Cancel), so
+  // there's no one action to promote without second-guessing the developer's
+  // workflow — those stay in the menu, ordered exactly as the policy returns.
+  const confirmAction = allActions.find((action) => action.key === "CONFIRM");
+  const menuActions = confirmAction
+    ? allActions.filter((action) => action.key !== "CONFIRM")
+    : allActions;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`Actions for ${appointment.clientName}`}
-        disabled={disabled}
-        className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-      >
-        <MoreHorizontal />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onViewDetails(appointment)}>
-          View details
-        </DropdownMenuItem>
-        {actions.length > 0 && <DropdownMenuSeparator />}
-        {actions.map((action) => (
-          <DropdownMenuItem
-            key={action.key}
-            variant={action.key === "CANCEL" ? "destructive" : "default"}
-            onClick={() => onAction(appointment, action)}
-          >
-            {action.label}
+    <div className="flex items-center justify-end gap-1">
+      {confirmAction && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={disabled}
+          aria-label={`Confirm appointment with ${appointment.clientName}`}
+          title="Confirm"
+          onClick={() => onAction(appointment, confirmAction)}
+        >
+          <Check />
+        </Button>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={`Actions for ${appointment.clientName}`}
+          disabled={disabled}
+          className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+        >
+          <MoreHorizontal />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onViewDetails(appointment)}>
+            View details
           </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {menuActions.length > 0 && <DropdownMenuSeparator />}
+          {menuActions.map((action) => (
+            <DropdownMenuItem
+              key={action.key}
+              variant={action.key === "CANCEL" ? "destructive" : "default"}
+              onClick={() => onAction(appointment, action)}
+            >
+              {action.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
@@ -246,7 +278,10 @@ export function AppointmentsTable({
                 colSpan={COLUMN_COUNT}
                 className="bg-muted/40 text-muted-foreground px-4 py-1.5 text-xs font-medium"
               >
-                {group.label}
+                <span className="flex items-center gap-1.5">
+                  <CalendarClock className="size-3.5" aria-hidden />
+                  {group.label}
+                </span>
               </TableCell>
             </TableRow>
             {group.items.map((appointment) => (
@@ -267,12 +302,32 @@ export function AppointmentsTable({
                   {appointment.clientName}
                 </TableCell>
                 <TableCell>
-                  <span className="block max-w-[28ch] truncate">
-                    {appointment.propertyTitle}
+                  <span className="flex items-center gap-1.5">
+                    <Home
+                      className="text-muted-foreground size-3.5 shrink-0"
+                      aria-hidden
+                    />
+                    <span className="block max-w-[24ch] truncate">
+                      {appointment.propertyTitle}
+                    </span>
                   </span>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {formatDateTime(appointment.scheduledFor)}
+                  <span className="sr-only">
+                    {formatDateTime(appointment.scheduledFor)}
+                    {isOverdueAppointment(appointment, new Date()) &&
+                      " (overdue)"}
+                  </span>
+                  <span aria-hidden className="flex items-center gap-1.5">
+                    <Clock className="size-3.5 shrink-0" aria-hidden />
+                    {formatTime(appointment.scheduledFor)}
+                    {isOverdueAppointment(appointment, new Date()) && (
+                      <span className="text-destructive flex items-center gap-1 text-xs font-medium">
+                        <CalendarClock className="size-3.5" aria-hidden />
+                        Overdue
+                      </span>
+                    )}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <AppointmentStatusBadge status={appointment.status} />

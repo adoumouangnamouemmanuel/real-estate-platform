@@ -52,6 +52,27 @@ function renderTable(
 }
 
 describe("AppointmentsTable", () => {
+  it("flags a REQUESTED appointment whose date has passed as overdue, but not one still in the future", () => {
+    const overdue: Appointment = makeAppointment({
+      id: "ov1",
+      clientName: "Overdue Client",
+      status: "REQUESTED",
+      scheduledFor: "2020-01-01T10:00:00.000Z",
+    });
+    renderTable({ appointments: [overdue, requested] });
+
+    const rows = screen.getAllByRole("row");
+    const overdueRow = rows.find((row) =>
+      row.textContent?.includes("Overdue Client"),
+    );
+    const requestedRow = rows.find((row) =>
+      row.textContent?.includes("Requested Client"),
+    );
+
+    expect(overdueRow?.textContent).toContain("Overdue");
+    expect(requestedRow?.textContent).not.toContain("Overdue");
+  });
+
   it("renders each appointment's client, property, and status", () => {
     renderTable();
 
@@ -85,9 +106,13 @@ describe("AppointmentsTable", () => {
     expect(onToggleAll).toHaveBeenCalled();
   });
 
-  it("only offers Confirm and Cancel for a REQUESTED appointment", async () => {
+  it("offers a direct Confirm button plus Cancel (in the menu) for a REQUESTED appointment", async () => {
     const user = userEvent.setup();
     renderTable();
+
+    expect(
+      screen.getByLabelText("Confirm appointment with Requested Client"),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByLabelText("Actions for Requested Client"));
 
@@ -95,11 +120,11 @@ describe("AppointmentsTable", () => {
       await screen.findByRole("menuitem", { name: "View details" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("menuitem", { name: "Confirm" }),
-    ).toBeInTheDocument();
-    expect(
       screen.getByRole("menuitem", { name: "Cancel" }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("menuitem", { name: "Mark Complete" }),
     ).not.toBeInTheDocument();
@@ -108,6 +133,10 @@ describe("AppointmentsTable", () => {
   it("offers no lifecycle actions for a terminal (COMPLETED) appointment", async () => {
     const user = userEvent.setup();
     renderTable();
+
+    expect(
+      screen.queryByLabelText("Confirm appointment with Completed Client"),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByLabelText("Actions for Completed Client"));
 
@@ -119,13 +148,14 @@ describe("AppointmentsTable", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("dispatches onAction with the chosen action", async () => {
+  it("dispatches onAction from the direct Confirm button", async () => {
     const user = userEvent.setup();
     const onAction = vi.fn();
     renderTable({ onAction });
 
-    await user.click(screen.getByLabelText("Actions for Requested Client"));
-    await user.click(await screen.findByRole("menuitem", { name: "Confirm" }));
+    await user.click(
+      screen.getByLabelText("Confirm appointment with Requested Client"),
+    );
 
     expect(onAction).toHaveBeenCalledWith(
       requested,
@@ -146,11 +176,14 @@ describe("AppointmentsTable", () => {
     expect(onViewDetails).toHaveBeenCalledWith(requested);
   });
 
-  it("disables a row's action trigger while it has a mutation pending", () => {
+  it("disables a row's action trigger and direct Confirm button while it has a mutation pending", () => {
     renderTable({ pendingIds: new Set(["r1"]) });
 
     expect(
       screen.getByLabelText("Actions for Requested Client"),
+    ).toBeDisabled();
+    expect(
+      screen.getByLabelText("Confirm appointment with Requested Client"),
     ).toBeDisabled();
     expect(
       screen.getByLabelText("Actions for Confirmed Client"),
