@@ -10,13 +10,20 @@ const NAV_LINKS = [
   { href: ROUTES.SEARCH, label: "Search" },
 ];
 
+/**
+ * Sticky across every public route (see (public)/layout.tsx, which renders
+ * this once for the whole route group) — the meeting's "premium/sticky
+ * behavior" requirement. `backdrop-blur` + a translucent background keep
+ * page content from looking abruptly cut off underneath it while scrolling,
+ * without needing any scroll-linked JS.
+ */
 export function Navbar() {
   return (
-    <header className="border-border border-b">
+    <header className="border-border bg-background/95 sticky top-0 z-40 border-b backdrop-blur-sm">
       <nav className="container-page flex flex-wrap items-center justify-between gap-4 py-4">
         <Link
           href={ROUTES.HOME}
-          className="text-lg font-semibold tracking-tight"
+          className="focus-visible:ring-ring/50 rounded-sm text-lg font-semibold tracking-tight outline-none focus-visible:ring-3"
         >
           {APP_NAME}
         </Link>
@@ -25,7 +32,7 @@ export function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm transition-colors outline-none focus-visible:ring-3"
               >
                 {link.label}
               </Link>

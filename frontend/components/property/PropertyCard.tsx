@@ -9,6 +9,7 @@ import { FavoriteButton } from "@/components/property/FavoriteButton";
 import { ROUTES } from "@/constants/routes";
 import { useFavoriteCount } from "@/hooks/useFavorites";
 import { formatPrice } from "@/lib/formatters";
+import { getPrimaryMeasurement } from "@/lib/propertyMeasurements";
 import type { Property } from "@/types";
 
 /** Above this, a property earns a "Popular" signal on its card — see favoriteService for what backs the count. */
@@ -18,13 +19,17 @@ interface PropertyCardProps {
   property: Property;
   /** Only the first visible row of cards should eagerly load — see PropertyGrid/homepage callers. */
   priority?: boolean;
+  /** Set by Similar Properties (see lib/similarProperties.ts) — an explainable, per-card reason this specific card was suggested. Never shown when absent, e.g. on a plain catalogue grid. */
+  reason?: string;
 }
 
 export function PropertyCard({
   property,
   priority = false,
+  reason,
 }: PropertyCardProps) {
   const coverImage = property.media[0];
+  const measurement = getPrimaryMeasurement(property);
   const favoriteCount = useFavoriteCount(
     property.id,
     property.favoriteCount ?? 0,
@@ -87,7 +92,7 @@ export function PropertyCard({
 
           {(property.bedrooms !== undefined ||
             property.bathrooms !== undefined ||
-            property.areaSqm !== undefined) && (
+            measurement) && (
             <div className="text-muted-foreground flex items-center gap-3 text-xs">
               {property.bedrooms !== undefined && (
                 <span className="flex items-center gap-1">
@@ -101,10 +106,10 @@ export function PropertyCard({
                   {property.bathrooms} ba
                 </span>
               )}
-              {property.areaSqm !== undefined && (
+              {measurement && (
                 <span className="flex items-center gap-1">
                   <Ruler className="size-3.5" aria-hidden />
-                  {property.areaSqm} m²
+                  {measurement.value} m²
                 </span>
               )}
             </div>
@@ -119,6 +124,12 @@ export function PropertyCard({
               </span>
             )}
           </p>
+
+          {reason && (
+            <p className="text-muted-foreground border-border border-t pt-2 text-xs italic">
+              {reason}
+            </p>
+          )}
         </div>
       </Link>
 

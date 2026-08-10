@@ -12,18 +12,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/constants/features";
 import { formatPrice } from "@/lib/formatters";
+import { getPrimaryMeasurement } from "@/lib/propertyMeasurements";
+import type { ScoredProperty } from "@/lib/similarProperties";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
-import type { Property, PropertyDetail } from "@/types";
+import type { PropertyDetail } from "@/types";
 
 interface PropertyDetailViewProps {
   property: PropertyDetail;
-  relatedProperties: Property[];
+  relatedProperties: ScoredProperty[];
 }
 
 export function PropertyDetailView({
   property,
   relatedProperties,
 }: PropertyDetailViewProps) {
+  const measurement = getPrimaryMeasurement(property);
   return (
     <div className="container-page flex flex-col gap-10 py-10">
       <PropertyMediaGallery media={property.media} title={property.title} />
@@ -64,7 +67,7 @@ export function PropertyDetailView({
 
             {(property.bedrooms !== undefined ||
               property.bathrooms !== undefined ||
-              property.areaSqm !== undefined) && (
+              measurement) && (
               <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
                 {property.bedrooms !== undefined && (
                   <span className="flex items-center gap-1.5">
@@ -78,10 +81,10 @@ export function PropertyDetailView({
                     {property.bathrooms} Bathrooms
                   </span>
                 )}
-                {property.areaSqm !== undefined && (
+                {measurement && (
                   <span className="flex items-center gap-1.5">
                     <Ruler className="size-4" aria-hidden />
-                    {property.areaSqm} m²
+                    {measurement.label}: {measurement.value} m²
                   </span>
                 )}
               </div>
@@ -127,7 +130,11 @@ export function PropertyDetailView({
           <h2 className="text-lg font-semibold">Similar Properties</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {relatedProperties.map((item) => (
-              <PropertyCard key={item.id} property={item} />
+              <PropertyCard
+                key={item.id}
+                property={item}
+                reason={item.reason}
+              />
             ))}
           </div>
         </section>

@@ -51,6 +51,17 @@ export interface Property {
   category: PropertyCategory;
   city: string;
   region: string;
+  /**
+   * A finer-grained subdivision within `city` (see `constants/locations.ts`'s
+   * `DISTRICTS`), mirroring the backend ER's `district`/`district_id`.
+   * Deliberately additive alongside `region`, not a replacement for it —
+   * `region` and `district` are not the same concept (region is
+   * Ghana-region-scale, district is a city-scoped subdivision) and the final
+   * terminology is still an open product/backend decision — see
+   * docs/PRODUCT_BACKEND_RECONCILIATION.md §6/§18. Optional because existing
+   * mock properties predate this field.
+   */
+  district?: string;
   status: PropertyStatus;
   media: PropertyMedia[];
   /**
@@ -74,8 +85,24 @@ export interface Property {
    */
   bedrooms?: number;
   bathrooms?: number;
-  /** Floor/land area in square meters. */
+  /** Undefined where the category doesn't have parking (e.g. most land listings). */
+  carSpaces?: number;
+  /** Undefined where the category doesn't have a meaningful construction date (land). */
+  yearBuilt?: number;
+  /**
+   * @deprecated Kept for backward compatibility with existing mock records
+   * only — a single generic area figure can't losslessly represent both a
+   * land parcel and a building's footprint (the ER's `property` table has
+   * two distinct columns: `land_size_sq_m` and `building_size_sq_m`). New
+   * code should read `landSizeSqm`/`buildingSizeSqm` instead; this field is
+   * only still read as a display fallback where a category-appropriate value
+   * isn't set on an older record.
+   */
   areaSqm?: number;
+  /** Land parcel size in square meters — the primary measurement for LAND listings, optionally recorded for others. */
+  landSizeSqm?: number;
+  /** Built floor area in square meters — the primary measurement for House/Apartment/Commercial/Office listings. */
+  buildingSizeSqm?: number;
   /**
    * A mock popularity signal (see services/favorite.service.ts) — aggregate
    * count of everyone who has favorited this listing, distinct from whether
@@ -84,6 +111,29 @@ export interface Property {
    * (`COUNT(*) FROM property_favorites`), never a value the frontend writes.
    */
   favoriteCount?: number;
+}
+
+/**
+ * A single selectable property feature/amenity — mirrors the backend ER's
+ * `feature` table (`feature_name`, `category`, `icon_name`). Replaces the old
+ * `AMENITY_POOLS` hardcoded string map as the one source of truth the
+ * Property Editor, Property Detail, and (in future) Property Cards/Filters
+ * all read through — see services/feature.service.ts.
+ */
+export interface Feature {
+  id: string;
+  name: string;
+  /** A broad display grouping (Security, Utilities, Outdoor, Land, ...) — mirrors `feature.category`. */
+  category: string;
+  /** A lucide-react icon name — mirrors `feature.icon_name`. */
+  iconName: string;
+  /**
+   * Which property categories this feature is offered for. Frontend-owned
+   * eligibility, not a backend concept: the ER's `property_feature` join has
+   * no category constraint of its own — this is the same product decision
+   * `AMENITY_POOLS` encoded before, just backed by a real catalog now.
+   */
+  propertyCategories: PropertyCategory[];
 }
 
 /** The list/card shape — also what a property embeds for its developer. */

@@ -66,3 +66,5 @@ export { analyticsService } from "./analytics.service";
 
 export { favoriteService } from "./favorite.service";
 export type { FavoritesState } from "./favorite.service";
+
+export { featureService, getFeatureByName } from "./feature.service";

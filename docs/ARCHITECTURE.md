@@ -1332,5 +1332,56 @@ Scoring rationale — this is a frontend-completeness and integration-safety sco
 
 ---
 
+### ADR-017: Pre-Integration Reconciliation — Feature Catalog, City/District, Category-Aware Property Model, Explainable Similarity
+
+**Date:** August 10, 2026
+**Status:** Accepted
+**Decision:** Following `docs/PRODUCT_BACKEND_RECONCILIATION.md`'s findings against the real backend ER diagram, this phase implements the frontend-owned corrections it identified as safe to build without backend changes — no new API endpoints invented, no mock services replaced, no backend/database contact.
+
+**Amenities become a real catalog, not a hardcoded per-category string map.** `services/feature.service.ts` + `services/mocks/features.mock.ts` (mirroring the ER's `feature`/`property_feature` tables) replace `constants/amenities.ts`'s `AMENITY_POOLS` as the one source of truth. `Feature.propertyCategories` (which categories a feature is offered for) is explicitly documented as frontend-owned product logic layered on top of the ER — the ER's `property_feature` join has no category constraint of its own. `ListingAmenitiesSection` now renders selected features as removable chips above the full picker; `PropertyAmenities` (Property Detail) reads the same catalog via `getFeatureByName` so an amenity's icon can never drift between the two surfaces.
+
+**City/District is additive, not a rename of `region`.** `constants/locations.ts` gained a `DISTRICTS` mock (city → district[]) and `Property.district`/`ListingFormValues.district`, both optional. `region` is untouched everywhere it already appears — the reconciliation explicitly found `region` (Ghana-region-scale) and `district` (ER's city-scoped subdivision) are not interchangeable, and the final terminology is still an open product/backend decision (see the reconciliation doc §6/§18). `ListingLocationSection` now has a City → District cascading select that clears the district whenever the city changes.
+
+**The property measurement model splits by category, replacing a single generic `areaSqm` going forward.** `Property.landSizeSqm`/`buildingSizeSqm` mirror the ER's `land_size_sq_m`/`building_size_sq_m` columns exactly; `areaSqm` is kept and marked `@deprecated` — a display-only fallback for older mock records, read by `lib/propertyMeasurements.ts`'s `getPrimaryMeasurement()`, the one function Property Detail/Property Card/Similar Properties all call rather than duplicating the category branch three times.
+
+**Six previously-modeled-but-not-editable Property fields (`bedrooms`, `bathrooms`, `carSpaces`, `yearBuilt`, `landSizeSqm`, `buildingSizeSqm`) get a form.** New `ListingMeasurementsSection`, category-conditional per the reconciliation's field matrix (Part 5/6): House/Apartment show bedrooms/bathrooms/car spaces/building size/year built; Land shows land size only; Commercial/Office show building size/car spaces/year built, never bedrooms/bathrooms. None of the six are required at draft or publish, except `landSizeSqm` for LAND at publish time — `publishListingSchema` gained a `.superRefine` for that one category-conditional rule rather than a second validation system, per the explicit instruction to reuse the existing schema architecture.
+
+**Similar Properties becomes a deterministic, explainable scoring model, not a category-only filter.** `lib/similarProperties.ts`'s `rankSimilarProperties` scores same-category candidates on listing type, city, district, price proximity, bedrooms (House/Apartment only — never scored for Land), and land/building size proximity (category-appropriate field), then builds each result's own explanation string from only the signals that actually matched that candidate — never a generic template. Explicitly not machine learning, not personalization; documented as such at the call site.
+
+**Property filters gained a category-aware bedrooms filter.** `FilterPanel` only shows the bedrooms select when no category is chosen or the chosen category actually has bedrooms (House/Apartment) — `lib/propertyFilters.ts`'s `BEDROOM_CATEGORIES` is the one place that eligibility list lives, matching `ListingMeasurementsSection`'s own category table.
+
+**Public Navbar is now sticky and branded consistently**, per the meeting's explicit "premium/sticky behavior" requirement — `bg-background/95 sticky top-0 z-40 backdrop-blur-sm`, no scroll-linked JS. A `NavbarAuthSection` "Dashboard" link now gives an authenticated DEVELOPER/ADMIN a one-click way back into their dashboard from any public page, without needing the account menu.
+
+**A product-role display mapping layer, not a role rename.** `lib/roles.ts`'s `PRODUCT_ROLE_LABEL` maps the unchanged internal `UserRole` (`USER`/`DEVELOPER`/`ADMIN`) to the meeting's product terminology (Client/Developer/Super Admin) for display only — `RequireAuth`'s `ROLE_RANK` remains the only authorization source of truth, untouched. Per the reconciliation's explicit finding that renaming `ADMIN` → `SUPER_ADMIN` is not just a label change (whether a Super Admin should still rank-inherit every DEVELOPER permission is a real, unresolved product decision), no role values were renamed.
+
+**Admin route protection was audited, not silently "fixed" with an invented claim.** `proxy.ts` still only gates on session-cookie presence — it deliberately does not decode a role from the mock session cookie, since that cookie is an unsigned presence marker, not a verifiable claim, and trusting a role read from it would be inventing a JWT claim this environment doesn't have. The actual, safe role check remains `RequireAuth`'s existing `ROLE_RANK` comparison (unchanged logic, now with explicit regression tests — see `RequireAuth.test.tsx`'s "super-admin route protection" describe block and the new `proxy.test.ts`). `proxy.ts`'s doc comment now states plainly that the backend must independently re-verify role on every admin-scoped request; the frontend guard is UX-layer defense in depth, not the security boundary.
+
+**Consequences:**
+
+- ✅ Every change in this phase is additive or frontend-internal — no `TODO(backend)` marker was removed, no mock service was deleted, and every new mock (`features.mock.ts`, `DISTRICTS`) follows the existing one-mock-file-per-concept convention.
+- ✅ `Property.areaSqm`'s deprecation is non-breaking: every existing mock record and every display component still resolves a value via `getPrimaryMeasurement()`'s fallback.
+- ⚠️ Backend confirmation is still required before `district`, the six new measurement fields, or the feature catalog can be considered final — see `docs/PRODUCT_BACKEND_RECONCILIATION.md` §18 for the specific open questions (region-vs-district terminology, `areaSqm` → land/building-size field mapping, whether `feature.category` on the real backend means the same "display grouping" this mock assumes).
+- ⚠️ Super Admin remains foundation-only by design this phase (see the IA below) — no page beyond the existing empty `(admin)/layout.tsx` was built, and no suspend/approve action (real or fake) was added anywhere.
+
+---
+
+## Super Admin — Information Architecture (Foundation Only)
+
+Per the reconciliation's explicit finding that Super Admin is closer to a net-new product surface than an integration task, this section documents the *intended* IA only — no pages, no components, no fake actions were built this phase. Distinct from the Developer Dashboard's seven-item nav (Home, My Properties, Appointments, Notifications, Analytics, Profile, Settings) on purpose, per the meeting's "developer and super-admin experiences must be clearly separated" requirement — a Super Admin does not manage their own properties, so reusing `DashboardSidebar`'s nav items would be wrong, not just visually inconsistent.
+
+| Section | Purpose | ER support | Backend confirmation needed |
+|---|---|---|---|
+| Overview | Platform-wide at-a-glance health (property counts by status, pending reports, recent developer signups) | Computable from `property`/`report`/`property_developer` | None — pure aggregation once endpoints exist |
+| All Properties | Cross-developer property table, ownership-independent | Yes — `property` has no owner-restricted query built in | None |
+| Developers | Directory + detail view of every `property_developer` | Yes | None |
+| Developer Approval | Gate before a developer's listings go live | **No dedicated field** — `is_verified` may or may not be the same gate as "approved" | Yes — see reconciliation §18 Q1 |
+| Reports | Moderation queue reading `report.status`/`resolution_note`, resolve/dismiss actions | Yes — the generic polymorphic `report` entity fits this directly | Valid `report.target_type` values, and whether they're enforced server-side (§18 Q8) |
+| Property Moderation | Suspend a property (`property.status`) | Yes | None |
+| Platform Analytics | Aggregate of `property_analytics` across all properties | Partially — per-property rollups exist, no platform-summary table | Whether aggregation happens server-side or is computed from per-property rows |
+
+**Not built this phase, and not faked:** no suspend/approve button anywhere renders as if it performs a real action — building a control that calls a nonexistent endpoint (or silently no-ops) would misrepresent the platform's actual capability, which is exactly the kind of premature/dishonest UI this reconciliation exists to prevent.
+
+---
+
 _ByTe Real Estate Platform — ARCHITECTURE.md_
 _Maintained by Emmanuel (CTO). Update this document when any architectural decision changes._

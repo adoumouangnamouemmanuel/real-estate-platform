@@ -6,7 +6,10 @@ import {
   type PropertyCategory,
 } from "@/constants/categories";
 import { CITIES } from "@/constants/locations";
+import { BEDROOM_CATEGORIES } from "@/lib/propertyFilters";
 import type { GetPropertiesParams, PropertySort } from "@/services";
+
+const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
 
 interface FilterPanelProps {
   filters: GetPropertiesParams;
@@ -148,6 +151,36 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           className={INPUT_CLASSNAME}
         />
       </div>
+
+      {(!filters.category || BEDROOM_CATEGORIES.includes(filters.category)) && (
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="filter-bedrooms"
+            className="text-muted-foreground text-xs"
+          >
+            Bedrooms
+          </label>
+          <select
+            id="filter-bedrooms"
+            value={filters.minBedrooms ?? ""}
+            onChange={(event) =>
+              onApply({
+                minBedrooms: event.target.value
+                  ? Number(event.target.value)
+                  : undefined,
+              })
+            }
+            className={SELECT_CLASSNAME}
+          >
+            <option value="">Any</option>
+            {BEDROOM_OPTIONS.map((count) => (
+              <option key={count} value={count}>
+                {count}+
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="filter-sort" className="text-muted-foreground text-xs">

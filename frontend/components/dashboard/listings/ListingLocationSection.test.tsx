@@ -27,10 +27,11 @@ function Harness() {
 }
 
 describe("ListingLocationSection", () => {
-  it("renders city, region, and address fields", () => {
+  it("renders city, district, region, and address fields", () => {
     render(<Harness />);
 
     expect(screen.getByLabelText("City")).toBeInTheDocument();
+    expect(screen.getByLabelText("District")).toBeInTheDocument();
     expect(screen.getByLabelText("Region")).toBeInTheDocument();
     expect(screen.getByLabelText("Address")).toBeInTheDocument();
   });
@@ -46,5 +47,29 @@ describe("ListingLocationSection", () => {
     expect(screen.getByLabelText("City")).toHaveValue("Accra");
     expect(screen.getByLabelText("Region")).toHaveValue("Greater Accra");
     expect(screen.getByLabelText("Address")).toHaveValue("1 Main Street");
+  });
+
+  it("disables the district select until a city is chosen, then offers that city's districts", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    expect(screen.getByLabelText("District")).toBeDisabled();
+
+    await user.selectOptions(screen.getByLabelText("City"), "Accra");
+    expect(screen.getByLabelText("District")).toBeEnabled();
+    await user.selectOptions(screen.getByLabelText("District"), "Osu");
+    expect(screen.getByLabelText("District")).toHaveValue("Osu");
+  });
+
+  it("clears the selected district when the city changes", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.selectOptions(screen.getByLabelText("City"), "Accra");
+    await user.selectOptions(screen.getByLabelText("District"), "Osu");
+    expect(screen.getByLabelText("District")).toHaveValue("Osu");
+
+    await user.selectOptions(screen.getByLabelText("City"), "Kumasi");
+    expect(screen.getByLabelText("District")).toHaveValue("");
   });
 });

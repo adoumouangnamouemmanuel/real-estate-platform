@@ -42,9 +42,28 @@ export const listingSchema = z.object({
   listingType: z.enum(["SALE", "RENT"]).optional().or(z.literal("")),
   category: z.enum(CATEGORY_VALUES).optional().or(z.literal("")),
   city: z.string().trim().optional().or(z.literal("")),
+  // Additive alongside `region` — see constants/locations.ts's doc comment on
+  // why `district` isn't a rename of `region`.
+  district: z.string().trim().optional().or(z.literal("")),
   region: z.string().trim().optional().or(z.literal("")),
   address: z.string().trim().optional().or(z.literal("")),
   amenities: z.array(z.string()).optional(),
+  // All optional at both draft and publish — none of these are forced
+  // "because they exist in the database" (see the reconciliation's Part 6).
+  // The category-conditional land-size rule below is the one exception,
+  // since a LAND listing's size is closer to a required identifying fact
+  // than an optional nicety.
+  bedrooms: z.number().int().nonnegative().optional(),
+  bathrooms: z.number().int().nonnegative().optional(),
+  carSpaces: z.number().int().nonnegative().optional(),
+  yearBuilt: z
+    .number()
+    .int()
+    .min(1800, "Enter a realistic year.")
+    .max(new Date().getFullYear() + 1, "Enter a realistic year.")
+    .optional(),
+  landSizeSqm: z.number().positive().optional(),
+  buildingSizeSqm: z.number().positive().optional(),
   media: z.array(mediaSchema).optional(),
 });
 
@@ -54,25 +73,43 @@ export type ListingFormValues = z.infer<typeof listingSchema>;
  * The "ready to publish" profile: everything a live, publicly-visible listing
  * needs that a draft doesn't. Only invoked when the developer clicks Publish —
  * never on every autosave tick, since a draft is allowed to be incomplete.
+ *
+ * `.superRefine` (not `.extend`) for the one category-conditional
+ * requirement — a LAND listing needs `landSizeSqm` before going live, the way
+ * every other category needs its base fields, but zod's `.extend` can't
+ * express "required only when category === X" on its own.
  */
-export const publishListingSchema = listingSchema.extend({
-  description: z.string().trim().min(1, "Add a description before publishing."),
-  price: z
-    .number({ error: "Add a price before publishing." })
-    .positive("Add a price before publishing."),
-  listingType: z.enum(["SALE", "RENT"], {
-    error: "Choose Sale or Rent before publishing.",
-  }),
-  category: z.enum(CATEGORY_VALUES, {
-    error: "Choose a category before publishing.",
-  }),
-  city: z.string().trim().min(1, "Add a city before publishing."),
-  region: z.string().trim().min(1, "Add a region before publishing."),
-  address: z.string().trim().min(1, "Add an address before publishing."),
-  media: z
-    .array(mediaSchema)
-    .min(1, "Add at least one photo before publishing."),
-});
+export const publishListingSchema = listingSchema
+  .extend({
+    description: z
+      .string()
+      .trim()
+      .min(1, "Add a description before publishing."),
+    price: z
+      .number({ error: "Add a price before publishing." })
+      .positive("Add a price before publishing."),
+    listingType: z.enum(["SALE", "RENT"], {
+      error: "Choose Sale or Rent before publishing.",
+    }),
+    category: z.enum(CATEGORY_VALUES, {
+      error: "Choose a category before publishing.",
+    }),
+    city: z.string().trim().min(1, "Add a city before publishing."),
+    region: z.string().trim().min(1, "Add a region before publishing."),
+    address: z.string().trim().min(1, "Add an address before publishing."),
+    media: z
+      .array(mediaSchema)
+      .min(1, "Add at least one photo before publishing."),
+  })
+  .superRefine((values, ctx) => {
+    if (values.category === "land" && !values.landSizeSqm) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["landSizeSqm"],
+        message: "Add the land size before publishing.",
+      });
+    }
+  });
 
 export interface PublishValidationIssue {
   /** The top-level ListingFormValues key this issue belongs to — lets the UI

@@ -1,4 +1,8 @@
 import type { PropertyCategory } from "@/constants/categories";
+import {
+  rankSimilarProperties,
+  type ScoredProperty,
+} from "@/lib/similarProperties";
 import type { PaginatedResult, Property, PropertyDetail } from "@/types";
 
 import { MOCK_PROPERTIES } from "./mocks/properties.mock";
@@ -14,6 +18,8 @@ export interface PropertyFilters {
   city?: string;
   minPrice?: number;
   maxPrice?: number;
+  /** Only meaningful for categories with bedrooms (House/Apartment) — ignored otherwise, see propertyFilters.ts. */
+  minBedrooms?: number;
   sort?: PropertySort;
 }
 
@@ -50,6 +56,11 @@ function filterProperties(
     if (filters.minPrice !== undefined && item.price < filters.minPrice)
       return false;
     if (filters.maxPrice !== undefined && item.price > filters.maxPrice)
+      return false;
+    if (
+      filters.minBedrooms !== undefined &&
+      (item.bedrooms ?? 0) < filters.minBedrooms
+    )
       return false;
 
     if (filters.q) {
@@ -98,14 +109,21 @@ export const propertyService = {
       : Promise.reject(new Error("Property not found"));
   },
 
+  /**
+   * Deterministic, explainable similarity ranking (see lib/similarProperties.ts)
+   * over the same-category candidate pool — never a machine-learning
+   * recommendation, and never a claim of personalization the mock data
+   * doesn't back up.
+   */
   getRelatedProperties: (
-    property: Pick<Property, "id" | "category">,
+    property: Property,
     limit = 4,
-  ): Promise<Property[]> =>
-    delay(
-      MOCK_PROPERTIES.filter(
-        (item) =>
-          item.category === property.category && item.id !== property.id,
-      ).slice(0, limit),
-    ),
+  ): Promise<ScoredProperty[]> => {
+    const sameCategoryCandidates = MOCK_PROPERTIES.filter(
+      (item) => item.category === property.category && item.id !== property.id,
+    );
+    return delay(
+      rankSimilarProperties(property, sameCategoryCandidates, limit),
+    );
+  },
 };

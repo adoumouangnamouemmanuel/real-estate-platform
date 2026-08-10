@@ -8,6 +8,38 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Changed
 
+- **Pre-Integration Reconciliation (Phase 0.5).** Reconciled the frontend
+  against the real backend ER diagram ahead of API integration. Replaced the
+  hardcoded amenity string pool with a real feature catalog service
+  (`services/feature.service.ts`, mirroring the ER's `feature`/
+  `property_feature` tables) — the Property Editor's amenities section now
+  renders multi-select chips with icons instead of plain checkboxes, and
+  Property Detail reads the same catalog so an amenity's icon can never
+  drift between the two. Added an additive `district` field (City → District
+  cascading select) alongside the existing `region` field — not a rename,
+  since the two aren't the same concept. Split the generic `areaSqm` measurement
+  into category-aware `landSizeSqm`/`buildingSizeSqm` (old field kept as a
+  deprecated fallback for existing records). Added a form section for six
+  previously-modeled-but-uneditable fields (bedrooms, bathrooms, car spaces,
+  year built, land size, building size), shown per-category — Land never
+  shows bedroom/bathroom fields, House/Apartment never show land size.
+  Replaced "Similar Properties"' naive category-only filter with a
+  deterministic, explainable scoring model (`lib/similarProperties.ts`) that
+  states exactly why each result was suggested (e.g. "Similar because it's in
+  Accra and within your price range"). Made the public property filter's
+  bedrooms select category-aware (hidden for Land/Commercial/Office). Made
+  the public Navbar sticky and premium-styled, and added a one-click
+  Dashboard link for authenticated developers browsing the public site — no
+  logout required. Added a display-only product-role label mapping
+  (Client/Developer/Super Admin) without renaming the underlying
+  USER/DEVELOPER/ADMIN role model, since that rename has real, unresolved
+  authorization-semantics implications. Added explicit regression tests
+  proving the Super Admin route guard blocks an unauthenticated visitor and
+  an authenticated Developer, admitting only Admin. Documented (but did not
+  build) a Super Admin information architecture, distinct from the Developer
+  Dashboard's own nav. See `docs/PRODUCT_BACKEND_RECONCILIATION.md` for the
+  full audit and `docs/ARCHITECTURE.md`'s ADR-017 for the decision record.
+
 - **My Properties Polish.** Added a real property thumbnail (existing demo
   imagery, `next/image`) to each row in the listings table. Promoted Edit
   to a direct, always-visible icon button per row instead of requiring the

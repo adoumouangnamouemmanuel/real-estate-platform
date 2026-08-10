@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
+import { getProductRoleLabel } from "@/lib/roles";
 
 function initials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
@@ -46,7 +47,7 @@ export function DashboardUserMenu() {
               {user.fullName}
             </span>
             <Badge variant="secondary" className="w-fit">
-              {user.role}
+              {getProductRoleLabel(user.role)}
             </Badge>
           </DropdownMenuLabel>
         </DropdownMenuGroup>

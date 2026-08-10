@@ -54,7 +54,8 @@ describe("DashboardUserMenu", () => {
     // Base UI's Menu popup mounts asynchronously (positioning + open transition) —
     // findBy* polls until it appears rather than assuming it's there on the next tick.
     expect(await screen.findByText("Kwame Mensah")).toBeInTheDocument();
-    expect(screen.getByText("DEVELOPER")).toBeInTheDocument();
+    // Product-facing label (lib/roles.ts), not the raw internal role value.
+    expect(screen.getByText("Developer")).toBeInTheDocument();
 
     await user.click(screen.getByRole("menuitem", { name: "Log out" }));
 

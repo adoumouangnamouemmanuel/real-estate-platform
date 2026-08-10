@@ -664,3 +664,55 @@ entries above were corrected in place rather than left to rot further.
   marketing pages (auth flows conventionally minimize distraction to reduce
   drop-off). Noted as a considered decision, not a defect; revisit only if
   a future conversion-rate signal suggests otherwise.
+
+### Phase 0.5 — Pre-Integration Reconciliation (August 2026)
+
+Implements the frontend/product corrections from
+`docs/PRODUCT_BACKEND_RECONCILIATION.md` that were safe to build without
+backend changes — see `docs/ARCHITECTURE.md`'s ADR-017 for the full decision
+record. Summary of what shipped: a real feature/amenities catalog
+(`services/feature.service.ts`) replacing the hardcoded `AMENITY_POOLS`;
+additive `district` field + City→District cascading select; category-aware
+property measurements (`landSizeSqm`/`buildingSizeSqm`, replacing generic
+`areaSqm` going forward); six previously-modeled-but-uneditable fields
+(bedrooms/bathrooms/car spaces/year built/land size/building size) now have a
+category-conditional form section; deterministic, explainable Similar
+Properties scoring (`lib/similarProperties.ts`); a category-aware bedrooms
+filter; a sticky, premium public Navbar with a Dashboard shortcut; a
+display-only product-role label mapping (`lib/roles.ts`); and explicit
+regression tests proving the Super Admin route guard actually blocks an
+unauthenticated visitor and an authenticated DEVELOPER, admitting only ADMIN.
+
+**Medium/Low findings deferred, not implemented this phase:**
+
+- **[Medium]** The feature/amenity catalog is not yet wired into Property
+  Cards or the public Filter Panel (only the Property Editor and Property
+  Detail read it today) — the reconciliation asked for it to "eventually" be
+  usable in both; scoped out this phase to keep the catalog's initial rollout
+  reviewable. `services/feature.service.ts`/`getFeatureByName` are already the
+  one source of truth, so this is additive wiring, not a redesign.
+- **[Medium]** Existing mock property records (`services/mocks/properties.mock.ts`,
+  `listings.mock.ts`) were not backfilled with `district`/`landSizeSqm`/
+  `buildingSizeSqm`/`carSpaces`/`yearBuilt` — every new field is optional and
+  falls back correctly (`areaSqm`, undefined-hides-the-stat), so nothing is
+  broken, but the new UI won't visibly populate on old fixture data until a
+  developer edits/re-saves a listing or the fixtures are refreshed.
+- **[Low]** Full upload/create visual-hierarchy polish (Part 14 of the
+  brief) and a broader motion-language pass (Part 15) were not undertaken
+  beyond what already existed — the entry points were already confirmed
+  production-grade in the prior Full Product Review, and neither part had a
+  concrete, evidenced defect to fix versus a subjective "make it feel more
+  alive" direction, which the brief's own philosophy warns against
+  over-indexing on.
+- **[Low]** `PropertyCard`'s bedroom/bathroom/measurement row is unlabeled
+  (just icon + number) while the Property Detail page's equivalent row is
+  fully labeled — a deliberate existing density trade-off for the card's
+  small footprint, not something this phase changed either direction.
+
+**Outstanding backend/product decisions** (not guessed, per the brief's
+explicit instruction) — see `docs/PRODUCT_BACKEND_RECONCILIATION.md` §18 for
+the full list: the Appointment entity itself, developer approval vs.
+verification, developer suspension model, region vs. district final
+terminology, the exact `areaSqm` → land/building-size DTO mapping, anonymous
+favorites, JWT payload shape, final role contract (whether Super Admin should
+still rank-inherit every Developer permission), CORS, and rate limiting.

@@ -153,9 +153,16 @@ export type ListingPatch = Partial<
     | "listingType"
     | "category"
     | "city"
+    | "district"
     | "region"
     | "address"
     | "amenities"
+    | "bedrooms"
+    | "bathrooms"
+    | "carSpaces"
+    | "yearBuilt"
+    | "landSizeSqm"
+    | "buildingSizeSqm"
     | "media"
   >
 >;
@@ -332,11 +339,18 @@ export const listingService = {
       listingType: patch.listingType ?? "SALE",
       category: patch.category ?? "apartment",
       city: patch.city ?? "",
+      district: patch.district,
       region: patch.region ?? "",
       status: "DRAFT",
       media: patch.media ?? [],
       address: patch.address ?? "",
       amenities: patch.amenities ?? [],
+      bedrooms: patch.bedrooms,
+      bathrooms: patch.bathrooms,
+      carSpaces: patch.carSpaces,
+      yearBuilt: patch.yearBuilt,
+      landSizeSqm: patch.landSizeSqm,
+      buildingSizeSqm: patch.buildingSizeSqm,
       updatedAt: now,
     };
 

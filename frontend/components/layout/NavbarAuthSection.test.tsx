@@ -50,6 +50,44 @@ describe("NavbarAuthSection", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("does not show a Dashboard link for a plain USER/client", () => {
+    useAuthStore.getState().setAuth(
+      {
+        id: "u1",
+        fullName: "Ama Boateng",
+        email: "ama@example.com",
+        role: "USER",
+      },
+      "token",
+    );
+
+    render(<NavbarAuthSection />);
+
+    expect(
+      screen.queryByRole("link", { name: /dashboard/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a Dashboard link for a DEVELOPER, without requiring logout", () => {
+    useAuthStore.getState().setAuth(
+      {
+        id: "u1",
+        fullName: "Kofi Mensah",
+        email: "kofi@example.com",
+        role: "DEVELOPER",
+      },
+      "token",
+    );
+
+    render(<NavbarAuthSection />);
+
+    expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+      "href",
+      "/dashboard",
+    );
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+  });
+
   it("clears the session when Log out is clicked", async () => {
     useAuthStore.getState().setAuth(
       {

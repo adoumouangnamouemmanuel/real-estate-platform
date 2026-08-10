@@ -41,9 +41,13 @@ export function parsePropertyFilters(
     city: first(raw.city) || undefined,
     minPrice: parsePrice(first(raw.minPrice)),
     maxPrice: parsePrice(first(raw.maxPrice)),
+    minBedrooms: parsePrice(first(raw.minBedrooms)),
     sort: sort && SORT_VALUES.includes(sort) ? sort : undefined,
   };
 }
+
+/** Categories that have a bedrooms concept at all — the bedrooms filter only makes sense to show for these, mirroring ListingMeasurementsSection's category-conditional fields. */
+export const BEDROOM_CATEGORIES: PropertyCategory[] = ["house", "apartment"];
 
 /** Builds the active-filter chip list for FilterChips from the current URL-derived filters. */
 export function buildPropertyFilterChips(
@@ -73,6 +77,13 @@ export function buildPropertyFilterChips(
     chips.push({
       key: "maxPrice",
       label: `Max ${formatPrice(filters.maxPrice)}`,
+    });
+  }
+
+  if (filters.minBedrooms !== undefined) {
+    chips.push({
+      key: "minBedrooms",
+      label: `${filters.minBedrooms}+ bedrooms`,
     });
   }
 

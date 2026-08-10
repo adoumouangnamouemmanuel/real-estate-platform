@@ -17,6 +17,7 @@ import {
   type ListingIdentity,
 } from "@/components/dashboard/listings/ListingEditorProvider";
 import { ListingLocationSection } from "@/components/dashboard/listings/ListingLocationSection";
+import { ListingMeasurementsSection } from "@/components/dashboard/listings/ListingMeasurementsSection";
 import { ListingPricingSection } from "@/components/dashboard/listings/ListingPricingSection";
 import { ListingPublishBar } from "@/components/dashboard/listings/ListingPublishBar";
 import { MediaUploader } from "@/components/dashboard/listings/MediaUploader";
@@ -118,9 +119,16 @@ function toFormValues(listing?: Property): ListingFormValues {
     listingType: listing?.listingType,
     category: listing?.category,
     city: listing?.city ?? "",
+    district: listing?.district ?? "",
     region: listing?.region ?? "",
     address: listing?.address ?? "",
     amenities: listing?.amenities ?? [],
+    bedrooms: listing?.bedrooms,
+    bathrooms: listing?.bathrooms,
+    carSpaces: listing?.carSpaces,
+    yearBuilt: listing?.yearBuilt,
+    landSizeSqm: listing?.landSizeSqm,
+    buildingSizeSqm: listing?.buildingSizeSqm,
     media: listing?.media ?? [],
   };
 }
@@ -334,6 +342,7 @@ function ListingFormInner({
         <ListingBasicsSection />
         <ListingLocationSection />
         <ListingPricingSection />
+        <ListingMeasurementsSection />
         <ListingAmenitiesSection />
         <MediaUploader />
       </form>

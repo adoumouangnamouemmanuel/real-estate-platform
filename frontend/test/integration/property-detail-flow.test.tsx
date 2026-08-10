@@ -28,7 +28,10 @@ describe("Property details flow", () => {
       },
     });
     const relatedProperties = [
-      makeProperty({ id: "p2", title: "Similar Apartment" }),
+      {
+        ...makeProperty({ id: "p2", title: "Similar Apartment" }),
+        reason: "Similar because it's in Accra.",
+      },
     ];
 
     renderWithQueryClient(
