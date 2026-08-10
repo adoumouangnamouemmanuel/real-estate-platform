@@ -8,6 +8,13 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
       data-slot="table-container"
+      // Keyboard-focusable so the horizontal scroll this container can grow
+      // is actually reachable without a mouse/touchpad (WCAG 2.1.1 "scrollable
+      // region must have keyboard access") — axe correctly flags this on any
+      // table wide enough to overflow, whether or not that's expected today.
+      tabIndex={0}
+      role="region"
+      aria-label="Scrollable table"
       className="relative w-full overflow-x-auto"
     >
       <table

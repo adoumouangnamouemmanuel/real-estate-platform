@@ -1,9 +1,29 @@
 "use client";
 
+import {
+  Building2,
+  CalendarCheck,
+  CalendarX,
+  CheckCircle2,
+  type LucideIcon,
+} from "lucide-react";
+
 import { SwipeableStatRow } from "@/components/dashboard/SwipeableStatRow";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCompactNumber } from "@/lib/formatters";
 import type { AnalyticsStat } from "@/types";
+
+/** One icon per stat key, chosen to match icons already used for the same
+ * concept elsewhere (CalendarCheck/CalendarX mirror the appointment
+ * notification icons) rather than decorating arbitrarily. No Trending
+ * icons here — none of these stats are compared against a prior period, so
+ * an up/down arrow would imply a direction the data doesn't actually show. */
+const STAT_ICON: Record<string, LucideIcon> = {
+  active_listings: Building2,
+  response_rate: CheckCircle2,
+  completed_viewings: CalendarCheck,
+  cancellation_rate: CalendarX,
+};
 
 function formatStatValue(stat: AnalyticsStat): string {
   if (stat.format === "percent") return `${stat.value}%`;
@@ -22,7 +42,10 @@ interface AnalyticsStatsRowProps {
  * first real second consumer of that trend-rendering path. Swipeable on
  * mobile via `SwipeableStatRow`, a plain grid from `sm` up.
  */
-export function AnalyticsStatsRow({ stats, isLoading }: AnalyticsStatsRowProps) {
+export function AnalyticsStatsRow({
+  stats,
+  isLoading,
+}: AnalyticsStatsRowProps) {
   if (isLoading) {
     return (
       <SwipeableStatRow
@@ -44,6 +67,7 @@ export function AnalyticsStatsRow({ stats, isLoading }: AnalyticsStatsRowProps) 
             value={formatStatValue(stat)}
             hint={stat.hint}
             trend={stat.trend}
+            icon={STAT_ICON[stat.key]}
           />
         ),
       }))}

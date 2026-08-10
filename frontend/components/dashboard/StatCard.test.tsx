@@ -50,4 +50,17 @@ describe("StatCard", () => {
     );
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
+
+  it("shows an honest 'not enough activity' note instead of a sparkline for a mostly-flat, near-zero trend", () => {
+    const { container } = render(
+      <StatCard
+        label="Completed Viewings"
+        value={2}
+        trend={[0, 0, 0, 1, 0, 0, 0, 0, 0, 1]}
+      />,
+    );
+
+    expect(container.querySelector("svg")).not.toBeInTheDocument();
+    expect(screen.getByText(/Not enough/)).toBeInTheDocument();
+  });
 });

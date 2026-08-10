@@ -4,6 +4,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "@/components/ui/sparkline";
 
+/** A sparkline needs at least this many active (non-zero) days to show a real
+ * shape — one or two isolated blips in an otherwise flat, zero-filled series
+ * just get stretched to full height by the min-max-normalized line and read
+ * as a dramatic spike, wildly overstating what's usually a single event. The
+ * underlying data isn't wrong (see analyticsCalculations.ts's own "never
+ * interpolated to look complete" rule) — this is purely about when rendering
+ * it as a *trend* would mislead more than it informs. */
+const MIN_ACTIVE_DAYS_FOR_TREND = 3;
+
+function hasReadableTrend(trend: number[] | undefined): boolean {
+  if (!trend || trend.length <= 1) return false;
+  return trend.filter((value) => value > 0).length >= MIN_ACTIVE_DAYS_FOR_TREND;
+}
+
 interface StatCardProps {
   label: string;
   value: string | number;
@@ -23,6 +37,9 @@ export function StatCard({
   trend,
   isLoading = false,
 }: StatCardProps) {
+  const hasTrend = Boolean(trend && trend.length > 1);
+  const trendIsReadable = hasReadableTrend(trend);
+
   if (isLoading) {
     return (
       <Card>
@@ -51,12 +68,20 @@ export function StatCard({
           {Icon && (
             <Icon className="text-muted-foreground size-5" aria-hidden />
           )}
-          {trend && trend.length > 1 && (
+          {trendIsReadable && trend ? (
             <Sparkline
               data={trend}
               className="text-primary h-6 w-16"
               ariaLabel={`${label} trend`}
             />
+          ) : (
+            hasTrend && (
+              <span className="text-muted-foreground text-right text-[10px] text-nowrap">
+                Not enough
+                <br />
+                activity yet
+              </span>
+            )
           )}
         </div>
       </CardContent>
