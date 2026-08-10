@@ -580,8 +580,12 @@ PaginatedResult` shape every other domain service uses — harmless at
 - **[Low]** No `React.memo` anywhere in `components/` — `AppointmentsView`/
   `ListingsView` re-render their full subtree (filters, table, pagination) on
   every row-selection toggle. Not a measured problem at current data volumes.
-- **[Low]** No `prefers-reduced-motion` handling anywhere (already flagged
-  pre-existing debt, re-confirmed still open during this review).
+- ~~**[Low]** No `prefers-reduced-motion` handling anywhere~~ — **stale, fixed**:
+  a global override landed in `app/globals.css` during the Dashboard Home
+  transformation (zeroes out animation/transition duration site-wide), and
+  every phase since has verified against it. This entry was never removed;
+  caught during the full product review — a reminder to update this file in
+  the same commit as the fix, not after.
 
 ## Bugs
 
@@ -632,6 +636,31 @@ PaginatedResult` shape every other domain service uses — harmless at
   (`/listings/new`, carrying React Hook Form + Zod + `MediaUploader`) versus
   the rest isn't quantified. Consider `@next/bundle-analyzer` once real
   performance concerns emerge, rather than pre-optimizing blind.
-- **[Low]** No `prefers-reduced-motion` handling for Dialog/Drawer transition
-  animations (base-ui's defaults). Common, low-severity gap; revisit if a
-  user-reported motion-sensitivity issue ever surfaces.
+- ~~**[Low]** No `prefers-reduced-motion` handling for Dialog/Drawer transition
+  animations~~ — **stale, fixed**: the same global `app/globals.css` override
+  covers this too (`animationDuration`/`transitionDuration` are zeroed for
+  every element under `*`, which includes base-ui's Dialog/Drawer keyframes).
+  Confirmed by inspecting a live Dialog's computed style under
+  `prefers-reduced-motion: reduce` during the full product review — it
+  resolves to a 0.01ms animation duration, not the library default.
+
+### Full Product Review — Medium/Low findings deferred, not implemented
+
+A complete cross-surface pass (every public/authenticated page, all seven
+journeys, full axe + E2E suite, responsive spot-checks 375–1440px) ahead of
+backend integration. Full test suite (484 unit/integration, 83 Playwright)
+passed both before and after this review's changes; the two stale debt
+entries above were corrected in place rather than left to rot further.
+
+- **[Low]** `Footer` carries only a copyright line — no Terms of
+  Service/Privacy Policy links, even though `RegisterForm` references both by
+  name in its consent checkbox (as plain text, not a link, so nothing is
+  actually broken — see the checkbox label in `components/auth/RegisterForm.tsx`).
+  Worth adding once those pages exist; inventing placeholder legal pages
+  purely to link to them would be its own kind of dishonesty.
+- **[Low]** Auth pages (`/login`, `/register`, `/forgot-password`,
+  `/reset-password`) are intentionally minimal — no imagery, no brand
+  storytelling — a deliberate, defensible contrast with the premium public
+  marketing pages (auth flows conventionally minimize distraction to reduce
+  drop-off). Noted as a considered decision, not a defect; revisit only if
+  a future conversion-rate signal suggests otherwise.

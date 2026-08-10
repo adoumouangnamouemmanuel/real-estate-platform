@@ -31,7 +31,7 @@ export function DevelopersView({ filters }: DevelopersViewProps) {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Developers</h1>
         <p className="text-muted-foreground text-sm">
-          {data ? `${data.total} developers` : "Browse verified developers"}
+          {data ? `${data.total} developers` : "Browse developers"}
         </p>
       </div>
 

@@ -9,7 +9,7 @@ import {
 
 export const metadata: Metadata = {
   title: `Properties | ${APP_NAME}`,
-  description: "Browse verified property listings across African markets.",
+  description: "Browse property listings across African markets.",
 };
 
 interface PropertiesPageProps {

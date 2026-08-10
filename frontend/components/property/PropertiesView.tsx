@@ -42,7 +42,7 @@ export function PropertiesView({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
         <p className="text-muted-foreground text-sm">
-          {data ? `${data.total} listings` : "Browse verified listings"}
+          {data ? `${data.total} listings` : "Browse listings"}
         </p>
       </div>
 

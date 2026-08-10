@@ -81,11 +81,10 @@ export default async function Home() {
 
         <div className="container-page relative flex flex-col items-center gap-6 py-24 text-center text-white">
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Find your next home, verified developers, WhatsApp away.
+            Find your next home across African markets.
           </h1>
           <p className="max-w-xl text-white/85">
-            Browse properties from verified developers across African markets —
-            no account required.
+            Browse real listings from real developers — no account required.
           </p>
           <SearchBar />
         </div>
@@ -183,8 +182,8 @@ export default async function Home() {
         <div className="container-page grid gap-8 sm:grid-cols-3">
           <TrustPoint
             icon={BadgeCheck}
-            title="Verified developers"
-            description="Every developer is vetted before their listings go live."
+            title="Developer verification"
+            description="Look for the verified badge — it means we've reviewed that developer."
           />
           <TrustPoint
             icon={MessageCircle}
@@ -204,8 +203,8 @@ export default async function Home() {
           Ready to find your next property?
         </h2>
         <p className="text-muted-foreground max-w-md">
-          Browse listings from verified developers across Ghana&apos;s biggest
-          markets — houses, apartments, land, and commercial space.
+          Browse listings across Ghana&apos;s biggest markets — houses,
+          apartments, land, and commercial space.
         </p>
         <Link
           href={ROUTES.PROPERTIES}
