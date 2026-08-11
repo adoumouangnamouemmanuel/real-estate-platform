@@ -14,7 +14,10 @@ export const MOCK_FEATURES: Feature[] = [
     name: "24/7 Security",
     category: "Security",
     iconName: "Shield",
-    propertyCategories: ["house", "apartment", "commercial"],
+    // "office" was missing here until the Feature Catalog Consistency Pass —
+    // the legacy AMENITY_POOLS.office pool included "24/7 Security" and this
+    // catalog's initial build accidentally dropped it. Restored to match.
+    propertyCategories: ["house", "apartment", "commercial", "office"],
   },
   {
     id: "backup-generator",

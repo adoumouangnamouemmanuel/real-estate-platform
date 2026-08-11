@@ -36,3 +36,20 @@ export const featureService = {
 export function getFeatureByName(name: string): Feature | undefined {
   return MOCK_FEATURES.find((feature) => feature.name === name);
 }
+
+/**
+ * Synchronous, mock-fixture-only helper — lets `services/mocks/properties.mock.ts`
+ * seed a property's `amenities: string[]` from this catalog's names instead of
+ * maintaining an independent taxonomy (the old `constants/amenities.ts`
+ * AMENITY_POOLS this catalog replaced). Not part of the async `featureService`
+ * surface real components call: this exists purely so fixture data has a
+ * single place to draw category-appropriate names from, same as
+ * `getFeatureByName` exists purely for synchronous display lookups.
+ */
+export function getFeatureNamesForCategory(
+  category: PropertyCategory,
+): string[] {
+  return MOCK_FEATURES.filter((feature) =>
+    feature.propertyCategories.includes(category),
+  ).map((feature) => feature.name);
+}

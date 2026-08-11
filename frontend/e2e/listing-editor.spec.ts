@@ -62,6 +62,23 @@ async function fillRequiredFields(page: import("@playwright/test").Page) {
 // same shared in-memory mock store — same reasoning as listings.spec.ts.
 test.describe.configure({ mode: "serial" });
 
+/**
+ * Filters to a row whose Status cell is *exactly* the given status — see
+ * listings.spec.ts's identical helper for why `toContainText` on the whole
+ * table is not a safe substitute (the unfiltered table almost always already
+ * contains *some* row of the target status, so that assertion can pass
+ * before the filter's refetch actually lands).
+ */
+function firstRowWithStatus(
+  page: import("@playwright/test").Page,
+  status: string,
+) {
+  return page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: status, exact: true }) })
+    .first();
+}
+
 test.describe("Property Editor (Phase 6.3)", () => {
   test("adding a property autosaves as a draft and adopts a real URL", async ({
     page,
@@ -113,7 +130,7 @@ test.describe("Property Editor (Phase 6.3)", () => {
     await goToMyProperties(page);
     await page.getByLabel("Status", { exact: true }).selectOption("DRAFT");
 
-    const firstRow = page.getByRole("row").nth(1);
+    const firstRow = firstRowWithStatus(page, "Draft");
     await firstRow.getByRole("link", { name: /Edit/ }).click();
 
     await expect(page).toHaveURL(/\/listings\/.+\/edit/);
@@ -134,7 +151,7 @@ test.describe("Property Editor (Phase 6.3)", () => {
     await goToMyProperties(page);
     await page.getByLabel("Status", { exact: true }).selectOption("ACTIVE");
 
-    const firstRow = page.getByRole("row").nth(1);
+    const firstRow = firstRowWithStatus(page, "Active");
     await firstRow.getByRole("link", { name: /Edit/ }).click();
 
     await expect(page).toHaveURL(/\/listings\/.+\/edit/);

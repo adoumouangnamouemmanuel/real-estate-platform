@@ -55,6 +55,14 @@ test.describe("Accessibility (axe)", () => {
     await page.goto("/properties");
     await page.waitForLoadState("networkidle");
     await page.locator("a[href^='/properties/']").first().click();
+    // Client-side navigation (Next.js Link) doesn't fire a full page load —
+    // .click() only waits for the click action itself, not for the resulting
+    // navigation. Without waiting for the URL to actually change first, the
+    // heading read below can still be racing the /properties listing page's
+    // own content (or the previous property's), not the destination page's —
+    // exactly what was happening here (this is a real, deterministic browser
+    // signal, not an arbitrary sleep).
+    await page.waitForURL(/\/properties\/[^/]+$/);
     // generateMetadata is async (awaits the mock service), so the new page's
     // <title> commits after networkidle. Wait for it to actually contain this
     // property's heading — a plain non-empty check can pass on the *previous*
@@ -249,6 +257,9 @@ test.describe("Accessibility (axe)", () => {
     await page.goto("/developers");
     await page.waitForLoadState("networkidle");
     await page.locator("a[href^='/developers/']").first().click();
+    // See the Property detail test above for why this wait is required —
+    // identical race, same fix.
+    await page.waitForURL(/\/developers\/[^/]+$/);
     const developerHeading = await page
       .getByRole("heading", { level: 1 })
       .textContent();

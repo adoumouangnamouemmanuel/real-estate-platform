@@ -90,8 +90,16 @@ test.describe("Notifications (Phase 6.6)", () => {
     await loginAsDeveloper(page);
     await goToNotifications(page);
     await page.getByLabel("Status").selectOption("UNREAD");
-
-    const firstCard = page.getByRole("listitem").first();
+    // The status filter triggers an async refetch (URL-driven filtering) —
+    // filtering the listitem locator itself on a button that only exists for
+    // genuinely-unread cards (NotificationsList.tsx's `isUnread` branch)
+    // makes Playwright's own auto-retry wait out the still-rendered
+    // unfiltered list, rather than grabbing whatever card happens to render
+    // first before the refetch lands.
+    const firstCard = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("button", { name: "Mark as read" }) })
+      .first();
     await firstCard.getByRole("button", { name: "Mark as read" }).click();
 
     // Re-select Unread: the just-read notification should no longer be in it.
@@ -105,8 +113,12 @@ test.describe("Notifications (Phase 6.6)", () => {
     await loginAsDeveloper(page);
     await goToNotifications(page);
     await page.getByLabel("Status").selectOption("UNREAD");
-
-    const firstCard = page.getByRole("listitem").first();
+    // See the "marks a single notification as read" test above for why this
+    // filtered locator (not a plain .first()) is required.
+    const firstCard = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("button", { name: "Mark as read" }) })
+      .first();
     await firstCard.getByRole("button").first().click();
 
     await expect(page.getByRole("dialog")).toBeVisible();

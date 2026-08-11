@@ -37,6 +37,27 @@ async function goToMyProperties(page: import("@playwright/test").Page) {
 // listing.service.test.ts snapshot/restore around each other.
 test.describe.configure({ mode: "serial" });
 
+/**
+ * Filters to a row whose Status cell is *exactly* the given status — not
+ * just "the table contains this text somewhere". The status filter select
+ * triggers an async refetch (URL-driven filtering), and `toContainText` on
+ * the whole table is not a safe wait for that: the unfiltered table almost
+ * always already contains *some* row of the target status mixed in with
+ * others, so that assertion can pass immediately, before the refetch lands,
+ * without proving the table is actually filtered. Filtering the row locator
+ * itself on the exact status cell makes Playwright's own auto-retry wait out
+ * the stale render correctly, whatever else is on the page.
+ */
+function firstRowWithStatus(
+  page: import("@playwright/test").Page,
+  status: string,
+) {
+  return page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: status, exact: true }) })
+    .first();
+}
+
 test.describe("My Properties (Phase 6.2)", () => {
   test("a developer reaches My Properties from the sidebar and sees their portfolio", async ({
     page,
@@ -95,7 +116,7 @@ test.describe("My Properties (Phase 6.2)", () => {
     await goToMyProperties(page);
     await page.getByLabel("Status", { exact: true }).selectOption("DRAFT");
 
-    const firstRow = page.getByRole("row").nth(1);
+    const firstRow = firstRowWithStatus(page, "Draft");
     const titleCell = await firstRow.locator("td").nth(1).innerText();
     const title = titleCell.split("\n")[0];
 
@@ -115,7 +136,7 @@ test.describe("My Properties (Phase 6.2)", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("DRAFT");
     await page.getByLabel("Rows per page").selectOption("50");
 
-    const firstRow = page.getByRole("row").nth(1);
+    const firstRow = firstRowWithStatus(page, "Draft");
     const titleCell = await firstRow.locator("td").nth(1).innerText();
     const title = titleCell.split("\n")[0];
 
@@ -140,7 +161,7 @@ test.describe("My Properties (Phase 6.2)", () => {
     await goToMyProperties(page);
     await page.getByLabel("Status", { exact: true }).selectOption("DRAFT");
 
-    const firstRow = page.getByRole("row").nth(1);
+    const firstRow = firstRowWithStatus(page, "Draft");
     const titleCell = await firstRow.locator("td").nth(1).innerText();
     const title = titleCell.split("\n")[0];
 
@@ -163,7 +184,7 @@ test.describe("My Properties (Phase 6.2)", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("DRAFT");
     await page.getByLabel("Rows per page").selectOption("50");
 
-    await page.getByRole("row").nth(1).getByRole("checkbox").check();
+    await firstRowWithStatus(page, "Draft").getByRole("checkbox").check();
     await expect(page.getByText("1 selected")).toBeVisible();
 
     await page.getByRole("button", { name: "Publish / Reopen" }).click();

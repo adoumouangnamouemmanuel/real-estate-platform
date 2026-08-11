@@ -8,6 +8,8 @@ export interface ScoredProperty extends Property {
 
 const PRICE_PROXIMITY_RATIO = 0.2;
 const SIZE_PROXIMITY_RATIO = 0.25;
+/** Sharing just one common amenity (e.g. "Parking") is too common to be a meaningful signal on its own — require at least this many shared features before it counts toward the score or the explanation. */
+const MIN_SHARED_FEATURES = 2;
 
 /**
  * Deterministic, explainable "Similar Properties" scoring — not a machine
@@ -74,6 +76,20 @@ function scoreCandidate(
   ) {
     score += 1;
     fragments.push("a similar size");
+  }
+
+  // Reads the same `amenities: string[]` the feature catalog (services/feature.service.ts)
+  // populates — feature overlap as a signal only makes sense because both the
+  // source and candidate amenities came from that one shared taxonomy, not two
+  // independently hardcoded lists that could name the same thing differently.
+  const sharedFeatures = (source.amenities ?? []).filter((amenity) =>
+    (candidate.amenities ?? []).includes(amenity),
+  );
+  if (sharedFeatures.length >= MIN_SHARED_FEATURES) {
+    score += 1;
+    fragments.push(
+      `shares ${sharedFeatures.length} features with this listing`,
+    );
   }
 
   return { score, fragments };

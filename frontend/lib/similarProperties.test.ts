@@ -99,6 +99,40 @@ describe("rankSimilarProperties", () => {
     expect(result.reason).toContain("a similar size");
   });
 
+  it("scores and explains shared features once at least two overlap", () => {
+    const source = makeProperty({
+      city: "Kumasi",
+      amenities: ["24/7 Security", "Backup Generator", "Garden"],
+    });
+    const candidate = makeProperty({
+      id: "candidate",
+      city: "Takoradi",
+      amenities: ["24/7 Security", "Backup Generator", "Parking"],
+    });
+
+    const [result] = rankSimilarProperties(source, [candidate], 1);
+
+    expect(result.reason).toContain("shares 2 features with this listing");
+  });
+
+  it("does not treat a single shared amenity as a meaningful signal", () => {
+    const source = makeProperty({
+      city: "Kumasi",
+      price: 100_000,
+      amenities: ["24/7 Security"],
+    });
+    const candidate = makeProperty({
+      id: "candidate",
+      city: "Takoradi",
+      price: 5_000_000,
+      amenities: ["24/7 Security"],
+    });
+
+    const [result] = rankSimilarProperties(source, [candidate], 1);
+
+    expect(result.reason).not.toContain("shares");
+  });
+
   it("respects the limit", () => {
     const source = makeProperty();
     const candidates = Array.from({ length: 10 }, (_, i) =>

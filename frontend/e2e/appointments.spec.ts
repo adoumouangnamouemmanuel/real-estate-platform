@@ -46,6 +46,27 @@ function firstDataRow(page: import("@playwright/test").Page) {
     .first();
 }
 
+/**
+ * Filters to a row whose Status cell is *exactly* the given status — not just
+ * "the table contains this text somewhere". The status filter select
+ * triggers an async refetch (URL-driven filtering), and `toContainText` on
+ * the whole table is not a safe wait for that: the unfiltered table almost
+ * always already contains *some* row of the target status mixed in with
+ * others, so that assertion can pass immediately, before the refetch lands,
+ * without proving the table is actually filtered. Filtering the row locator
+ * itself on the exact status cell makes Playwright's own auto-retry wait out
+ * the stale render correctly, whatever else is on the page.
+ */
+function firstRowWithStatus(
+  page: import("@playwright/test").Page,
+  status: string,
+) {
+  return page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: status, exact: true }) })
+    .first();
+}
+
 // Serial: several tests here mutate the shared mock appointment book (confirm,
 // cancel, reschedule, bulk actions). Running them concurrently would race on
 // the same in-memory array and produce flaky row counts — same reason
@@ -111,7 +132,7 @@ test.describe("Appointments (Phase 6.4)", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("REQUESTED");
     await page.getByLabel("Rows per page").selectOption("50");
 
-    const firstRow = firstDataRow(page);
+    const firstRow = firstRowWithStatus(page, "Requested");
     const clientCell = await firstRow.locator("td").nth(1).innerText();
 
     await firstRow
@@ -149,7 +170,7 @@ test.describe("Appointments (Phase 6.4)", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("CONFIRMED");
     await page.getByLabel("Rows per page").selectOption("50");
 
-    const firstRow = firstDataRow(page);
+    const firstRow = firstRowWithStatus(page, "Confirmed");
     const clientCell = await firstRow.locator("td").nth(1).innerText();
 
     await firstRow.getByRole("button", { name: /Actions for/ }).click();
@@ -172,7 +193,7 @@ test.describe("Appointments (Phase 6.4)", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("REQUESTED");
     await page.getByLabel("Rows per page").selectOption("50");
 
-    await firstDataRow(page).getByRole("checkbox").check();
+    await firstRowWithStatus(page, "Requested").getByRole("checkbox").check();
     await expect(page.getByText("1 selected")).toBeVisible();
 
     await expect(

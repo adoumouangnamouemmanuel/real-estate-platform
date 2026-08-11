@@ -685,12 +685,25 @@ unauthenticated visitor and an authenticated DEVELOPER, admitting only ADMIN.
 
 **Medium/Low findings deferred, not implemented this phase:**
 
-- **[Medium]** The feature/amenity catalog is not yet wired into Property
-  Cards or the public Filter Panel (only the Property Editor and Property
-  Detail read it today) — the reconciliation asked for it to "eventually" be
-  usable in both; scoped out this phase to keep the catalog's initial rollout
-  reviewable. `services/feature.service.ts`/`getFeatureByName` are already the
-  one source of truth, so this is additive wiring, not a redesign.
+- ~~**[Medium]** The feature/amenity catalog is not yet wired into Property
+  Cards or the public Filter Panel~~ — **audited in the Feature Catalog
+  Consistency Pass**: `PropertyCard` deliberately still doesn't render
+  amenities — bedrooms/bathrooms/measurement is the right density for a
+  scannable card, and a wall of amenity chips would work against that, not
+  for it; not a gap, a considered decision, restated here so it isn't
+  rediscovered. A public amenities _filter_ is a genuinely new, non-trivial
+  UI surface (multi-select control, URL param, chip rendering, `some`-vs-`every`
+  matching semantics) — not implemented, tracked below as its own item rather
+  than silently built as a side effect of a consistency pass.
+- **[Medium]** No public amenities/features filter exists yet
+  (`components/search/FilterPanel.tsx`, `lib/propertyFilters.ts`,
+  `property.service.ts`'s `filterProperties`). The canonical catalog
+  (`services/feature.service.ts`) is ready to back one — `featureService.getFeatures()`
+  already returns the full catalog, and `Property.amenities: string[]` already
+  stores catalog names — but the UI/matching-semantics decision (which
+  features to surface as filter chips; does a property need _all_ selected
+  features or _any_?) is a real product decision, not a mechanical wire-up.
+  Worth a small, dedicated pass once prioritized.
 - **[Medium]** Existing mock property records (`services/mocks/properties.mock.ts`,
   `listings.mock.ts`) were not backfilled with `district`/`landSizeSqm`/
   `buildingSizeSqm`/`carSpaces`/`yearBuilt` — every new field is optional and
@@ -716,3 +729,48 @@ verification, developer suspension model, region vs. district final
 terminology, the exact `areaSqm` → land/building-size DTO mapping, anonymous
 favorites, JWT payload shape, final role contract (whether Super Admin should
 still rank-inherit every Developer permission), CORS, and rate limiting.
+
+### Feature Catalog Consistency Pass (August 2026)
+
+A narrow audit closing the one architectural gap Phase 0.5 left behind:
+`services/mocks/properties.mock.ts` still imported the legacy
+`constants/amenities.ts` (`AMENITY_POOLS`) to seed mock fixture amenities,
+independent of the real feature catalog (`services/feature.service.ts` +
+`services/mocks/features.mock.ts`) the Property Editor and Property Detail
+already used — two sources of truth for the same taxonomy.
+
+**Found and fixed a genuine value gap while auditing, not just cosmetic
+duplication**: comparing the two taxonomies field-by-field surfaced that
+`features.mock.ts`'s `security-24-7` feature was missing `office` from its
+`propertyCategories` — the legacy `AMENITY_POOLS.office` pool included "24/7
+Security", so this was silent data loss introduced when the catalog was first
+built in Phase 0.5, not a deliberate change. Restored.
+
+**Migration**: `getFeatureNamesForCategory(category)` added to
+`feature.service.ts` — a synchronous, mock-fixture-only helper (distinct from
+the async `featureService.getFeatures()` real components call) that derives a
+category's amenity names from `MOCK_FEATURES`. `properties.mock.ts` now calls
+this instead of `AMENITY_POOLS.<category>`. `Property.amenities` stays
+`string[]` of display names — no DTO change, no breaking change to
+`PropertyAmenities`/`PropertyCard`/existing tests, exactly the "smallest safe
+migration" this pass was scoped to.
+
+**`constants/amenities.ts` removed.** Confirmed unused repository-wide after
+the migration (only comment/doc mentions of the old name remained, no
+imports) before deleting — not assumed safe, verified.
+
+**Similar Properties gained a feature-overlap signal.** `lib/similarProperties.ts`
+now scores (and explains, e.g. "shares 2 features with this listing") shared
+amenities between the source and a candidate, but only once at least 2
+features overlap — a single shared amenity (e.g. "Parking", common across
+most listings in a category) isn't a meaningful similarity signal on its own
+and would just add noise. This was safe to add specifically _because_ both
+sides now read `amenities` from the one shared catalog — before this pass,
+two independently-seeded lists could name conceptually-identical amenities
+differently, which would have made overlap-matching unreliable.
+
+**Audited, not changed:** `PropertyCard` still doesn't render amenities
+(considered decision, not a gap — see the corrected Medium item above) and
+the public Filter Panel still has no amenities filter (real product/UI
+decision, tracked as its own Medium item above, not built as a side effect of
+this pass).

@@ -8,6 +8,24 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Changed
 
+- **Feature Catalog Consistency Pass.** Eliminated the last duplicate
+  amenity/feature source of truth: `services/mocks/properties.mock.ts` no
+  longer imports the legacy `constants/amenities.ts` (`AMENITY_POOLS`) to
+  seed fixture amenities — it now draws from the canonical feature catalog
+  via a new `getFeatureNamesForCategory()` helper in `feature.service.ts`.
+  `constants/amenities.ts` was deleted after confirming it was genuinely
+  unused everywhere. While auditing the two taxonomies for parity, found and
+  fixed a real data gap: the catalog's `24/7 Security` feature was missing
+  `office` from its eligible categories, silently dropping a feature the
+  legacy pool had offered office listings. `lib/similarProperties.ts` gained
+  a new "shared features" signal (only counted once at least 2 features
+  overlap, to avoid noise from one common amenity) — safe to add now that
+  both sides of the comparison read from one shared catalog. Audited, left
+  unchanged: `PropertyCard` still doesn't render amenities (a considered
+  density decision) and the public Filter Panel still has no amenities
+  filter (a real product/UI decision requiring its own scoped pass, tracked
+  in `TODO.md`).
+
 - **Pre-Integration Reconciliation (Phase 0.5).** Reconciled the frontend
   against the real backend ER diagram ahead of API integration. Replaced the
   hardcoded amenity string pool with a real feature catalog service
