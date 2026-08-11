@@ -99,18 +99,39 @@ function RowActions({
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        disabled={disabled || !canEdit}
-        aria-label={`Edit ${property.title}`}
-        title={canEdit ? "Edit listing" : "Edit listing (soon)"}
-        {...(canEdit
-          ? { render: <Link href={ROUTES.EDIT_LISTING(property.slug)} /> }
-          : {})}
-      >
-        <Pencil />
-      </Button>
+      {canEdit ? (
+        <Link
+          href={ROUTES.EDIT_LISTING(property.slug)}
+          aria-label={`Edit ${property.title}`}
+          title="Edit listing"
+          aria-disabled={disabled}
+          tabIndex={disabled ? -1 : undefined}
+          onClick={(event) => {
+            // A plain <a> has no `disabled` semantics of its own — this
+            // reproduces the same "row action blocked while its own mutation
+            // is in flight" behavior the previous Button+render composition
+            // got for free from Base UI's disabled handling.
+            if (disabled) event.preventDefault();
+          }}
+          className={buttonVariants({
+            variant: "ghost",
+            size: "icon-sm",
+            className: disabled ? "pointer-events-none opacity-50" : undefined,
+          })}
+        >
+          <Pencil />
+        </Link>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled
+          aria-label={`Edit ${property.title}`}
+          title="Edit listing (soon)"
+        >
+          <Pencil />
+        </Button>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={`Actions for ${property.title}`}

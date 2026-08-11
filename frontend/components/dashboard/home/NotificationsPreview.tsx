@@ -6,7 +6,7 @@ import { Bell } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
@@ -21,9 +21,7 @@ function NotificationRow({ notification }: { notification: Notification }) {
   const isUnread = notification.status === "UNREAD";
 
   return (
-    <li
-      className={cn("flex gap-3 rounded-lg p-2", isUnread && "bg-muted/50")}
-    >
+    <li className={cn("flex gap-3 rounded-lg p-2", isUnread && "bg-muted/50")}>
       <span className="bg-muted text-muted-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
         <Icon className="size-4" aria-hidden />
       </span>
@@ -57,13 +55,12 @@ export function NotificationsPreview() {
   const { data, isLoading, isError } = useDashboardNotifications();
 
   const viewAll = isFeatureEnabled("DASHBOARD_NOTIFICATIONS") ? (
-    <Button
-      variant="ghost"
-      size="sm"
-      render={<Link href={ROUTES.NOTIFICATIONS} />}
+    <Link
+      href={ROUTES.NOTIFICATIONS}
+      className={buttonVariants({ variant: "ghost", size: "sm" })}
     >
       View all
-    </Button>
+    </Link>
   ) : undefined;
 
   return (

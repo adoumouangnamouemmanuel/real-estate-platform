@@ -5,7 +5,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { NotificationCategoryBadge } from "@/components/dashboard/StatusBadge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDateTime, formatRelativeTime } from "@/lib/formatters";
@@ -86,13 +86,12 @@ function NotificationCard({
 
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         {notification.link && (
-          <Button
-            variant="outline"
-            size="sm"
-            render={<Link href={notification.link} />}
+          <Link
+            href={notification.link}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             View
-          </Button>
+          </Link>
         )}
         {isUnread && (
           <Button

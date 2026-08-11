@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { NotificationCategoryBadge } from "@/components/dashboard/StatusBadge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Drawer,
   DrawerContent,
@@ -72,13 +72,12 @@ export function NotificationDetailsDrawer({
 
             <DrawerFooter className="flex-row flex-wrap justify-end">
               {notification.link && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={notification.link} />}
+                <Link
+                  href={notification.link}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
                   View details
-                </Button>
+                </Link>
               )}
               {notification.status === "UNREAD" && (
                 <Button

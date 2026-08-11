@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { ActionNeededItem, ActionNeededType } from "@/types";
@@ -113,13 +113,12 @@ export function ActionNeededList({
                     {item.description}
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={item.href} />}
+                <Link
+                  href={item.href}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
                   View
-                </Button>
+                </Link>
               </li>
             );
           })}

@@ -405,6 +405,30 @@ Living tracker for frontend work. Update this alongside feature work, not after 
 
 ## Technical Debt
 
+- ~~**[Medium]** `Button` + `render={<Link .../>}` triggers a Base UI console
+  warning~~ — **fixed** (Aug 2026, frontend-freeze manual review). Found
+  starting from the Navbar's "Log in" button; `nativeButton` defaults to
+  `true` in `components/ui/button.tsx`, and Base UI warns whenever `render`
+  swaps in a non-`<button>` element. First attempt (`nativeButton={false}`
+  whenever `render` is supplied) was tried and reverted: it silenced the
+  warning but made Base UI apply button ARIA semantics onto the rendered
+  `<a>`, changing its accessible role from "link" to "button" — a real
+  regression, confirmed by 10 failing `getByRole("link", ...)` assertions.
+  The actual fix: every genuinely-navigational `Button` + `render={<Link
+.../>}` call site now renders a plain `Link` styled with `buttonVariants()`
+  directly, bypassing Base UI's button-role emulation entirely (the pattern
+  `RecentListings.tsx`'s own dropdown trigger already used). Fixed in
+  `components/layout/NavbarAuthSection.tsx`,
+  `components/dashboard/notifications/NotificationsList.tsx`,
+  `components/dashboard/notifications/NotificationDetailsDrawer.tsx`,
+  `components/dashboard/ActionNeededList.tsx`,
+  `components/dashboard/home/QuickActions.tsx`,
+  `components/dashboard/home/RecentListings.tsx`,
+  `components/dashboard/home/NotificationsPreview.tsx`,
+  `app/(dashboard)/listings/page.tsx`. `DashboardUserMenu.tsx` and
+  `ListingsTable.tsx` were in the original (inaccurate) list of affected
+  files — re-checked and confirmed they use `DropdownMenuItem`, a different
+  Base UI primitive that doesn't trigger this warning; left untouched.
 - `MediaUploader` reorders photos with explicit "move earlier"/"move later"
   buttons, not drag-and-drop — drag-and-drop would need a new dependency and
   its own from-scratch keyboard-accessibility work; the buttons are fully

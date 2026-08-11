@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
 import type { FeatureFlag } from "@/constants/features";
@@ -89,15 +89,17 @@ export function QuickActions() {
         }
 
         return (
-          <Button
+          <Link
             key={action.label}
-            variant={index === 0 ? "default" : "outline"}
-            render={<Link href={action.href} />}
-            className="gap-2"
+            href={action.href}
+            className={buttonVariants({
+              variant: index === 0 ? "default" : "outline",
+              className: "gap-2",
+            })}
           >
             <Icon aria-hidden />
             {action.label}
-          </Button>
+          </Link>
         );
       })}
     </div>

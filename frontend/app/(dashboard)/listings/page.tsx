@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { DashboardPageContainer } from "@/components/dashboard/DashboardPageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { ListingsView } from "@/components/dashboard/listings/ListingsView";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { APP_NAME } from "@/constants/config";
 import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
@@ -42,10 +42,10 @@ export default async function ListingsPage({
         description="Search, filter, and manage your property portfolio."
         action={
           isFeatureEnabled("DASHBOARD_PROPERTY_EDITOR") ? (
-            <Button render={<Link href={ROUTES.NEW_LISTING} />}>
+            <Link href={ROUTES.NEW_LISTING} className={buttonVariants()}>
               <Plus />
               Add Property
-            </Button>
+            </Link>
           ) : undefined
         }
       />

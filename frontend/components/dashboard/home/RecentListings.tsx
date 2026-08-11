@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { PropertyStatusBadge } from "@/components/dashboard/StatusBadge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,9 +67,12 @@ export function RecentListings() {
   const { data, isLoading, isError } = useRecentListings();
 
   const viewAll = isFeatureEnabled("DASHBOARD_PROPERTIES") ? (
-    <Button variant="ghost" size="sm" render={<Link href={ROUTES.LISTINGS} />}>
+    <Link
+      href={ROUTES.LISTINGS}
+      className={buttonVariants({ variant: "ghost", size: "sm" })}
+    >
       View all
-    </Button>
+    </Link>
   ) : undefined;
 
   return (

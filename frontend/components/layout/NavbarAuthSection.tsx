@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -25,15 +25,17 @@ export function NavbarAuthSection() {
           {user.fullName}
         </span>
         {hasDashboard && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            render={<Link href={ROUTES.DASHBOARD} />}
+          <Link
+            href={ROUTES.DASHBOARD}
+            className={buttonVariants({
+              variant: "outline",
+              size: "sm",
+              className: "gap-1.5",
+            })}
           >
             <LayoutDashboard className="size-4" aria-hidden />
             Dashboard
-          </Button>
+          </Link>
         )}
         <Button variant="outline" size="sm" onClick={() => logout()}>
           Log out
@@ -43,8 +45,11 @@ export function NavbarAuthSection() {
   }
 
   return (
-    <Button variant="outline" size="sm" render={<Link href={ROUTES.LOGIN} />}>
+    <Link
+      href={ROUTES.LOGIN}
+      className={buttonVariants({ variant: "outline", size: "sm" })}
+    >
       Log in
-    </Button>
+    </Link>
   );
 }
