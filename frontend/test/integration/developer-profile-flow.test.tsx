@@ -24,7 +24,6 @@ describe("Developer profile flow", () => {
       <DeveloperProfileView
         developer={developer}
         activeListings={activeListings}
-        featuredListings={[]}
       />,
     );
 
@@ -35,35 +34,33 @@ describe("Developer profile flow", () => {
       screen.getByText("Building homes across Greater Accra since 2019."),
     ).toBeInTheDocument();
     expect(screen.getByText("hello@atlantic.example")).toBeInTheDocument();
-    expect(screen.getByText("4.6 / 5")).toBeInTheDocument();
+    // The rating moved from a stat tile (one "4.6 / 5" node) into the identity
+    // metadata row, where the value and the scale are separate nodes so the
+    // number can carry its own emphasis. Still no count — no such field exists.
+    expect(screen.getByText("4.6")).toBeInTheDocument();
+    expect(screen.getByText("/ 5")).toBeInTheDocument();
     expect(screen.getByText("Active Listing")).toBeInTheDocument();
   });
 
-  it("renders Featured Properties only when there are featured listings", () => {
-    const developer = makeDeveloperProfile();
-
-    const { rerender } = renderWithQueryClient(
+  /**
+   * The former "Featured Properties" section was removed: it rendered this
+   * developer's own active properties sorted by price, presented as an
+   * editorial selection the data cannot support (no `featured` field exists).
+   * This asserts the duplicate section stays gone.
+   */
+  it("does not present a separate Featured Properties section", () => {
+    renderWithQueryClient(
       <DeveloperProfileView
-        developer={developer}
-        activeListings={[]}
-        featuredListings={[]}
+        developer={makeDeveloperProfile()}
+        activeListings={[makeProperty({ title: "Only Listing" })]}
       />,
     );
+
     expect(
-      screen.queryByRole("heading", { name: "Featured Properties" }),
+      screen.queryByRole("heading", { name: /Featured/i }),
     ).not.toBeInTheDocument();
-
-    rerender(
-      <DeveloperProfileView
-        developer={developer}
-        activeListings={[]}
-        featuredListings={[makeProperty({ title: "Top Listing" })]}
-      />,
-    );
-    expect(
-      screen.getByRole("heading", { name: "Featured Properties" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Top Listing")).toBeInTheDocument();
+    // The one property appears exactly once, not duplicated across sections.
+    expect(screen.getAllByText("Only Listing")).toHaveLength(1);
   });
 
   it("only renders social links that the developer actually has", () => {
@@ -72,11 +69,7 @@ describe("Developer profile flow", () => {
     });
 
     renderWithQueryClient(
-      <DeveloperProfileView
-        developer={developer}
-        activeListings={[]}
-        featuredListings={[]}
-      />,
+      <DeveloperProfileView developer={developer} activeListings={[]} />,
     );
 
     expect(screen.getByRole("link", { name: /Website/ })).toBeInTheDocument();
@@ -93,7 +86,6 @@ describe("Developer profile flow", () => {
       <DeveloperProfileView
         developer={makeDeveloperProfile()}
         activeListings={[]}
-        featuredListings={[]}
       />,
     );
 
@@ -105,7 +97,6 @@ describe("Developer profile flow", () => {
       <DeveloperProfileView
         developer={makeDeveloperProfile()}
         activeListings={[]}
-        featuredListings={[]}
       />,
     );
 

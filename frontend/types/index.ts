@@ -147,6 +147,30 @@ export interface Developer {
   isVerified: boolean;
   rating?: number;
   activeListings: number;
+  /**
+   * Short description, shown as the Developer directory card's editorial line.
+   *
+   * The data already exists on both sides: every record in
+   * `services/mocks/developers.mock.ts` carries a bio (the mock array is typed
+   * `DeveloperProfile[]` and `developer.service.ts` returns it unmapped, so the
+   * list path has always carried this value at runtime), and the backend model
+   * has a real `property_developer.bio` column. Nothing here is invented.
+   *
+   * Optional rather than required because `docs/API_CONTRACT.md` §Developers
+   * currently defines `bio` as **detail-only** — it lists `bio`,
+   * `socialLinks`, `totalListings` and `yearsActive` as fields that "only need
+   * joining on the detail page", unlike the cheap `activeListings`/`rating`
+   * aggregates. The directory renders a bio when one is present and degrades
+   * cleanly when it isn't, so a list response that omits it stays correct.
+   *
+   * TODO(backend): serving `bio` on the developer *list* DTO is therefore a
+   * **proposed contract addendum, not agreed behaviour** — it would widen
+   * `GET /api/v1/developers` beyond what API_CONTRACT.md currently specifies,
+   * and needs backend agreement before either document changes. Same handling
+   * as the proposed public `listingType` filter (see CHANGELOG.md, Stage 6):
+   * documented as a proposal, not applied.
+   */
+  bio?: string;
 }
 
 export interface DeveloperSocialLinks {

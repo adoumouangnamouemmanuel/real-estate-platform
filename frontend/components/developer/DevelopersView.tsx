@@ -27,19 +27,23 @@ export function DevelopersView({ filters }: DevelopersViewProps) {
   }
 
   return (
-    <div className="container-page flex flex-col gap-6 py-10">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Developers</h1>
-        <p className="text-muted-foreground text-sm">
-          {data ? `${data.total} developers` : "Browse developers"}
-        </p>
-      </div>
-
+    // `flex-1` is a layout fix, not styling: the public <main> is a column flex
+    // container, and without it a short result set (three developers is one
+    // row) left the footer floating mid-viewport above ~500px of dead space.
+    <div className="container-page flex flex-1 flex-col gap-6 py-10">
       <DeveloperFilterPanel filters={filters} onApply={handleFilterChange} />
       <FilterChips
         chips={buildDeveloperFilterChips(filters)}
         onRemove={handleRemoveFilter}
       />
+
+      {/* Reads straight off the query result — no rounding, no "500+" framing.
+          Hidden while loading rather than showing a zero that would flicker. */}
+      {data && (
+        <p className="text-muted-foreground text-sm" aria-live="polite">
+          {data.total} {data.total === 1 ? "developer" : "developers"}
+        </p>
+      )}
 
       <DeveloperGrid
         developers={data?.items ?? []}

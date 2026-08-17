@@ -213,4 +213,26 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /*
+   * The rules above can't reach framer-motion, which writes inline styles
+   * rather than CSS transitions — and `MotionConfig reducedMotion="user"`
+   * only suppresses transform, deliberately leaving opacity animating.
+   *
+   * The gap this closes is the pre-hydration window: `useReducedMotion` is a
+   * `useSyncExternalStore` hook whose `getServerSnapshot()` returns false, and
+   * React uses that same snapshot for the hydration render — so the server and
+   * first client render both emit the "hidden" state (opacity 0, y 24) even for
+   * a user who has asked for no motion. The JS fix in MotionReveal only takes
+   * effect once the store re-reads after hydration.
+   *
+   * `!important` beats framer's inline styles, so reveal content is at its
+   * final position and fully opaque from the very first paint, with no
+   * dependence on hydration timing. Applies to every route using the shared
+   * primitives, not just one page.
+   */
+  [data-motion-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

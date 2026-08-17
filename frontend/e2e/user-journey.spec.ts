@@ -59,9 +59,18 @@ test.describe("Homepage → Search → Listing → Details → Developer journey
       new RegExp(developerHref!.replace(/[/]/g, "\\/") + "$"),
     );
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "About" })).toBeVisible();
+    // The bio no longer sits under its own "About" heading — it moved into the
+    // identity header, where it belongs to who the developer is rather than to
+    // a downstream section. Assert the bio text itself, which is the thing that
+    // actually has to be on the page, rather than the heading that framed it.
     await expect(
-      page.getByRole("heading", { name: "Active Listings" }),
+      page
+        .locator("main header p")
+        .filter({ hasText: /.{60,}/ })
+        .first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Active listings/i }),
     ).toBeVisible();
   });
 

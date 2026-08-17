@@ -52,8 +52,17 @@ export function MotionReveal({
   if (prefersReducedMotion) {
     return (
       <Component
-        initial="visible"
+        data-motion-reveal
+        // `initial={false}` (not "visible") tells framer to mount at the target
+        // values without running an enter animation at all, and duration 0
+        // collapses any transition it would otherwise inherit. Previously this
+        // branch used initial/animate="visible", which still animated: the
+        // element had already begun fading from the render below, so framer
+        // eased it to 1 rather than snapping — measured at opacity 0.62 200ms
+        // in, settling only after the full 600ms reveal duration.
+        initial={false}
         animate="visible"
+        transition={{ duration: 0 }}
         variants={resolvedVariants}
         {...props}
       />
@@ -62,6 +71,7 @@ export function MotionReveal({
 
   return (
     <Component
+      data-motion-reveal
       initial="hidden"
       whileInView="visible"
       viewport={{ once, margin: "-80px" }}
@@ -77,6 +87,31 @@ export function MotionRevealItem({
   variants,
   ...props
 }: { as?: RevealTag; variants?: Variants } & HTMLMotionProps<"div">) {
+  const prefersReducedMotion = useReducedMotion();
   const Component = motion[as] as typeof motion.div;
-  return <Component variants={variants ?? revealVariants} {...props} />;
+
+  // Items previously ignored the setting entirely and inherited the parent's
+  // stagger, so each one was delayed by 80ms * its index even for users who had
+  // asked for no motion. Opting out here as well means the last item in a long
+  // grid appears at the same instant as the first.
+  if (prefersReducedMotion) {
+    return (
+      <Component
+        data-motion-reveal
+        initial={false}
+        animate="visible"
+        transition={{ duration: 0 }}
+        variants={variants ?? revealVariants}
+        {...props}
+      />
+    );
+  }
+
+  return (
+    <Component
+      data-motion-reveal
+      variants={variants ?? revealVariants}
+      {...props}
+    />
+  );
 }

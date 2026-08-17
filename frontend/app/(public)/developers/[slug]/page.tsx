@@ -34,16 +34,14 @@ export default async function DeveloperProfilePage({
     .getDeveloperBySlug(slug)
     .catch(() => notFound());
 
-  const [activeListingsResult, featuredListings] = await Promise.all([
-    developerService.getDeveloperListings(developer.id),
-    developerService.getFeaturedListings(developer.id, 3),
-  ]);
+  const activeListingsResult = await developerService.getDeveloperListings(
+    developer.id,
+  );
 
   return (
     <DeveloperProfileView
       developer={developer}
       activeListings={activeListingsResult.items}
-      featuredListings={featuredListings}
     />
   );
 }

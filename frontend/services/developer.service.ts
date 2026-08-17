@@ -108,10 +108,10 @@ export const developerService = {
     return delay(paginate(listings, page, pageSize));
   },
 
-  getFeaturedListings: (developerId: string, limit = 4): Promise<Property[]> =>
-    delay(
-      MOCK_PROPERTIES.filter((item) => item.developer.id === developerId)
-        .sort((a, b) => b.price - a.price)
-        .slice(0, limit),
-    ),
+  // `getFeaturedListings` was removed here, not just unused: it returned this
+  // developer's own active properties sorted by price, which the profile
+  // presented as "Featured Properties" alongside the full list of the same
+  // properties. No `featured` field exists anywhere in the model, so a price
+  // sort was standing in for editorial selection the data cannot support.
+  // Reinstating it needs a real flag from the backend, not a client-side rank.
 };
