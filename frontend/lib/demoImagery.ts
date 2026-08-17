@@ -87,3 +87,16 @@ export function getCategoryImageUrl(
 
 /** The homepage hero's full-bleed background photo — same demo/mock provenance as every other image here. */
 export const HERO_IMAGE_URL = unsplashUrl("1600585154340-be6161a56a0c", 2000);
+
+/**
+ * The homepage hero's cinematic crossfade rotation — one verified photo per
+ * category (reusing ids already inspected in CATEGORY_IMAGE_POOL above,
+ * never new ones) so the opening moment previews the range of what's on the
+ * platform rather than looping a single frame.
+ */
+export const HERO_IMAGES: { src: string; alt: string }[] = [
+  { src: HERO_IMAGE_URL, alt: "" },
+  { src: unsplashUrl(CATEGORY_IMAGE_POOL.apartment[0], 2000), alt: "" },
+  { src: unsplashUrl(CATEGORY_IMAGE_POOL.land[0], 2000), alt: "" },
+  { src: unsplashUrl(CATEGORY_IMAGE_POOL.commercial[1], 2000), alt: "" },
+];

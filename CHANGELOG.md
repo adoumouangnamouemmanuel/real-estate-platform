@@ -8,6 +8,132 @@ The format follows Keep a Changelog and the project uses a roadmap-driven delive
 
 ### Changed
 
+- **Stage 6 — Product UX Remediation.** Closed nine gaps found by a live-browser
+  product UX audit against the meeting decisions in
+  `docs/PRODUCT_BACKEND_RECONCILIATION.md` §2. No backend, ER, API
+  implementation, auth contract or mock-fixture changes; no new architecture —
+  every fix reuses an existing service, primitive or rule.
+
+  _Trust and data honesty:_
+
+  - **The homepage no longer advertises a capability that is switched off.** It
+    claimed "Direct WhatsApp contact — Message developers directly" as a
+    standing fact while `FEATURES.WHATSAPP_CONTACT` was `false` and every real
+    CTA on the site rendered a disabled "(coming soon)" button — a direct breach
+    of the meeting's "no frontend copy may promise more than the backend can
+    deliver." The copy now comes from `lib/contactTrustPoint.ts`, which reads
+    the same flag those CTAs read; the flag-off wording describes what genuinely
+    works today (developer emails published on their profiles) rather than a
+    softened version of the WhatsApp promise. Flipping the flag restores the
+    WhatsApp claim and activates the CTAs together, with no further change.
+  - **Removed the fabricated "Total Property Views" KPI** from Dashboard Home.
+    It was a hardcoded `MOCK_TOTAL_PROPERTY_VIEWS = 3742` — the only metric on
+    the page not derived from data, and precisely the claim Analytics refuses to
+    make for want of per-view data (ADR-016). `dashboardService.getMetrics` now
+    omits the field entirely rather than substituting another number or a
+    placeholder zero, `DashboardMetrics.totalPropertyViews` became optional with
+    the reasoning recorded on the type, and `DashboardKpis` is typed against
+    only the metrics that have a real source, so the tile cannot silently
+    return. Three tiles instead of four.
+
+  _Broken and missing journeys:_
+
+  - **Property detail pages have a working contact path again.** The only
+    contact control was the disabled WhatsApp button, so a live listing offered
+    no way to reach anyone — while a real `mailto:` already existed on the
+    developer's profile, two clicks away and unsignposted. `DeveloperInfoCard`
+    now carries an explicit "Contact {developer}" action routed to
+    `ROUTES.DEVELOPER_CONTACT` (`/developers/[slug]#contact`), and the profile's
+    Contact block became a properly labelled `<section id="contact">` with
+    scroll margin for the sticky navbar. No booking form, viewing request,
+    phone number or WhatsApp affordance was invented — the Appointment entity
+    still doesn't exist backend-side (§9).
+
+    Building this surfaced a second, non-obvious bug: the anchor didn't
+    actually scroll. `/developers/[slug]` has its own `loading.tsx`, so Next
+    applies its `#hash` scroll while the loading boundary is mounted — measured
+    on the built app, `#contact` only entered the DOM ~700ms later, and
+    `scrollY` stayed `0`, leaving the visitor at the top of the profile rather
+    than at the contact details. (The hard-load path was timing-dependent too:
+    it scrolled correctly on an idle machine and failed under CPU load.) Fixed
+    with `components/common/ScrollToHash.tsx`, rendered alongside the real
+    content so the target is guaranteed to exist — it honours
+    `prefers-reduced-motion` and moves focus as well as the viewport, which a
+    hard load's native fragment navigation does for free but a client-side one
+    does not. The E2E assertion was changed from `toBeVisible()` to
+    `toBeInViewport()`: the former checks presence, not position, and passed
+    straight over the broken anchor.
+
+  - **Saved Properties (`/saved`) now exists.** Favourites could be saved from
+    every card but never retrieved: no route, no link, nothing. The new page
+    composes the existing `favoriteService` (which ids this browser has saved)
+    with a new `propertyService.getPropertiesByIds`, renders through the
+    existing `PropertyGrid`/`PropertyCard`, and removes a property through the
+    very same optimistic `FavoriteButton` mutation that added it — one
+    favourites system, not two. The page states plainly that saves live in this
+    browser only, rather than implying an account-synced list the backend
+    doesn't provide yet. Reachable from a new public nav entry.
+  - **Draft listings no longer offer a "View listing" action that 404s.** A
+    draft has no public page by design, so the action navigated straight to
+    "Page not found" (reproduced in a browser during the audit). A new
+    `isPubliclyVisible` rule in `listing.service.ts` — taken from
+    `docs/API_CONTRACT.md` §3's own "only ACTIVE properties should ever appear
+    here", and deliberately conservative on the `RESERVED` case that contract
+    hedges on — is now the single source both the My Properties row menu, its
+    mobile card equivalent, and Dashboard Home's Recent Listings read. A SOLD
+    listing (terminal, undeletable, off the public site) renders no actions menu
+    at all rather than an empty popup; its Edit action is unaffected. Status
+    transitions, Publish, Delete and every other behaviour are untouched.
+
+  _Discovery:_
+
+  - **Added a Sale/Rent filter to the public marketplace**, which had none —
+    buyers and renters browsed one interleaved list, and "Price: Low to High"
+    surfaced six monthly rentals ahead of every sale listing because a rent and
+    a sale price were being ordered as if they were the same unit. `listingType`
+    now flows through the existing filter pipeline end to end (`PropertyFilters`
+    → `parsePropertyFilters` → `filterProperties` → `FilterPanel` → filter
+    chip), so it is URL-driven, survives refresh, and composes with the existing
+    sorting and pagination. **No price normalization was invented** — the data
+    model has no rental period to derive one from; instead, sorting a
+    still-mixed list by price shows an inline note offering to narrow to one
+    type.
+  - **District is now visible publicly.** It was collected by the Property
+    Editor and stored on `Property`, but rendered nowhere. A shared
+    `lib/propertyLocation.ts` formats the location line for cards and the detail
+    header (preferring the more specific "East Legon, Accra" over "Accra,
+    Greater Accra" when a district exists) and stacks the full hierarchy on the
+    detail page's Location section. Listings without a district — every fixture
+    today, since mocks were deliberately not backfilled — render exactly as
+    before.
+  - **The public navbar shows which page you are on.** No link carried
+    `aria-current` at any route. A minimal `NavbarLinks` client boundary adds it
+    plus a weight-and-colour active state (not colour alone); `Navbar` itself
+    stays a Server Component and its sticky/glass styling, auth section,
+    Dashboard shortcut and logout are untouched.
+
+  _Property Editor:_
+
+  - **Region no longer blocks publishing.** It was a required, free-text field
+    with no column in the backend model at all (§6 lists it MISSING/AMBIGUOUS,
+    and §18 Q4 on region-vs-district is still open), so a developer could be
+    gated on a value that could not be persisted. Region is now derived from the
+    selected city via `CITY_REGIONS` in `constants/locations.ts` and displayed
+    read-only, and was removed from `publishListingSchema`. The mapping is
+    derived from — not invented for — existing data: all 46 mock
+    property/listing records agree on it with no contradictions, and the city
+    field is a closed select, so it is total for anything selectable. Records
+    whose city predates that list keep their stored region rather than being
+    blanked. **This does not resolve region-vs-district** — the two remain
+    distinct concepts, nothing was renamed, and the backend question stays open
+    in `TODO.md`.
+
+  _Backend contract addendum proposed, not applied:_ public
+  `GET /api/v1/properties` should accept `listingType` — the column exists
+  (`property.listing_type`, §6 MATCH) and `GET /developers/me/listings` already
+  filters on it; only the public params block in `docs/API_CONTRACT.md` §3 omits
+  it. No backend or contract file was modified.
+
 - **Feature Catalog Consistency Pass.** Eliminated the last duplicate
   amenity/feature source of truth: `services/mocks/properties.mock.ts` no
   longer imports the legacy `constants/amenities.ts` (`AMENITY_POOLS`) to

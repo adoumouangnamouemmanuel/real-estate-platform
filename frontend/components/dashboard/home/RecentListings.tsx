@@ -28,6 +28,7 @@ import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
 import { useRecentListings } from "@/hooks/useDashboard";
 import { formatPrice, formatRelativeTime } from "@/lib/formatters";
+import { isPubliclyVisible } from "@/services";
 import type { Property } from "@/types";
 
 const COLUMN_COUNT = 4;
@@ -44,11 +45,17 @@ function ListingActions({ property }: { property: Property }) {
         <MoreHorizontal />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          render={<Link href={ROUTES.PROPERTY_DETAIL(property.slug)} />}
-        >
-          View listing
-        </DropdownMenuItem>
+        {/* Only for statuses that actually have a public page — this widget
+            shows drafts too, and a draft's public URL 404s. Same rule as My
+            Properties' row menu (services/listing.service.ts). Edit is always
+            offered, so the menu can never end up empty here. */}
+        {isPubliclyVisible(property.status) && (
+          <DropdownMenuItem
+            render={<Link href={ROUTES.PROPERTY_DETAIL(property.slug)} />}
+          >
+            View listing
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem
           disabled={!canEdit}
           {...(canEdit

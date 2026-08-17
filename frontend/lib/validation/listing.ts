@@ -95,7 +95,14 @@ export const publishListingSchema = listingSchema
       error: "Choose a category before publishing.",
     }),
     city: z.string().trim().min(1, "Add a city before publishing."),
-    region: z.string().trim().min(1, "Add a region before publishing."),
+    // `region` is deliberately NOT required to publish. It has no column in the
+    // backend model (docs/PRODUCT_BACKEND_RECONCILIATION.md §6 — MISSING /
+    // AMBIGUOUS, and §18 Q4 on region-vs-district is still open), so requiring
+    // it blocked publication on a value that couldn't be persisted. It's now
+    // derived from the chosen city (see ListingLocationSection) rather than
+    // typed, and city *is* required above — so a published listing still ends
+    // up with a region for every city the editor offers, without the developer
+    // being gated on a free-text field. Revisit once Q4 is answered.
     address: z.string().trim().min(1, "Add an address before publishing."),
     media: z
       .array(mediaSchema)

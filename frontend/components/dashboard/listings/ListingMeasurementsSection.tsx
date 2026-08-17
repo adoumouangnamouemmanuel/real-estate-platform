@@ -8,6 +8,15 @@ import { Input } from "@/components/ui/input";
 import type { PropertyCategory } from "@/constants/categories";
 import type { ListingFormValues } from "@/lib/validation/listing";
 
+/** Covers every mock listing today (max 5) with headroom — see services/mocks/properties.mock.ts. */
+const BEDROOM_BATHROOM_OPTIONS = Array.from(
+  { length: 11 },
+  (_, index) => index,
+);
+
+const SELECT_CLASSNAME =
+  "border-border bg-background h-9 w-full rounded-md border px-3 text-sm";
+
 /**
  * Which measurement/structural fields apply to each category — the same
  * "don't show every field to every property type" rule the reconciliation
@@ -158,14 +167,19 @@ export function ListingMeasurementsSection() {
             htmlFor="listing-bedrooms"
             error={errors.bedrooms?.message}
           >
-            <Input
+            <select
               id="listing-bedrooms"
-              type="number"
-              min={0}
-              inputMode="numeric"
               aria-invalid={!!errors.bedrooms}
+              className={SELECT_CLASSNAME}
               {...numberField(register, "bedrooms")}
-            />
+            >
+              <option value="">Select…</option>
+              {BEDROOM_BATHROOM_OPTIONS.map((count) => (
+                <option key={count} value={count}>
+                  {count === 0 ? "Studio (0)" : count}
+                </option>
+              ))}
+            </select>
           </FormField>
         )}
 
@@ -175,14 +189,19 @@ export function ListingMeasurementsSection() {
             htmlFor="listing-bathrooms"
             error={errors.bathrooms?.message}
           >
-            <Input
+            <select
               id="listing-bathrooms"
-              type="number"
-              min={0}
-              inputMode="numeric"
               aria-invalid={!!errors.bathrooms}
+              className={SELECT_CLASSNAME}
               {...numberField(register, "bathrooms")}
-            />
+            >
+              <option value="">Select…</option>
+              {BEDROOM_BATHROOM_OPTIONS.map((count) => (
+                <option key={count} value={count}>
+                  {count}
+                </option>
+              ))}
+            </select>
           </FormField>
         )}
 

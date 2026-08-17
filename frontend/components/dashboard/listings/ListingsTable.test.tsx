@@ -1,11 +1,31 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeProperty } from "@/test/fixtures";
 import type { Property } from "@/types";
 
 import { ListingsTable } from "./ListingsTable";
+
+/** See the identical helper in AppointmentsTable.test.tsx — flips the jsdom
+ *  matchMedia stub so the sub-`md` card presentation renders. */
+function useMobileViewport() {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) =>
+    ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList) as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+}
 
 const draft: Property = makeProperty({
   id: "d1",
@@ -98,6 +118,37 @@ describe("ListingsTable", () => {
     ).not.toBeInTheDocument();
   });
 
+  /**
+   * A DRAFT has no page on the public catalogue, so the "View listing" action
+   * it used to offer navigated straight to a 404 (reproduced in a real browser
+   * during the Stage 6 audit). `isPubliclyVisible` is the one rule this and the
+   * card presentation both read.
+   */
+  it("offers no public View listing action for a DRAFT", async () => {
+    const user = userEvent.setup();
+    renderTable();
+
+    await user.click(screen.getByLabelText("Actions for Draft Listing"));
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Publish" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "View listing" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers View listing for an ACTIVE listing, linked to its public page", async () => {
+    const user = userEvent.setup();
+    renderTable();
+
+    await user.click(screen.getByLabelText("Actions for Active Listing"));
+
+    expect(
+      await screen.findByRole("menuitem", { name: "View listing" }),
+    ).toHaveAttribute("href", "/properties/test-property");
+  });
+
   it("links the row's direct Edit action to the property editor", () => {
     renderTable();
 
@@ -107,18 +158,19 @@ describe("ListingsTable", () => {
     );
   });
 
-  it("offers no Delete action and no transitions for a SOLD (terminal) listing", async () => {
-    const user = userEvent.setup();
+  /**
+   * SOLD is terminal (no transitions), undeletable, and off the public
+   * catalogue — so its menu would render as an empty popup. The trigger is
+   * dropped rather than offering a control with nothing behind it; Edit is a
+   * separate always-present button, so no action is lost.
+   */
+  it("renders no actions menu at all for a SOLD (terminal) listing", () => {
     renderTable();
 
-    await user.click(screen.getByLabelText("Actions for Sold Listing"));
-
     expect(
-      await screen.findByRole("menuitem", { name: "View listing" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("menuitem", { name: "Delete" }),
+      screen.queryByLabelText("Actions for Sold Listing"),
     ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Edit Sold Listing")).toBeInTheDocument();
   });
 
   it("dispatches onStatusChange with the chosen transition", async () => {
@@ -191,5 +243,79 @@ describe("ListingsTable", () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  describe("below md (card presentation)", () => {
+    let restore: () => void;
+    afterEach(() => restore?.());
+
+    it("renders cards instead of a table, each row's controls present exactly once", () => {
+      restore = useMobileViewport();
+      renderTable();
+
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
+      // Draft and Active have menus; Sold is terminal/undeletable/non-public,
+      // so it renders none — identical to the desktop table above.
+      expect(screen.getAllByLabelText(/^Actions for /)).toHaveLength(2);
+      expect(screen.getByText("Draft Listing")).toBeInTheDocument();
+    });
+
+    it("applies the same publicly-visible rule to View listing as the table", async () => {
+      restore = useMobileViewport();
+      const user = userEvent.setup();
+      renderTable();
+
+      await user.click(screen.getByLabelText("Actions for Draft Listing"));
+      expect(
+        await screen.findByRole("menuitem", { name: "Publish" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("menuitem", { name: "View listing" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("keeps status, price and edit/actions reachable without horizontal scrolling", () => {
+      restore = useMobileViewport();
+      renderTable({ listings: [draft] });
+
+      expect(screen.getByText("Draft")).toBeInTheDocument();
+      expect(screen.getByLabelText("Edit Draft Listing")).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Actions for Draft Listing"),
+      ).toBeInTheDocument();
+    });
+
+    it("still offers only the transitions valid for the row's status", async () => {
+      restore = useMobileViewport();
+      const user = userEvent.setup();
+      const onStatusChange = vi.fn();
+      renderTable({ listings: [draft], onStatusChange });
+
+      await user.click(screen.getByLabelText("Actions for Draft Listing"));
+      await user.click(
+        await screen.findByRole("menuitem", { name: "Publish" }),
+      );
+
+      expect(onStatusChange).toHaveBeenCalledWith(
+        draft,
+        expect.objectContaining({ target: "ACTIVE" }),
+      );
+    });
+
+    it("keeps bulk selection working", async () => {
+      restore = useMobileViewport();
+      const user = userEvent.setup();
+      const onToggleRow = vi.fn();
+      const onToggleAll = vi.fn();
+      renderTable({ onToggleRow, onToggleAll });
+
+      await user.click(screen.getByLabelText("Select Draft Listing"));
+      expect(onToggleRow).toHaveBeenCalledWith("d1");
+
+      await user.click(
+        screen.getByLabelText("Select all listings on this page"),
+      );
+      expect(onToggleAll).toHaveBeenCalled();
+    });
   });
 });

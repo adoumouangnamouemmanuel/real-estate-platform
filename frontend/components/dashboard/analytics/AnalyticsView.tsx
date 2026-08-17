@@ -6,6 +6,7 @@ import { AnalyticsStatsRow } from "@/components/dashboard/analytics/AnalyticsSta
 import { AppointmentFunnelChart } from "@/components/dashboard/analytics/AppointmentFunnelChart";
 import { PortfolioCompositionTable } from "@/components/dashboard/analytics/PortfolioCompositionTable";
 import { ErrorState } from "@/components/common/ErrorState";
+import { MotionReveal } from "@/components/motion";
 import { useAnalyticsSnapshot } from "@/hooks/useAnalytics";
 import { useFilterNavigation } from "@/hooks/useFilterNavigation";
 import { getErrorMessage } from "@/lib/errors";
@@ -51,15 +52,20 @@ export function AnalyticsView({ period }: AnalyticsViewProps) {
         />
       </div>
 
-      <AnalyticsStatsRow stats={data?.stats ?? []} isLoading={isLoading} />
+      <MotionReveal key={`stats-${period}`}>
+        <AnalyticsStatsRow stats={data?.stats ?? []} isLoading={isLoading} />
+      </MotionReveal>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <MotionReveal
+        key={`charts-${period}`}
+        className="grid gap-6 lg:grid-cols-2"
+      >
         <AppointmentFunnelChart funnel={data?.funnel} isLoading={isLoading} />
         <PortfolioCompositionTable
           portfolio={data?.portfolio}
           isLoading={isLoading}
         />
-      </div>
+      </MotionReveal>
     </div>
   );
 }

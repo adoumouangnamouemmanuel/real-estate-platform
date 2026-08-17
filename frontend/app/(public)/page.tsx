@@ -4,7 +4,6 @@ import {
   Briefcase,
   Building2,
   Home as HomeIcon,
-  MessageCircle,
   ShieldCheck,
   TrendingUp,
   Trees,
@@ -14,6 +13,12 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ComponentType } from "react";
 
+import {
+  ImageCrossfade,
+  MotionImage,
+  MotionReveal,
+  MotionRevealItem,
+} from "@/components/motion";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { buttonVariants } from "@/components/ui/button";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -22,7 +27,8 @@ import {
   type PropertyCategory,
 } from "@/constants/categories";
 import { ROUTES } from "@/constants/routes";
-import { getCategoryImageUrl, HERO_IMAGE_URL } from "@/lib/demoImagery";
+import { getContactTrustPoint } from "@/lib/contactTrustPoint";
+import { getCategoryImageUrl, HERO_IMAGES } from "@/lib/demoImagery";
 import { propertyService } from "@/services";
 import type { Property } from "@/types";
 
@@ -65,66 +71,78 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <section className="relative flex min-h-[560px] items-center justify-center overflow-hidden">
-        <Image
-          src={HERO_IMAGE_URL}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
+      <section className="relative flex min-h-[560px] items-center justify-center overflow-hidden sm:min-h-[640px] lg:min-h-[720px]">
+        <ImageCrossfade images={HERO_IMAGES} className="absolute inset-0" />
         <div
           aria-hidden
           className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/25"
         />
 
-        <div className="container-page relative flex flex-col items-center gap-6 py-24 text-center text-white">
-          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+        <MotionReveal
+          stagger
+          className="container-page relative flex flex-col items-center gap-6 py-24 text-center text-white"
+        >
+          <MotionRevealItem
+            as="h1"
+            className="max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl"
+          >
             Find your next home across African markets.
-          </h1>
-          <p className="max-w-xl text-white/85">
+          </MotionRevealItem>
+          <MotionRevealItem as="p" className="max-w-xl text-white/85">
             Browse real listings from real developers — no account required.
-          </p>
-          <SearchBar />
-        </div>
+          </MotionRevealItem>
+          <MotionRevealItem className="flex w-full max-w-xl justify-center">
+            <SearchBar variant="glass" />
+          </MotionRevealItem>
+        </MotionReveal>
       </section>
 
       <section className="container-page flex flex-col gap-6 py-16">
         <h2 className="text-2xl font-semibold tracking-tight">
           Explore by category
         </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <MotionReveal
+          stagger
+          className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+        >
           {PROPERTY_CATEGORIES.map((category) => {
             const Icon = CATEGORY_ICONS[category.value];
             return (
-              <Link
-                key={category.value}
-                href={`${ROUTES.PROPERTIES}?category=${category.value}`}
-                className="group ring-border relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-xl ring-1"
-              >
-                <Image
-                  src={getCategoryImageUrl(category.value)}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
-                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                />
-                <div
-                  aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"
-                />
-                <div className="relative flex items-center gap-2 p-3 text-white">
-                  <Icon className="size-4 shrink-0" aria-hidden />
-                  <span className="text-sm font-medium">{category.label}</span>
-                </div>
-              </Link>
+              <MotionRevealItem key={category.value}>
+                <Link
+                  href={`${ROUTES.PROPERTIES}?category=${category.value}`}
+                  className="ring-border relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-xl ring-1"
+                >
+                  <MotionImage className="absolute inset-0">
+                    <Image
+                      src={getCategoryImageUrl(category.value)}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
+                      className="object-cover"
+                    />
+                  </MotionImage>
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"
+                  />
+                  <div className="relative flex items-center gap-2 p-3 text-white">
+                    <Icon className="size-4 shrink-0" aria-hidden />
+                    <span className="text-sm font-medium">
+                      {category.label}
+                    </span>
+                  </div>
+                </Link>
+              </MotionRevealItem>
             );
           })}
-        </div>
+        </MotionReveal>
       </section>
 
-      <section className="container-page flex flex-col gap-6 py-8">
+      <MotionReveal
+        as="section"
+        className="container-page flex flex-col gap-6 py-8"
+      >
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold tracking-tight">
             Featured Properties
@@ -142,10 +160,13 @@ export default async function Home() {
             <PropertyCard key={property.id} property={property} />
           ))}
         </div>
-      </section>
+      </MotionReveal>
 
       {trending.length > 0 && (
-        <section className="container-page flex flex-col gap-6 py-8">
+        <MotionReveal
+          as="section"
+          className="container-page flex flex-col gap-6 py-8"
+        >
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <TrendingUp className="text-brand-gold size-5" aria-hidden />
@@ -162,11 +183,14 @@ export default async function Home() {
               <PropertyCard key={property.id} property={property} />
             ))}
           </div>
-        </section>
+        </MotionReveal>
       )}
 
       {landOpportunities.length > 0 && (
-        <section className="container-page flex flex-col gap-6 py-8">
+        <MotionReveal
+          as="section"
+          className="container-page flex flex-col gap-6 py-8"
+        >
           <h2 className="text-2xl font-semibold tracking-tight">
             Land Opportunities
           </h2>
@@ -175,30 +199,40 @@ export default async function Home() {
               <PropertyCard key={property.id} property={property} />
             ))}
           </div>
-        </section>
+        </MotionReveal>
       )}
 
       <section className="bg-muted/40 py-16">
-        <div className="container-page grid gap-8 sm:grid-cols-3">
-          <TrustPoint
-            icon={BadgeCheck}
-            title="Developer verification"
-            description="Look for the verified badge — it means we've reviewed that developer."
-          />
-          <TrustPoint
-            icon={MessageCircle}
-            title="Direct WhatsApp contact"
-            description="Message developers directly — no middlemen, no hidden fees."
-          />
-          <TrustPoint
-            icon={ShieldCheck}
-            title="Transparent listings"
-            description="Real prices and real locations, so there are no surprises at viewing."
-          />
-        </div>
+        <MotionReveal
+          stagger
+          className="container-page grid gap-8 sm:grid-cols-3"
+        >
+          <MotionRevealItem>
+            <TrustPoint
+              icon={BadgeCheck}
+              title="Developer verification"
+              description="Look for the verified badge — it means we've reviewed that developer."
+            />
+          </MotionRevealItem>
+          {/* Copy is chosen from the same flag the real WhatsApp CTAs read —
+              see lib/contactTrustPoint.ts. */}
+          <MotionRevealItem>
+            <TrustPoint {...getContactTrustPoint()} />
+          </MotionRevealItem>
+          <MotionRevealItem>
+            <TrustPoint
+              icon={ShieldCheck}
+              title="Transparent listings"
+              description="Real prices and real locations, so there are no surprises at viewing."
+            />
+          </MotionRevealItem>
+        </MotionReveal>
       </section>
 
-      <section className="container-page flex flex-col items-center gap-4 py-20 text-center">
+      <MotionReveal
+        as="section"
+        className="container-page flex flex-col items-center gap-4 py-20 text-center"
+      >
         <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           Ready to find your next property?
         </h2>
@@ -212,7 +246,7 @@ export default async function Home() {
         >
           Browse Properties
         </Link>
-      </section>
+      </MotionReveal>
     </div>
   );
 }

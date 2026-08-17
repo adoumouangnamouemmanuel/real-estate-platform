@@ -3,13 +3,17 @@
 import { Bath, Bed, Building2, MapPin, Ruler, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/property/FavoriteButton";
+import { MotionImage } from "@/components/motion";
 import { ROUTES } from "@/constants/routes";
 import { useFavoriteCount } from "@/hooks/useFavorites";
 import { formatPrice } from "@/lib/formatters";
+import { formatPropertyLocation } from "@/lib/propertyLocation";
 import { getPrimaryMeasurement } from "@/lib/propertyMeasurements";
+import { cn } from "@/lib/utils";
 import type { Property } from "@/types";
 
 /** Above this, a property earns a "Popular" signal on its card — see favoriteService for what backs the count. */
@@ -19,14 +23,17 @@ interface PropertyCardProps {
   property: Property;
   /** Only the first visible row of cards should eagerly load — see PropertyGrid/homepage callers. */
   priority?: boolean;
-  /** Set by Similar Properties (see lib/similarProperties.ts) — an explainable, per-card reason this specific card was suggested. Never shown when absent, e.g. on a plain catalogue grid. */
+  /** Set by Similar Properties (see lib/similarProperties.ts) — an explainable, per-card reason this specific card was suggested. Never shown when absent, e.g. on a plain catalogue grid. Kept for screen readers even when `matchTags` renders the compact version. */
   reason?: string;
+  /** Compact scannable version of `reason` (e.g. ["Similar location", "3 shared features"]) — see lib/similarProperties.ts. */
+  matchTags?: string[];
 }
 
 export function PropertyCard({
   property,
   priority = false,
   reason,
+  matchTags,
 }: PropertyCardProps) {
   const coverImage = property.media[0];
   const measurement = getPrimaryMeasurement(property);
@@ -35,9 +42,11 @@ export function PropertyCard({
     property.favoriteCount ?? 0,
   );
   const isPopular = favoriteCount >= POPULAR_THRESHOLD;
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
-    <article className="group bg-card ring-border relative flex flex-col overflow-hidden rounded-xl ring-1 transition-shadow duration-300 hover:shadow-lg">
+    <article className="bg-card ring-border relative flex flex-col overflow-hidden rounded-xl ring-1 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg">
       {/*
         A normal block-level flex container, not `display: contents` — a
         `contents` element has no box of its own, which left Playwright (and
@@ -50,15 +59,22 @@ export function PropertyCard({
         className="flex flex-1 flex-col"
       >
         <div className="bg-muted relative aspect-[4/3] w-full overflow-hidden">
-          {coverImage ? (
-            <Image
-              src={coverImage.url}
-              alt={property.title}
-              fill
-              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-              priority={priority}
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-            />
+          {coverImage && !imageFailed ? (
+            <MotionImage className="absolute inset-0">
+              <Image
+                src={coverImage.url}
+                alt={property.title}
+                fill
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                priority={priority}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageFailed(true)}
+                className={cn(
+                  "object-cover opacity-0 transition-opacity duration-500",
+                  imageLoaded && "opacity-100",
+                )}
+              />
+            </MotionImage>
           ) : (
             <div className="text-muted-foreground flex h-full w-full items-center justify-center">
               <Building2 className="size-8" aria-hidden />
@@ -85,9 +101,7 @@ export function PropertyCard({
 
           <p className="text-muted-foreground flex items-center gap-1 text-xs">
             <MapPin className="size-3.5 shrink-0" aria-hidden />
-            <span className="truncate">
-              {property.city}, {property.region}
-            </span>
+            <span className="truncate">{formatPropertyLocation(property)}</span>
           </p>
 
           {(property.bedrooms !== undefined ||
@@ -125,10 +139,17 @@ export function PropertyCard({
             )}
           </p>
 
-          {reason && (
-            <p className="text-muted-foreground border-border border-t pt-2 text-xs italic">
-              {reason}
+          {matchTags && matchTags.length > 0 ? (
+            <p className="text-muted-foreground border-border border-t pt-2 text-xs">
+              {matchTags.join(" · ")}
+              {reason && <span className="sr-only"> — {reason}</span>}
             </p>
+          ) : (
+            reason && (
+              <p className="text-muted-foreground border-border border-t pt-2 text-xs italic">
+                {reason}
+              </p>
+            )
           )}
         </div>
       </Link>

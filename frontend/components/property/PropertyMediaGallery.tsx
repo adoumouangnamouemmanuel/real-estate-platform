@@ -1,9 +1,11 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { Building2 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
+import { DURATION_BASE } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { PropertyMedia } from "@/types";
 
@@ -31,18 +33,29 @@ export function PropertyMediaGallery({
   return (
     <div className="flex flex-col gap-2">
       <div className="bg-muted relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-        {/* Keyed by index so switching photos re-mounts the image and replays
-            the fade-in (tw-animate-css, already installed for radix-derived
-            primitives elsewhere) instead of the swap being instant. */}
-        <Image
-          key={activeIndex}
-          src={activeImage.url}
-          alt={`${title} — photo ${activeIndex + 1} of ${media.length}`}
-          fill
-          sizes="(min-width: 1024px) 900px, 100vw"
-          className="animate-in fade-in object-cover duration-300"
-          priority
-        />
+        {/* mode="sync" (rather than the default "wait") lets the incoming
+            photo fade in while the outgoing one is still fading out, so
+            switching photos crossfades instead of dipping through the muted
+            background between them. */}
+        <AnimatePresence mode="sync">
+          <motion.div
+            key={activeIndex}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DURATION_BASE }}
+            className="absolute inset-0"
+          >
+            <Image
+              src={activeImage.url}
+              alt={`${title} — photo ${activeIndex + 1} of ${media.length}`}
+              fill
+              sizes="(min-width: 1024px) 900px, 100vw"
+              className="object-cover"
+              priority
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {media.length > 1 && (

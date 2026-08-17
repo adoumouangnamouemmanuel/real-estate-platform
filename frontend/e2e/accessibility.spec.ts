@@ -16,6 +16,9 @@ test.describe("Accessibility (axe)", () => {
     { name: "Property listing", path: "/properties" },
     { name: "Developer listing", path: "/developers" },
     { name: "Search results", path: "/search?q=Accra" },
+    // Scanned in its empty state — a fresh browser context has nothing saved.
+    // The populated state is covered by saved-properties.spec.ts.
+    { name: "Saved properties", path: "/saved" },
     { name: "Login", path: "/login" },
     { name: "Registration", path: "/register" },
     { name: "Forgot password", path: "/forgot-password" },
@@ -181,6 +184,15 @@ test.describe("Accessibility (axe)", () => {
       .click();
     await expect(page).toHaveURL("/notifications");
     await page.waitForLoadState("networkidle");
+    // The notification list's stagger-in entrance (MotionRevealItem) means a
+    // card can still be mid-fade right after networkidle; axe computes
+    // contrast from the element's current (partially-transparent) blended
+    // color at that instant, which reads as a false low-contrast violation
+    // that doesn't exist once the reveal settles. Confirmed by comparing
+    // scans with and without this wait — only the mid-animation scan flags
+    // anything. Give the ~600ms reveal (lib/motion.ts DURATION_SLOW) time to
+    // finish before scanning the settled page.
+    await page.waitForTimeout(1000);
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

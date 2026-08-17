@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { MOBILE_MEDIA_QUERY, useMediaQuery } from "@/hooks/useMediaQuery";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDate, formatDateTime, formatTime } from "@/lib/formatters";
 import {
@@ -188,11 +189,124 @@ function RowActions({
 }
 
 /**
- * The Appointments table: bulk-selectable rows grouped by scheduled date,
+ * Below `md` the 6-column table only fits ~2 columns on a phone, pushing
+ * Status, the overdue flag and every action behind a horizontal scroll. This
+ * renders the same appointments as a stacked card list instead — same date
+ * grouping, same selection, same `RowActions` component (so
+ * AppointmentActionPolicy stays the single source of truth for what a given
+ * status may do), just laid out vertically.
+ */
+function AppointmentCards({
+  groups,
+  selectedIds,
+  onToggleRow,
+  onAction,
+  onViewDetails,
+  pendingIds,
+}: {
+  groups: { label: string; items: Appointment[] }[];
+  selectedIds: Set<string>;
+  onToggleRow: (id: string) => void;
+  onAction: (appointment: Appointment, action: AppointmentAction) => void;
+  onViewDetails: (appointment: Appointment) => void;
+  pendingIds: Set<string>;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      {groups.map((group) => (
+        <section
+          key={`group-${group.label}-${group.items[0]?.id}`}
+          aria-label={group.label}
+          className="flex flex-col gap-2"
+        >
+          <h3 className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+            <CalendarClock className="size-3.5" aria-hidden />
+            {group.label}
+          </h3>
+
+          <ul className="flex flex-col gap-2">
+            {group.items.map((appointment) => {
+              const overdue = isOverdueAppointment(appointment, new Date());
+              return (
+                <li
+                  key={appointment.id}
+                  data-state={
+                    selectedIds.has(appointment.id) ? "selected" : undefined
+                  }
+                  className="border-border data-[state=selected]:bg-muted/50 flex gap-3 rounded-lg border p-3"
+                >
+                  <Checkbox
+                    checked={selectedIds.has(appointment.id)}
+                    onChange={() => onToggleRow(appointment.id)}
+                    aria-label={`Select appointment with ${appointment.clientName}`}
+                    className="mt-1 shrink-0"
+                  />
+
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">
+                        {appointment.clientName}
+                      </span>
+                      <AppointmentStatusBadge status={appointment.status} />
+                    </div>
+
+                    <span className="text-muted-foreground flex items-center gap-1.5 text-sm">
+                      <Home className="size-3.5 shrink-0" aria-hidden />
+                      <span className="truncate">
+                        {appointment.propertyTitle}
+                      </span>
+                    </span>
+
+                    <span className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                      <span className="sr-only">
+                        {formatDateTime(appointment.scheduledFor)}
+                        {overdue && " (overdue)"}
+                      </span>
+                      <span aria-hidden className="flex items-center gap-1.5">
+                        <Clock className="size-3.5 shrink-0" aria-hidden />
+                        {formatTime(appointment.scheduledFor)}
+                      </span>
+                      {overdue && (
+                        <span
+                          aria-hidden
+                          className="text-destructive flex items-center gap-1 text-xs font-medium"
+                        >
+                          <CalendarClock className="size-3.5" aria-hidden />
+                          Overdue
+                        </span>
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="shrink-0">
+                    <RowActions
+                      appointment={appointment}
+                      onAction={onAction}
+                      onViewDetails={onViewDetails}
+                      disabled={pendingIds.has(appointment.id)}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The Appointments list: bulk-selectable rows grouped by scheduled date,
  * a status-aware action menu per row driven entirely by
  * AppointmentActionPolicy (so a policy change here can't drift from the bulk
  * toolbar's rules), loading skeleton, and both a true-empty and a
  * filtered-to-nothing empty state — mirrors ListingsTable.
+ *
+ * Renders a semantic table from `md` up and a card list below it. The two are
+ * swapped in JS rather than with `hidden`/`md:` classes so only one exists in
+ * the DOM at a time — otherwise every row's controls and accessible names
+ * would be duplicated.
  */
 export function AppointmentsTable({
   appointments,
@@ -208,6 +322,8 @@ export function AppointmentsTable({
   hasActiveFilters,
   onClearFilters,
 }: AppointmentsTableProps) {
+  const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY);
+
   if (isError) {
     return (
       <ErrorState
@@ -249,6 +365,31 @@ export function AppointmentsTable({
     appointments.every((item) => selectedIds.has(item.id));
   const someSelected = appointments.some((item) => selectedIds.has(item.id));
   const groups = groupByDate(appointments);
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Visible text matches SelectAllCheckbox's own aria-label verbatim so
+            the accessible name still contains the visible label (WCAG 2.5.3). */}
+        <label className="text-muted-foreground flex items-center gap-2 text-sm">
+          <SelectAllCheckbox
+            checked={allSelected}
+            indeterminate={someSelected && !allSelected}
+            onChange={onToggleAll}
+          />
+          Select all appointments on this page
+        </label>
+        <AppointmentCards
+          groups={groups}
+          selectedIds={selectedIds}
+          onToggleRow={onToggleRow}
+          onAction={onAction}
+          onViewDetails={onViewDetails}
+          pendingIds={pendingIds}
+        />
+      </div>
+    );
+  }
 
   return (
     <Table>

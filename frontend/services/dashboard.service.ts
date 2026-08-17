@@ -19,9 +19,6 @@ import {
 
 const MOCK_LATENCY_MS = 400;
 
-/** A steady headline number for "total views" — not derivable from the mock listings. */
-const MOCK_TOTAL_PROPERTY_VIEWS = 3742;
-
 function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) =>
     setTimeout(() => resolve(value), MOCK_LATENCY_MS),
@@ -50,7 +47,13 @@ export const dashboardService = {
       unreadNotifications: MOCK_NOTIFICATIONS.filter(
         (n) => n.status === "UNREAD",
       ).length,
-      totalPropertyViews: MOCK_TOTAL_PROPERTY_VIEWS,
+      // `totalPropertyViews` is deliberately absent, not zero: every metric
+      // here is derived from real mock data, and there is no per-view data to
+      // derive it from. It used to be a hardcoded 3742 — a fabricated headline
+      // number on the developer's first screen, while Analytics next door
+      // refuses to make any view-based claim for exactly that reason
+      // (ADR-016). TODO(backend): populate from the `property_analytics` daily
+      // rollups (ARCHITECTURE.md §11) — a real value, or none at all.
     });
   },
 

@@ -1,9 +1,12 @@
 "use client";
 
 import { Heart } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { useIsFavorited, useToggleFavorite } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
+
+const MotionHeart = motion.create(Heart);
 
 interface FavoriteButtonProps {
   propertyId: string;
@@ -51,14 +54,15 @@ export function FavoriteButton({
         className,
       )}
     >
-      <Heart
+      <MotionHeart
         aria-hidden
+        initial={false}
+        animate={{ scale: isFavorited ? [1, 1.35, 1] : 1 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
         className={cn(
-          "transition-all duration-200",
+          "transition-colors duration-200",
           size === "sm" ? "size-4.5" : "size-5",
-          isFavorited
-            ? "fill-brand-gold text-brand-gold scale-110"
-            : "text-foreground scale-100",
+          isFavorited ? "fill-brand-gold text-brand-gold" : "text-foreground",
         )}
       />
     </button>

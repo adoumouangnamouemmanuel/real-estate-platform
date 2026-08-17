@@ -1,9 +1,12 @@
 "use client";
 
+import { motion } from "framer-motion";
+
 import { EmptyState } from "@/components/common/EmptyState";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { PROPERTY_STATUS_LABEL } from "@/components/dashboard/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DURATION_SLOW, EASE_CINEMATIC } from "@/lib/motion";
 import {
   Table,
   TableBody,
@@ -35,10 +38,12 @@ function ShareBar({ count, total }: { count: number; total: number }) {
   return (
     <div className="flex items-center justify-end gap-2">
       <div className="bg-muted h-2 w-10 shrink-0 overflow-hidden rounded-full">
-        <div
+        <motion.div
           aria-hidden
           className="bg-primary h-full rounded-full"
-          style={{ width: `${percent}%` }}
+          initial={{ width: 0 }}
+          animate={{ width: `${percent}%` }}
+          transition={{ duration: DURATION_SLOW, ease: EASE_CINEMATIC }}
         />
       </div>
       <span className="text-muted-foreground w-8 shrink-0 text-right text-xs tabular-nums">
@@ -81,7 +86,12 @@ export function PortfolioCompositionTable({
           description="Properties you add will appear here."
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2">
+        // Splits into two columns only at `xl`, not `sm`: this card is itself
+        // half-width from `lg` (see AnalyticsView's grid), so an inner split at
+        // 640px left each table ~150px at 1024 — clipping the "Share of
+        // portfolio" header and hiding every percentage and count behind a
+        // horizontal scroll.
+        <div className="grid gap-6 xl:grid-cols-2">
           <Table>
             <TableHeader>
               <TableRow>

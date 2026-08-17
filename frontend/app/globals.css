@@ -57,6 +57,19 @@
      `bottom-0` so the nav never renders over it. One number, three
      consumers — change it here, not in each consumer. */
   --dashboard-mobile-nav-h: 3.5rem;
+
+  /* Motion system tokens — shared timing/easing for the Premium Experience
+     motion pass (see frontend/CLAUDE.md). Cinematic surfaces (hero, gallery,
+     scroll reveals) use --ease-cinematic, a slower, weighted curve; UI
+     feedback (hover, press, toggles) uses --ease-standard, snappier and more
+     mechanical. Keep new motion work referencing these rather than inventing
+     new curves/durations per component. */
+  --ease-cinematic: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 600ms;
+  --duration-cinematic: 1200ms;
 }
 
 @theme inline {
@@ -107,13 +120,26 @@
   --spacing-dashboard-mobile-nav: var(--dashboard-mobile-nav-h);
 }
 
+/*
+ * `w-full` is load-bearing, not decorative: both containers are rendered as a
+ * direct child of a `flex flex-col` <main> (see app/(public)/layout.tsx and
+ * DashboardShell). `mx-auto` sets *auto* cross-axis margins, and per the
+ * flexbox spec auto cross margins disable `align-items: stretch` — so without
+ * an explicit width the container is shrink-to-fit sized instead of filling
+ * its parent. When any descendant's min-content exceeds the viewport (a wide
+ * dashboard table), shrink-to-fit resolves to that min-content and the whole
+ * page scrolls horizontally, instead of the table scrolling inside its own
+ * `overflow-x-auto` region as designed. Making the width explicit keeps the
+ * container at the parent's width and lets the intended scroll container do
+ * its job. Do not remove.
+ */
 @utility container-page {
-  @apply mx-auto max-w-6xl px-4 sm:px-6;
+  @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
 }
 
 /* Wider than container-page: dashboard tables need the extra room desktop screens have. */
 @utility container-dashboard {
-  @apply mx-auto max-w-(--breakpoint-xl) px-4 py-6 lg:px-6;
+  @apply mx-auto w-full max-w-(--breakpoint-xl) px-4 py-6 lg:px-6;
 }
 
 body {

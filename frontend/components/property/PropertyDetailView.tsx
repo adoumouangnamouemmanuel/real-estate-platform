@@ -3,6 +3,7 @@ import { Bath, Bed, MessageCircle, Ruler } from "lucide-react";
 import { ShareButton } from "@/components/common/ShareButton";
 import { WhatsAppCTA } from "@/components/common/WhatsAppCTA";
 import { DeveloperInfoCard } from "@/components/developer/DeveloperInfoCard";
+import { MotionReveal, MotionRevealItem } from "@/components/motion";
 import { FavoriteButton } from "@/components/property/FavoriteButton";
 import { PropertyAmenities } from "@/components/property/PropertyAmenities";
 import { PropertyCard } from "@/components/property/PropertyCard";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/constants/features";
 import { formatPrice } from "@/lib/formatters";
 import { getPrimaryMeasurement } from "@/lib/propertyMeasurements";
+import { formatPropertyLocation } from "@/lib/propertyLocation";
 import type { ScoredProperty } from "@/lib/similarProperties";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
 import type { PropertyDetail } from "@/types";
@@ -33,14 +35,14 @@ export function PropertyDetailView({
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
-          <header className="flex flex-col gap-3">
+          <MotionReveal as="header" className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
                   {property.listingType === "SALE" ? "For Sale" : "For Rent"}
                 </Badge>
                 <span className="text-muted-foreground text-sm">
-                  {property.city}, {property.region}
+                  {formatPropertyLocation(property)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -89,28 +91,31 @@ export function PropertyDetailView({
                 )}
               </div>
             )}
-          </header>
+          </MotionReveal>
 
-          <section className="flex flex-col gap-2">
+          <MotionReveal as="section" className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold">Description</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {property.description}
             </p>
-          </section>
+          </MotionReveal>
 
           {property.amenities.length > 0 && (
-            <section className="flex flex-col gap-2">
+            <MotionReveal as="section" className="flex flex-col gap-2">
               <h2 className="text-lg font-semibold">Amenities</h2>
               <PropertyAmenities amenities={property.amenities} />
-            </section>
+            </MotionReveal>
           )}
 
-          <section className="flex flex-col gap-2">
+          <MotionReveal as="section" className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold">Location</h2>
             <PropertyLocation property={property} />
-          </section>
+          </MotionReveal>
         </div>
 
+        {/* Sticky sidebar architecture preserved exactly — no motion wrapper
+            on the <aside> itself, only within it, so lg:sticky positioning
+            can't be affected by an in-flight transform. */}
         <aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:h-fit lg:self-start">
           <h2 className="text-lg font-semibold">Contact</h2>
           <DeveloperInfoCard developer={property.developer} />
@@ -126,18 +131,23 @@ export function PropertyDetailView({
       </div>
 
       {relatedProperties.length > 0 && (
-        <section className="flex flex-col gap-4">
+        <MotionReveal as="section" className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Similar Properties</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <MotionReveal
+            stagger
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
             {relatedProperties.map((item) => (
-              <PropertyCard
-                key={item.id}
-                property={item}
-                reason={item.reason}
-              />
+              <MotionRevealItem key={item.id}>
+                <PropertyCard
+                  property={item}
+                  reason={item.reason}
+                  matchTags={item.tags}
+                />
+              </MotionRevealItem>
             ))}
-          </div>
-        </section>
+          </MotionReveal>
+        </MotionReveal>
       )}
     </div>
   );

@@ -1,8 +1,9 @@
-import { BadgeCheck, Globe, MessageCircle } from "lucide-react";
+import { BadgeCheck, Globe, Mail, MessageCircle } from "lucide-react";
 import Image from "next/image";
 
 import { WhatsAppCTA } from "@/components/common/WhatsAppCTA";
 import { MapPlaceholder } from "@/components/common/MapPlaceholder";
+import { ScrollToHash } from "@/components/common/ScrollToHash";
 import { DeveloperAvatar } from "@/components/developer/DeveloperAvatar";
 import { DeveloperStats } from "@/components/developer/DeveloperStats";
 import { PropertyCard } from "@/components/property/PropertyCard";
@@ -35,6 +36,9 @@ export function DeveloperProfileView({
 }: DeveloperProfileViewProps) {
   return (
     <div className="flex flex-col">
+      {/* Mounted with the real content, not the route's loading boundary — see
+          ScrollToHash for why Next's own `#hash` scroll doesn't land here. */}
+      <ScrollToHash />
       <div className="bg-muted relative h-40 w-full sm:h-56">
         {developer.coverImageUrl && (
           <Image
@@ -116,13 +120,27 @@ export function DeveloperProfileView({
           </div>
 
           <aside className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-lg font-semibold">Contact</h2>
+            {/* `id`/`scroll-mt` are load-bearing: a property detail page links
+                straight here via ROUTES.DEVELOPER_CONTACT (`#contact`), and the
+                public Navbar is `sticky top-0`, so without the scroll margin the
+                heading lands underneath it. */}
+            <section
+              id="contact"
+              aria-labelledby="developer-contact-heading"
+              className="flex scroll-mt-24 flex-col gap-2"
+            >
+              <h2
+                id="developer-contact-heading"
+                className="text-lg font-semibold"
+              >
+                Contact
+              </h2>
               <div className="border-border flex flex-col gap-2 rounded-lg border p-4 text-sm">
                 <a
                   href={`mailto:${developer.email}`}
-                  className="hover:underline"
+                  className="flex items-center gap-1.5 hover:underline"
                 >
+                  <Mail className="size-3.5 shrink-0" aria-hidden />
                   {developer.email}
                 </a>
                 {SOCIAL_LINKS.map(
@@ -141,7 +159,7 @@ export function DeveloperProfileView({
                     ),
                 )}
               </div>
-            </div>
+            </section>
 
             <div className="flex flex-col gap-2">
               <h2 className="text-lg font-semibold">Location</h2>

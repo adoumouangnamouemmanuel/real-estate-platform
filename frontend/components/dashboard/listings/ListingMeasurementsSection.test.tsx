@@ -62,15 +62,15 @@ describe("ListingMeasurementsSection", () => {
     expect(screen.queryByLabelText("Bathrooms")).not.toBeInTheDocument();
   });
 
-  it("accepts a numeric value and clears to undefined when emptied", async () => {
+  it("accepts a selected bedroom count and clears to undefined when reset to the placeholder", async () => {
     const user = userEvent.setup();
     render(<Harness category="house" />);
 
     const bedrooms = screen.getByLabelText("Bedrooms");
-    await user.type(bedrooms, "3");
-    expect(bedrooms).toHaveValue(3);
+    await user.selectOptions(bedrooms, "3");
+    expect(bedrooms).toHaveValue("3");
 
-    await user.clear(bedrooms);
-    expect(bedrooms).toHaveValue(null);
+    await user.selectOptions(bedrooms, "");
+    expect(bedrooms).toHaveValue("");
   });
 });

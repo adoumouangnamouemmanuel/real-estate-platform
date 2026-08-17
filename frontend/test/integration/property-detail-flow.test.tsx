@@ -31,6 +31,7 @@ describe("Property details flow", () => {
       {
         ...makeProperty({ id: "p2", title: "Similar Apartment" }),
         reason: "Similar because it's in Accra.",
+        tags: ["Similar location"],
       },
     ];
 

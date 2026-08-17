@@ -1,11 +1,34 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeAppointment } from "@/test/fixtures";
 import type { Appointment } from "@/types";
 
 import { AppointmentsTable } from "./AppointmentsTable";
+
+/**
+ * The jsdom matchMedia stub (vitest.setup.ts) always reports `matches: false`,
+ * so every test above this renders the desktop table. This flips it to make
+ * the sub-`md` card presentation render instead.
+ */
+function useMobileViewport() {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) =>
+    ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList) as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+}
 
 const requested: Appointment = makeAppointment({
   id: "r1",
@@ -227,5 +250,81 @@ describe("AppointmentsTable", () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  describe("below md (card presentation)", () => {
+    let restore: () => void;
+    afterEach(() => restore?.());
+
+    it("renders cards instead of a table, with no duplicate table in the DOM", () => {
+      restore = useMobileViewport();
+      renderTable();
+
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
+      // Same rows, same accessible names — each present exactly once.
+      expect(
+        screen.getByLabelText("Actions for Requested Client"),
+      ).toBeInTheDocument();
+      expect(screen.getAllByLabelText(/^Actions for /)).toHaveLength(3);
+    });
+
+    it("keeps status, property, time and the overdue flag visible without horizontal scrolling", () => {
+      restore = useMobileViewport();
+      const overdue: Appointment = makeAppointment({
+        id: "ov-m",
+        clientName: "Overdue Client",
+        status: "REQUESTED",
+        scheduledFor: "2020-01-01T10:00:00.000Z",
+      });
+      renderTable({ appointments: [overdue] });
+
+      expect(screen.getByText("Overdue Client")).toBeInTheDocument();
+      expect(screen.getByText(overdue.propertyTitle)).toBeInTheDocument();
+      expect(screen.getByText("Requested")).toBeInTheDocument();
+      expect(screen.getByText("Overdue")).toBeInTheDocument();
+    });
+
+    it("still drives every action from AppointmentActionPolicy", async () => {
+      restore = useMobileViewport();
+      const user = userEvent.setup();
+      const onAction = vi.fn();
+      renderTable({ onAction });
+
+      // REQUESTED keeps its promoted Confirm button…
+      await user.click(
+        screen.getByLabelText("Confirm appointment with Requested Client"),
+      );
+      expect(onAction).toHaveBeenCalledWith(
+        requested,
+        expect.objectContaining({ key: "CONFIRM", target: "CONFIRMED" }),
+      );
+
+      // …and a terminal appointment still offers no lifecycle actions.
+      await user.click(screen.getByLabelText("Actions for Completed Client"));
+      expect(
+        await screen.findByRole("menuitem", { name: "View details" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("menuitem", { name: "Confirm" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("keeps bulk selection working", async () => {
+      restore = useMobileViewport();
+      const user = userEvent.setup();
+      const onToggleRow = vi.fn();
+      const onToggleAll = vi.fn();
+      renderTable({ onToggleRow, onToggleAll });
+
+      await user.click(
+        screen.getByLabelText("Select appointment with Requested Client"),
+      );
+      expect(onToggleRow).toHaveBeenCalledWith("r1");
+
+      await user.click(
+        screen.getByLabelText("Select all appointments on this page"),
+      );
+      expect(onToggleAll).toHaveBeenCalled();
+    });
   });
 });

@@ -39,9 +39,13 @@ test.describe("Dashboard shell", () => {
   }) => {
     await loginAsDeveloper(page);
 
-    // KPI cards.
+    // KPI cards — only metrics with a real source. "Total Property Views" was
+    // removed in Stage 6: it was a hardcoded 3742 with no per-view data behind
+    // it, the one fabricated number on the page.
     await expect(page.getByText("Total Properties")).toBeVisible();
-    await expect(page.getByText("Total Property Views")).toBeVisible();
+    await expect(page.getByText("Active Listings")).toBeVisible();
+    await expect(page.getByText("Draft Listings")).toBeVisible();
+    await expect(page.getByText("Total Property Views")).toHaveCount(0);
 
     // Recent Listings: a known mock listing appears in the listings table.
     await expect(

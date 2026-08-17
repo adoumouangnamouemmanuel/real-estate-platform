@@ -280,14 +280,25 @@ export interface ActivityItem {
   timestamp: string;
 }
 
-/** The six headline KPIs on the dashboard home. */
+/** The headline KPIs on the dashboard home. */
 export interface DashboardMetrics {
   totalProperties: number;
   activeListings: number;
   draftListings: number;
   appointmentRequests: number;
   unreadNotifications: number;
-  totalPropertyViews: number;
+  /**
+   * Optional, and deliberately not supplied by the mock service today. There is
+   * no per-view data anywhere in the frontend — this was a hardcoded constant
+   * (`3742`), which is exactly the claim Analytics already refuses to make
+   * (ADR-016 excludes every view-based metric for the same reason). Kept in the
+   * shape because `docs/API_CONTRACT.md` §12 documents the field and flags it as
+   * a known placeholder needing a real source; `property.view_count` +
+   * `property_analytics` now exist backend-side (see
+   * docs/PRODUCT_BACKEND_RECONCILIATION.md §1), so this becomes real at
+   * integration. Until a real value arrives, omit it — never substitute one.
+   */
+  totalPropertyViews?: number;
 }
 
 /** Identity/brand shown in the welcome header — distinct from the numeric metrics. */

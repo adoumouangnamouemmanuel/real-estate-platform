@@ -36,7 +36,9 @@ export {
   canDeleteListing,
   DELETABLE_STATUSES,
   getAvailableTransitions,
+  isPubliclyVisible,
   listingService,
+  PUBLICLY_VISIBLE_STATUSES,
   STATUS_TRANSITIONS,
 } from "./listing.service";
 export type {

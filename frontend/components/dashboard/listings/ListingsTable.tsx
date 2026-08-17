@@ -27,11 +27,13 @@ import {
 } from "@/components/ui/table";
 import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
+import { MOBILE_MEDIA_QUERY, useMediaQuery } from "@/hooks/useMediaQuery";
 import { getErrorMessage } from "@/lib/errors";
 import { formatPrice, formatRelativeTime } from "@/lib/formatters";
 import {
   canDeleteListing,
   getAvailableTransitions,
+  isPubliclyVisible,
   type StatusTransition,
 } from "@/services";
 import type { Property } from "@/types";
@@ -96,6 +98,15 @@ function RowActions({
   const canEdit = isFeatureEnabled("DASHBOARD_PROPERTY_EDITOR");
   const transitions = getAvailableTransitions(property.status);
   const deletable = canDeleteListing(property.status);
+  // A draft has no public page, so linking to one sent developers to a 404.
+  // `isPubliclyVisible` (services/listing.service.ts) is the single rule both
+  // this menu and the mobile card list read.
+  const viewable = isPubliclyVisible(property.status);
+  // A SOLD listing is terminal, undeletable and off the public site, so its
+  // menu would otherwise render as an empty popup. Drop the trigger entirely
+  // rather than offer a control with nothing behind it — Edit is a separate,
+  // always-present button, so no action is lost.
+  const hasMenuActions = viewable || transitions.length > 0 || deletable;
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -132,51 +143,153 @@ function RowActions({
           <Pencil />
         </Button>
       )}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          aria-label={`Actions for ${property.title}`}
-          disabled={disabled}
-          className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-        >
-          <MoreHorizontal />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            render={<Link href={ROUTES.PROPERTY_DETAIL(property.slug)} />}
+      {hasMenuActions && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label={`Actions for ${property.title}`}
+            disabled={disabled}
+            className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
           >
-            View listing
-          </DropdownMenuItem>
-          {transitions.length > 0 && <DropdownMenuSeparator />}
-          {transitions.map((transition) => (
-            <DropdownMenuItem
-              key={transition.target}
-              onClick={() => onStatusChange(property, transition)}
-            >
-              {transition.label}
-            </DropdownMenuItem>
-          ))}
-          {deletable && (
-            <>
-              <DropdownMenuSeparator />
+            <MoreHorizontal />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {viewable && (
               <DropdownMenuItem
-                variant="destructive"
-                onClick={() => onDeleteRequest(property)}
+                render={<Link href={ROUTES.PROPERTY_DETAIL(property.slug)} />}
               >
-                Delete
+                View listing
               </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            )}
+            {viewable && transitions.length > 0 && <DropdownMenuSeparator />}
+            {transitions.map((transition) => (
+              <DropdownMenuItem
+                key={transition.target}
+                onClick={() => onStatusChange(property, transition)}
+              >
+                {transition.label}
+              </DropdownMenuItem>
+            ))}
+            {deletable && (
+              <>
+                {(viewable || transitions.length > 0) && (
+                  <DropdownMenuSeparator />
+                )}
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDeleteRequest(property)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }
 
 /**
- * The My Properties table: bulk-selectable rows, a status-aware action menu per
+ * Below `md` the 7-column table only fits ~2 columns on a phone, pushing
+ * Status, Last updated and every action behind a horizontal scroll. This
+ * renders the same listings as a stacked card list instead — same selection,
+ * same thumbnail, and the same `RowActions` component, so
+ * getAvailableTransitions/canDeleteListing stay the single source of truth
+ * for what each status may do.
+ */
+function ListingCards({
+  listings,
+  selectedIds,
+  onToggleRow,
+  onStatusChange,
+  onDeleteRequest,
+  pendingIds,
+}: {
+  listings: Property[];
+  selectedIds: Set<string>;
+  onToggleRow: (id: string) => void;
+  onStatusChange: (property: Property, transition: StatusTransition) => void;
+  onDeleteRequest: (property: Property) => void;
+  pendingIds: Set<string>;
+}) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {listings.map((property) => (
+        <li
+          key={property.id}
+          data-state={selectedIds.has(property.id) ? "selected" : undefined}
+          className="border-border data-[state=selected]:bg-muted/50 flex gap-3 rounded-lg border p-3"
+        >
+          <Checkbox
+            checked={selectedIds.has(property.id)}
+            onChange={() => onToggleRow(property.id)}
+            aria-label={`Select ${property.title}`}
+            className="mt-1 shrink-0"
+          />
+
+          <div className="bg-muted relative size-12 shrink-0 overflow-hidden rounded-md">
+            {property.media[0] ? (
+              <Image
+                src={property.media[0].url}
+                alt=""
+                fill
+                sizes="48px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="text-muted-foreground flex h-full w-full items-center justify-center">
+                <Building2 className="size-4" aria-hidden />
+              </div>
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Cards have the vertical room the table row didn't, so titles
+                  wrap to a second line instead of truncating mid-word. */}
+              <span className="line-clamp-2 font-medium">{property.title}</span>
+              <PropertyStatusBadge status={property.status} />
+            </div>
+            <span className="text-muted-foreground truncate text-sm">
+              {property.city}, {property.region}
+            </span>
+            <span className="flex flex-wrap items-center gap-x-2 text-sm">
+              <span className="font-medium">{formatPrice(property.price)}</span>
+              <span className="text-muted-foreground">
+                {property.listingType === "SALE" ? "For Sale" : "For Rent"}
+              </span>
+            </span>
+            <span className="text-muted-foreground text-xs">
+              Updated{" "}
+              {property.updatedAt
+                ? formatRelativeTime(property.updatedAt)
+                : "—"}
+            </span>
+          </div>
+
+          <div className="shrink-0">
+            <RowActions
+              property={property}
+              onStatusChange={onStatusChange}
+              onDeleteRequest={onDeleteRequest}
+              disabled={pendingIds.has(property.id)}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The My Properties list: bulk-selectable rows, a status-aware action menu per
  * row (only the transitions valid for that listing's current status, plus Delete
  * only when the status allows it), loading skeleton, and both a true-empty and a
  * filtered-to-nothing empty state.
+ *
+ * Renders a semantic table from `md` up and a card list below it — swapped in
+ * JS, not with `hidden`/`md:` classes, so each row's controls and accessible
+ * names exist exactly once in the DOM.
  */
 export function ListingsTable({
   listings,
@@ -192,6 +305,8 @@ export function ListingsTable({
   hasActiveFilters,
   onClearFilters,
 }: ListingsTableProps) {
+  const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY);
+
   if (isError) {
     return (
       <ErrorState
@@ -231,6 +346,31 @@ export function ListingsTable({
   const allSelected =
     listings.length > 0 && listings.every((item) => selectedIds.has(item.id));
   const someSelected = listings.some((item) => selectedIds.has(item.id));
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Visible text matches SelectAllCheckbox's own aria-label verbatim so
+            the accessible name still contains the visible label (WCAG 2.5.3). */}
+        <label className="text-muted-foreground flex items-center gap-2 text-sm">
+          <SelectAllCheckbox
+            checked={allSelected}
+            indeterminate={someSelected && !allSelected}
+            onChange={onToggleAll}
+          />
+          Select all listings on this page
+        </label>
+        <ListingCards
+          listings={listings}
+          selectedIds={selectedIds}
+          onToggleRow={onToggleRow}
+          onStatusChange={onStatusChange}
+          onDeleteRequest={onDeleteRequest}
+          pendingIds={pendingIds}
+        />
+      </div>
+    );
+  }
 
   return (
     <Table>

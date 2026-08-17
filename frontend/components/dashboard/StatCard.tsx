@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 
+import { AnimatedNumber } from "@/components/motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "@/components/ui/sparkline";
@@ -20,7 +21,9 @@ function hasReadableTrend(trend: number[] | undefined): boolean {
 
 interface StatCardProps {
   label: string;
-  value: string | number;
+  value: number;
+  /** Formats the tweened value each frame (e.g. "3.7K", "66%") — defaults to a plain rounded number. */
+  format?: (value: number) => string;
   icon?: LucideIcon;
   hint?: string;
   /** Optional recent-trend values, oldest first — rendered as a small sparkline. */
@@ -32,6 +35,7 @@ interface StatCardProps {
 export function StatCard({
   label,
   value,
+  format,
   icon: Icon,
   hint,
   trend,
@@ -59,7 +63,9 @@ export function StatCard({
           <span className="text-muted-foreground text-sm font-medium">
             {label}
           </span>
-          <span className="text-2xl font-semibold tracking-tight">{value}</span>
+          <span className="text-2xl font-semibold tracking-tight">
+            <AnimatedNumber value={value} format={format} />
+          </span>
           {hint && (
             <span className="text-muted-foreground text-xs">{hint}</span>
           )}

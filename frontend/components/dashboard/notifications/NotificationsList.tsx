@@ -5,6 +5,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { NotificationCategoryBadge } from "@/components/dashboard/StatusBadge";
+import { MotionReveal, MotionRevealItem } from "@/components/motion";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/errors";
@@ -44,7 +45,8 @@ function NotificationCard({
   const isUnread = notification.status === "UNREAD";
 
   return (
-    <li
+    <MotionRevealItem
+      as="li"
       className={cn(
         "border-border flex gap-3 rounded-lg border border-l-4 p-3 transition-colors",
         isUnread ? "bg-muted/50 border-l-primary" : "border-l-transparent",
@@ -104,7 +106,7 @@ function NotificationCard({
           </Button>
         )}
       </div>
-    </li>
+    </MotionRevealItem>
   );
 }
 
@@ -176,7 +178,12 @@ export function NotificationsList({
   }
 
   return (
-    <ul className="flex flex-col gap-2">
+    <MotionReveal
+      as="ul"
+      stagger
+      key={notifications.map((notification) => notification.id).join(",")}
+      className="flex flex-col gap-2"
+    >
       {notifications.map((notification) => (
         <NotificationCard
           key={notification.id}
@@ -186,6 +193,6 @@ export function NotificationsList({
           isPending={pendingIds.has(notification.id)}
         />
       ))}
-    </ul>
+    </MotionReveal>
   );
 }

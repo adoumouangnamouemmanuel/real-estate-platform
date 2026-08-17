@@ -6,8 +6,12 @@ import {
   type PropertyCategory,
 } from "@/constants/categories";
 import { CITIES } from "@/constants/locations";
-import { BEDROOM_CATEGORIES } from "@/lib/propertyFilters";
+import {
+  BEDROOM_CATEGORIES,
+  LISTING_TYPE_OPTIONS,
+} from "@/lib/propertyFilters";
 import type { GetPropertiesParams, PropertySort } from "@/services";
+import type { ListingType } from "@/types";
 
 const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
 
@@ -22,10 +26,10 @@ const SORT_OPTIONS: { value: PropertySort; label: string }[] = [
   { value: "price_desc", label: "Price: High to Low" },
 ];
 
-const SELECT_CLASSNAME =
-  "border-border bg-background h-8 rounded-md border px-2 text-sm";
-const INPUT_CLASSNAME =
-  "border-border bg-background h-8 w-28 rounded-md border px-2 text-sm";
+const CONTROL_BASE =
+  "border-border bg-background h-9 rounded-md border px-2.5 text-sm transition-colors hover:border-foreground/30 focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none";
+const SELECT_CLASSNAME = CONTROL_BASE;
+const INPUT_CLASSNAME = `${CONTROL_BASE} w-28`;
 
 /**
  * Keyword + price are uncontrolled and submit-on-Apply (avoids a nav per keystroke); category,
@@ -52,7 +56,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
     <form
       key={`${filters.q ?? ""}-${filters.minPrice ?? ""}-${filters.maxPrice ?? ""}`}
       onSubmit={handleSubmit}
-      className="border-border flex flex-wrap items-end gap-3 rounded-lg border p-4"
+      className="border-border bg-card flex flex-wrap items-end gap-4 rounded-xl border p-4 shadow-sm sm:p-5"
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="filter-q" className="text-muted-foreground text-xs">
@@ -90,6 +94,36 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           {PROPERTY_CATEGORIES.map((category) => (
             <option key={category.value} value={category.value}>
               {category.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Placed directly after Category, before Location/price: Sale-vs-Rent is
+          the first cut most buyers make, and leaving it until after the price
+          inputs would put it below the fold on a narrow viewport. */}
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor="filter-listing-type"
+          className="text-muted-foreground text-xs"
+        >
+          Listing type
+        </label>
+        <select
+          id="filter-listing-type"
+          value={filters.listingType ?? ""}
+          onChange={(event) =>
+            onApply({
+              listingType: (event.target.value || undefined) as
+                ListingType | undefined,
+            })
+          }
+          className={SELECT_CLASSNAME}
+        >
+          <option value="">Sale &amp; Rent</option>
+          {LISTING_TYPE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
@@ -202,7 +236,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
         </select>
       </div>
 
-      <Button type="submit" size="sm">
+      <Button type="submit" size="lg">
         Apply
       </Button>
     </form>

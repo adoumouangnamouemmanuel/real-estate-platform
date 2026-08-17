@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { PropertyStatus } from "@/types";
+
 import { MOCK_LISTINGS } from "./mocks/listings.mock";
 import {
   canDeleteListing,
   getAvailableTransitions,
+  isPubliclyVisible,
   listingService,
+  PUBLICLY_VISIBLE_STATUSES,
 } from "./listing.service";
 
 /** Deep-clones the mock portfolio so mutation tests can restore it afterward and never leak state into other test files that import the same module. */
@@ -272,5 +276,43 @@ describe("listingService mutations", () => {
     await expect(
       listingService.updateListing("no-such-slug", { price: 1 }),
     ).rejects.toThrow(/not found/);
+  });
+});
+
+/**
+ * Which statuses have a page on the public catalogue. Straight from
+ * docs/API_CONTRACT.md §3 ("Only ACTIVE properties should ever appear here").
+ * Before this rule existed, My Properties offered a "View listing" action on
+ * every row including drafts, which navigated to a public 404 — reproduced in
+ * a real browser during the Stage 6 audit.
+ */
+describe("isPubliclyVisible", () => {
+  it("is true only for ACTIVE", () => {
+    expect(isPubliclyVisible("ACTIVE")).toBe(true);
+  });
+
+  it("is false for a DRAFT, which has no public page by design", () => {
+    expect(isPubliclyVisible("DRAFT")).toBe(false);
+  });
+
+  it.each(["SUSPENDED", "SOLD", "RESERVED"] as const)(
+    "is false for %s",
+    (status) => {
+      expect(isPubliclyVisible(status)).toBe(false);
+    },
+  );
+
+  it("covers every PropertyStatus, so a new status can't default to public", () => {
+    const allStatuses: PropertyStatus[] = [
+      "ACTIVE",
+      "RESERVED",
+      "SOLD",
+      "DRAFT",
+      "SUSPENDED",
+    ];
+    for (const status of allStatuses) {
+      expect(typeof isPubliclyVisible(status)).toBe("boolean");
+    }
+    expect(PUBLICLY_VISIBLE_STATUSES.size).toBe(1);
   });
 });

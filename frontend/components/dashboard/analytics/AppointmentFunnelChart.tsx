@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
@@ -7,6 +8,7 @@ import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { APPOINTMENT_STATUS_LABEL } from "@/components/dashboard/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DURATION_SLOW, EASE_CINEMATIC } from "@/lib/motion";
 import {
   Table,
   TableBody,
@@ -39,7 +41,10 @@ export function AppointmentFunnelChart({
 }: AppointmentFunnelChartProps) {
   const [view, setView] = useState<"chart" | "table">("chart");
 
-  const maxCount = Math.max(1, ...(funnel?.stages.map((stage) => stage.count) ?? []));
+  const maxCount = Math.max(
+    1,
+    ...(funnel?.stages.map((stage) => stage.count) ?? []),
+  );
 
   return (
     <DashboardSection
@@ -93,10 +98,12 @@ export function AppointmentFunnelChart({
                 {APPOINTMENT_STATUS_LABEL[stage.status]}
               </span>
               <div className="bg-muted h-6 flex-1 overflow-hidden rounded-md">
-                <div
+                <motion.div
                   aria-hidden
-                  className="bg-primary h-full rounded-md transition-all"
-                  style={{ width: `${(stage.count / maxCount) * 100}%` }}
+                  className="bg-primary h-full rounded-md"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(stage.count / maxCount) * 100}%` }}
+                  transition={{ duration: DURATION_SLOW, ease: EASE_CINEMATIC }}
                 />
               </div>
               <span className="w-8 shrink-0 text-right text-sm tabular-nums">

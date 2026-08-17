@@ -44,7 +44,9 @@ async function fillRequiredFields(page: import("@playwright/test").Page) {
   await page.getByLabel("Category").selectOption("apartment");
   await page.getByLabel("Listing type").selectOption("SALE");
   await page.getByLabel("City").selectOption("Accra");
-  await page.getByLabel("Region").fill("Greater Accra");
+  // Region is derived from the city now, not typed — and is no longer required
+  // to publish (it has no backend column; see ListingLocationSection).
+  await expect(page.getByText("Greater Accra")).toBeVisible();
   await page.getByLabel("Address").fill("1 Test Street");
   await page.getByLabel("Price").fill("250000");
   await page.setInputFiles("#listing-media-input", {

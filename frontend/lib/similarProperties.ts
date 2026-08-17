@@ -4,6 +4,8 @@ import type { Property } from "@/types";
 export interface ScoredProperty extends Property {
   /** Human-readable, per-candidate explanation built only from signals that actually matched — never a generic template asserting a similarity dimension that didn't match this specific candidate. */
   reason: string;
+  /** Short scannable labels for the same matched signals as `reason` (e.g. "Similar location", "3 shared features") — for compact chip display where a full sentence doesn't fit. Same signals, different rendering; never a second source of truth. */
+  tags: string[];
 }
 
 const PRICE_PROXIMITY_RATIO = 0.2;
@@ -23,9 +25,10 @@ const MIN_SHARED_FEATURES = 2;
 function scoreCandidate(
   source: Property,
   candidate: Property,
-): { score: number; fragments: string[] } {
+): { score: number; fragments: string[]; tags: string[] } {
   let score = 0;
   const fragments: string[] = [];
+  const tags: string[] = [];
 
   if (candidate.listingType === source.listingType) {
     score += 3;
@@ -34,10 +37,13 @@ function scoreCandidate(
   if (candidate.city === source.city) {
     score += 3;
     fragments.push(`in ${candidate.city}`);
+    tags.push("Similar location");
 
     if (candidate.district && candidate.district === source.district) {
       score += 2;
       fragments.push(`in the ${candidate.district} area`);
+      // Same underlying signal as the city match above (location) — a
+      // sharper match raises the score but doesn't earn a second tag.
     }
   }
 
@@ -48,6 +54,7 @@ function scoreCandidate(
   ) {
     score += 2;
     fragments.push("within your price range");
+    tags.push("Similar price");
   }
 
   // Bedrooms is only a meaningful similarity signal for categories that have
@@ -60,6 +67,7 @@ function scoreCandidate(
   ) {
     score += 1;
     fragments.push("with the same number of bedrooms");
+    tags.push("Same bedroom count");
   }
 
   const sourceSize =
@@ -76,6 +84,7 @@ function scoreCandidate(
   ) {
     score += 1;
     fragments.push("a similar size");
+    tags.push("Similar size");
   }
 
   // Reads the same `amenities: string[]` the feature catalog (services/feature.service.ts)
@@ -90,9 +99,10 @@ function scoreCandidate(
     fragments.push(
       `shares ${sharedFeatures.length} features with this listing`,
     );
+    tags.push(`${sharedFeatures.length} shared features`);
   }
 
-  return { score, fragments };
+  return { score, fragments, tags };
 }
 
 function buildReason(candidate: Property, fragments: string[]): string {
@@ -125,13 +135,14 @@ export function rankSimilarProperties(
 ): ScoredProperty[] {
   return candidates
     .map((candidate) => {
-      const { score, fragments } = scoreCandidate(source, candidate);
-      return { candidate, score, fragments };
+      const { score, fragments, tags } = scoreCandidate(source, candidate);
+      return { candidate, score, fragments, tags };
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
-    .map(({ candidate, fragments }) => ({
+    .map(({ candidate, fragments, tags }) => ({
       ...candidate,
       reason: buildReason(candidate, fragments),
+      tags,
     }));
 }

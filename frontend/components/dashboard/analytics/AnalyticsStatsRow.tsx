@@ -25,10 +25,13 @@ const STAT_ICON: Record<string, LucideIcon> = {
   cancellation_rate: CalendarX,
 };
 
-function formatStatValue(stat: AnalyticsStat): string {
-  if (stat.format === "percent") return `${stat.value}%`;
-  if (stat.format === "hours") return `${stat.value}h`;
-  return formatCompactNumber(stat.value);
+function formatStatValue(
+  value: number,
+  format: AnalyticsStat["format"],
+): string {
+  if (format === "percent") return `${value}%`;
+  if (format === "hours") return `${value}h`;
+  return formatCompactNumber(value);
 }
 
 interface AnalyticsStatsRowProps {
@@ -64,7 +67,8 @@ export function AnalyticsStatsRow({
         node: (
           <StatCard
             label={stat.label}
-            value={formatStatValue(stat)}
+            value={stat.value}
+            format={(value) => formatStatValue(value, stat.format)}
             hint={stat.hint}
             trend={stat.trend}
             icon={STAT_ICON[stat.key]}

@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { MotionConfig } from "framer-motion";
 import { useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -40,7 +41,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      {/* Belt-and-suspenders alongside the manual useReducedMotion checks in
+          components/motion/*: this covers any framer-motion transform/scale
+          animation (hover, tap) that doesn't go through those primitives. */}
+      <MotionConfig reducedMotion="user">{children}</MotionConfig>
       <Toaster />
     </QueryClientProvider>
   );

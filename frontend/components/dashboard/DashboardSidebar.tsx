@@ -27,7 +27,7 @@ export function DashboardSidebar() {
   const hasUnread = Boolean(unreadCount);
 
   return (
-    <aside className="border-border bg-sidebar hidden shrink-0 border-r md:flex md:w-16 lg:w-60">
+    <aside className="border-sidebar-border bg-sidebar hidden shrink-0 border-r md:flex md:w-16 lg:w-60">
       <nav
         aria-label="Dashboard"
         className="flex w-full flex-col gap-1 p-2 lg:p-3"

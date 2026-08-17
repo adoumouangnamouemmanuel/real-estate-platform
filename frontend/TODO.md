@@ -369,6 +369,27 @@ Living tracker for frontend work. Update this alongside feature work, not after 
   shared `TableHead` primitive (benefits every table in the app). See
   CHANGELOG.md for detail.
 
+- **Stage 6 — Product UX Remediation (August 2026)**: a fix-only pass over nine
+  gaps found by a live-browser product UX audit against the meeting decisions
+  recorded in `docs/PRODUCT_BACKEND_RECONCILIATION.md` §2. See CHANGELOG.md for
+  the full breakdown. Summary: the homepage's WhatsApp claim now reads the same
+  feature flag the real CTAs read (`lib/contactTrustPoint.ts`); the fabricated
+  `MOCK_TOTAL_PROPERTY_VIEWS = 3742` KPI is gone and cannot silently return;
+  property detail pages have a working contact route to the developer's profile
+  contact section; Saved Properties (`/saved`) gives favourites a retrieval
+  surface for the first time; a `listingType` (Sale/Rent) filter was added to
+  the public marketplace; drafts no longer offer a public "View listing" action
+  that 404s (new `isPubliclyVisible` rule); region is derived from city instead
+  of being a publish-blocking free-text field; district is surfaced publicly;
+  and the public navbar has an `aria-current` active state.
+
+  Four items the earlier reconciliation listed as open were **re-verified as
+  already fixed** and deliberately not re-touched: the sticky public Navbar, the
+  Dashboard shortcut for authenticated developers on the public navbar, "View
+  public site" in the dashboard user menu, and `proxy.ts`'s role handling (now a
+  documented, correctly-reasoned decision placing the real boundary server-side,
+  not an oversight).
+
 ## In Progress
 
 - Nothing currently in flight.
@@ -734,6 +755,12 @@ unauthenticated visitor and an authenticated DEVELOPER, admitting only ADMIN.
   falls back correctly (`areaSqm`, undefined-hides-the-stat), so nothing is
   broken, but the new UI won't visibly populate on old fixture data until a
   developer edits/re-saves a listing or the fixtures are refreshed.
+  **Still true after Stage 6**, and now the one reason district doesn't show up
+  on any existing card or detail page even though the presentation for it
+  landed: `lib/propertyLocation.ts` renders district when present and falls back
+  to the previous `city, region` line when it isn't, so today every fixture
+  takes the fallback path. Covered by unit tests on both branches rather than
+  by fabricating district values into the fixtures.
 - **[Low]** Full upload/create visual-hierarchy polish (Part 14 of the
   brief) and a broader motion-language pass (Part 15) were not undertaken
   beyond what already existed — the entry points were already confirmed
@@ -753,6 +780,27 @@ verification, developer suspension model, region vs. district final
 terminology, the exact `areaSqm` → land/building-size DTO mapping, anonymous
 favorites, JWT payload shape, final role contract (whether Super Admin should
 still rank-inherit every Developer permission), CORS, and rate limiting.
+
+**On §18 Q4 (region vs. district) specifically, after Stage 6:** still open, and
+deliberately not resolved. Stage 6 changed only _how the frontend obtains_ a
+region — derived from the selected city via `CITY_REGIONS`
+(`constants/locations.ts`) instead of a free-text input — and stopped
+`publishListingSchema` requiring it, because a publish gate on a field with no
+backend column could block a developer on something unpersistable. `region` and
+`district` remain separate concepts; nothing was renamed or merged, and the
+mapping is a frontend display derivation only (the ER's `city` table has no
+region column — §3). What the backend still needs to decide: whether `region`
+survives as its own field, is replaced by `district_id`, or becomes an attribute
+of `city`. If it survives, `CITY_REGIONS` should be replaced by whatever
+`GET /api/v1/cities` returns rather than kept as a hardcoded map.
+
+**Backend contract addendum proposed by Stage 6 (not applied):** the public
+`GET /api/v1/properties` should accept a `listingType` filter. The column exists
+(`property.listing_type` — §6 MATCH) and `GET /developers/me/listings` already
+filters on it; only `docs/API_CONTRACT.md` §3's params block omits it, which is
+why the public catalogue had no Sale/Rent filter at all. `PropertyFilters`
+carries a `TODO(backend)` pointing here. No contract or backend file was
+modified.
 
 ### Feature Catalog Consistency Pass (August 2026)
 

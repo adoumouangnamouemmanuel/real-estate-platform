@@ -242,8 +242,10 @@ describe("Property Editor (ListingForm, all flows composed)", () => {
       screen.getByLabelText("Listing type"),
       completeDraft.listingType,
     );
+    // No Region step: selecting the city derives it (see
+    // ListingLocationSection). Publishing succeeding without one is the point —
+    // region is no longer a publish gate.
     await user.selectOptions(screen.getByLabelText("City"), completeDraft.city);
-    await user.type(screen.getByLabelText("Region"), completeDraft.region);
     await user.type(
       screen.getByLabelText("Address"),
       completeDraft.address as string,

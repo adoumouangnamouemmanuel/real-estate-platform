@@ -1,26 +1,30 @@
 "use client";
 
-import {
-  BadgeCheck,
-  Building2,
-  Eye,
-  FileText,
-  type LucideIcon,
-} from "lucide-react";
+import { BadgeCheck, Building2, FileText, type LucideIcon } from "lucide-react";
 
 import { ErrorState } from "@/components/common/ErrorState";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useDashboardMetrics } from "@/hooks/useDashboard";
-import { formatCompactNumber } from "@/lib/formatters";
 import type { DashboardMetrics } from "@/types";
 
+/**
+ * Only keys whose values the service actually derives from data. Typed against
+ * the required keys of `DashboardMetrics` specifically, so a placeholder metric
+ * (currently `totalPropertyViews`, which is optional precisely because nothing
+ * sources it) cannot be added back to this row without first being given a real
+ * source. See services/dashboard.service.ts.
+ */
+type SourcedMetric = {
+  [K in keyof DashboardMetrics]-?: undefined extends DashboardMetrics[K]
+    ? never
+    : K;
+}[keyof DashboardMetrics];
+
 interface KpiSpec {
-  key: keyof DashboardMetrics;
+  key: SourcedMetric;
   label: string;
   icon: LucideIcon;
   hint: string;
-  /** Compact-format large counts (views); leave small counts as-is. */
-  compact?: boolean;
 }
 
 /**
@@ -50,16 +54,12 @@ const KPIS: KpiSpec[] = [
     icon: FileText,
     hint: "Not yet published",
   },
-  {
-    key: "totalPropertyViews",
-    label: "Total Property Views",
-    icon: Eye,
-    hint: "All time",
-    compact: true,
-  },
 ];
 
-const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-4";
+// Three tiles, not four: "Total Property Views" was removed (see the type note
+// above). `lg:grid-cols-3` keeps them evenly weighted at full width instead of
+// leaving a fourth column empty.
+const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
 
 /** The six headline KPI tiles, built on the shared StatCard primitive. */
 export function DashboardKpis() {
@@ -86,18 +86,15 @@ export function DashboardKpis() {
 
   return (
     <div className={GRID}>
-      {KPIS.map((kpi) => {
-        const raw = data[kpi.key];
-        return (
-          <StatCard
-            key={kpi.key}
-            label={kpi.label}
-            value={kpi.compact ? formatCompactNumber(raw) : raw}
-            icon={kpi.icon}
-            hint={kpi.hint}
-          />
-        );
-      })}
+      {KPIS.map((kpi) => (
+        <StatCard
+          key={kpi.key}
+          label={kpi.label}
+          value={data[kpi.key]}
+          icon={kpi.icon}
+          hint={kpi.hint}
+        />
+      ))}
     </div>
   );
 }

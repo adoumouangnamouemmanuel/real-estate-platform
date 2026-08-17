@@ -1,14 +1,9 @@
 import Link from "next/link";
 
 import { NavbarAuthSection } from "@/components/layout/NavbarAuthSection";
+import { NavbarLinks } from "@/components/layout/NavbarLinks";
 import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
-
-const NAV_LINKS = [
-  { href: ROUTES.PROPERTIES, label: "Properties" },
-  { href: ROUTES.DEVELOPERS, label: "Developers" },
-  { href: ROUTES.SEARCH, label: "Search" },
-];
 
 /**
  * Sticky across every public route (see (public)/layout.tsx, which renders
@@ -16,6 +11,10 @@ const NAV_LINKS = [
  * behavior" requirement. `backdrop-blur` + a translucent background keep
  * page content from looking abruptly cut off underneath it while scrolling,
  * without needing any scroll-linked JS.
+ *
+ * Stays a Server Component: only the destination list needs `usePathname` for
+ * its active state, and only `NavbarAuthSection` needs auth state, so each is
+ * its own leaf client boundary rather than making the whole header client-side.
  */
 export function Navbar() {
   return (
@@ -27,18 +26,7 @@ export function Navbar() {
         >
           {APP_NAME}
         </Link>
-        <ul className="flex flex-wrap items-center gap-6 text-sm">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm transition-colors outline-none focus-visible:ring-3"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <NavbarLinks />
 
         <NavbarAuthSection />
       </nav>

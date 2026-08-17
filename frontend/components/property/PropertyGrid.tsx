@@ -1,5 +1,6 @@
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
+import { MotionReveal, MotionRevealItem } from "@/components/motion";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { PropertyCardSkeleton } from "@/components/property/PropertyCardSkeleton";
 import { getErrorMessage } from "@/lib/errors";
@@ -52,10 +53,16 @@ export function PropertyGrid({
   }
 
   return (
-    <div className={GRID_CLASSNAME}>
+    <MotionReveal
+      key={properties.map((property) => property.id).join(",")}
+      stagger
+      className={GRID_CLASSNAME}
+    >
       {properties.map((property) => (
-        <PropertyCard key={property.id} property={property} />
+        <MotionRevealItem key={property.id}>
+          <PropertyCard property={property} />
+        </MotionRevealItem>
       ))}
-    </div>
+    </MotionReveal>
   );
 }

@@ -33,3 +33,38 @@ export function getDistrictsForCity(city: string | undefined): string[] {
   if (!city || !(city in DISTRICTS)) return [];
   return DISTRICTS[city as City];
 }
+
+// TODO(backend): replace with the region/administrative area the real `city`
+// table carries, once GET /api/v1/cities exists. The ER's `city` table has no
+// region column today (see docs/PRODUCT_BACKEND_RECONCILIATION.md §3), which is
+// precisely why this stays a frontend-only display derivation.
+/**
+ * City → region, for the four cities the editor actually offers.
+ *
+ * **Not a resolution of the region-vs-district question** (§6/§18 Q4, still
+ * open): `region` remains its own concept, distinct from `district`, and
+ * nothing here renames or merges them. This exists only so the Property Editor
+ * stops asking a developer to hand-type a value into a free-text box that has
+ * no backend column to land in — and stops *blocking publication* on it.
+ *
+ * Derived from, not invented for, the existing data: every one of the 46 mock
+ * property/listing records agrees on these pairings, with no contradictions
+ * (Accra and Tema → Greater Accra, Kumasi → Ashanti, Takoradi → Western). Since
+ * `CITIES` is a closed list and the editor's city field is a select over it, the
+ * mapping is total for anything a developer can now choose.
+ *
+ * Legacy records whose city predates `CITIES` (e.g. "Ada Foah") resolve to
+ * undefined here — callers must fall back to the region already stored on the
+ * record rather than blanking it.
+ */
+export const CITY_REGIONS: Record<City, string> = {
+  Accra: "Greater Accra",
+  Kumasi: "Ashanti",
+  Takoradi: "Western",
+  Tema: "Greater Accra",
+};
+
+export function getRegionForCity(city: string | undefined): string | undefined {
+  if (!city || !(city in CITY_REGIONS)) return undefined;
+  return CITY_REGIONS[city as City];
+}

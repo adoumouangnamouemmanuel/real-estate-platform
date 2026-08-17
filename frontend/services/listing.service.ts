@@ -71,6 +71,31 @@ export function canDeleteListing(status: PropertyStatus): boolean {
   return DELETABLE_STATUSES.has(status);
 }
 
+/**
+ * Statuses that have a page on the public catalogue. Straight from
+ * `docs/API_CONTRACT.md` §3, which is explicit: "Only ACTIVE properties should
+ * ever appear here — DRAFT/SUSPENDED/RESERVED(arguably)/SOLD listings belong to
+ * the developer's own GET /developers/me/listings, never this public endpoint."
+ *
+ * Deliberately conservative on RESERVED, the one status that contract hedges
+ * on ("arguably"): offering a link that 404s is the bug this exists to prevent,
+ * whereas withholding one costs a developer nothing. Widen this set — not the
+ * call sites — if the backend confirms RESERVED stays public.
+ */
+export const PUBLICLY_VISIBLE_STATUSES: ReadonlySet<PropertyStatus> = new Set([
+  "ACTIVE",
+]);
+
+/**
+ * Whether a listing can be opened on the public site. A DRAFT never can — it has
+ * no public page by design, so a "View listing" action on one led straight to a
+ * 404. Both the My Properties row menu and its mobile card equivalent read this
+ * rather than deciding for themselves, same reasoning as STATUS_TRANSITIONS.
+ */
+export function isPubliclyVisible(status: PropertyStatus): boolean {
+  return PUBLICLY_VISIBLE_STATUSES.has(status);
+}
+
 export function getAvailableTransitions(
   status: PropertyStatus,
 ): StatusTransition[] {

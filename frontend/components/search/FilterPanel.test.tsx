@@ -15,6 +15,26 @@ describe("FilterPanel", () => {
     expect(onApply).toHaveBeenCalledWith({ category: "apartment" });
   });
 
+  it("applies listing-type changes immediately", async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(<FilterPanel filters={{}} onApply={onApply} />);
+
+    await user.selectOptions(screen.getByLabelText("Listing type"), "RENT");
+
+    expect(onApply).toHaveBeenCalledWith({ listingType: "RENT" });
+  });
+
+  it("clears the listing-type filter back to showing both", async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(<FilterPanel filters={{ listingType: "RENT" }} onApply={onApply} />);
+
+    await user.selectOptions(screen.getByLabelText("Listing type"), "");
+
+    expect(onApply).toHaveBeenCalledWith({ listingType: undefined });
+  });
+
   it("applies city changes immediately", async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();
@@ -74,6 +94,7 @@ describe("FilterPanel", () => {
         filters={{
           q: "Kumasi",
           category: "land",
+          listingType: "SALE",
           city: "Kumasi",
           minPrice: 50000,
         }}
@@ -83,6 +104,7 @@ describe("FilterPanel", () => {
 
     expect(screen.getByLabelText("Keyword")).toHaveValue("Kumasi");
     expect(screen.getByLabelText("Category")).toHaveValue("land");
+    expect(screen.getByLabelText("Listing type")).toHaveValue("SALE");
     expect(screen.getByLabelText("Location")).toHaveValue("Kumasi");
     expect(screen.getByLabelText("Min price")).toHaveValue(50000);
   });

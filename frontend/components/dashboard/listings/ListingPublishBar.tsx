@@ -45,7 +45,8 @@ const FIELD_INPUT_ID: Partial<Record<keyof ListingFormValues, string>> = {
   listingType: "listing-type",
   category: "listing-category",
   city: "listing-city",
-  region: "listing-region",
+  // No `region` entry: it has no focusable input any more (derived from city —
+  // see ListingLocationSection) and can no longer raise a publish issue.
   address: "listing-address",
   media: "listing-media-input",
 };

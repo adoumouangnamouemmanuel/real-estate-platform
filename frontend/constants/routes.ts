@@ -4,7 +4,15 @@ export const ROUTES = {
   PROPERTY_DETAIL: (id: string) => `/properties/${id}`,
   DEVELOPERS: "/developers",
   DEVELOPER_DETAIL: (id: string) => `/developers/${id}`,
+  /**
+   * The developer's profile, scrolled to its Contact section. The only contact
+   * detail the frontend actually holds is `DeveloperProfile.email`, which the
+   * profile page already renders — this route exists so a property page can
+   * point at it explicitly instead of leaving a buyer to hunt for it.
+   */
+  DEVELOPER_CONTACT: (id: string) => `/developers/${id}#contact`,
   SEARCH: "/search",
+  SAVED: "/saved",
   LOGIN: "/login",
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",

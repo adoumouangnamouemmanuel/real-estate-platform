@@ -3,7 +3,12 @@ import {
   rankSimilarProperties,
   type ScoredProperty,
 } from "@/lib/similarProperties";
-import type { PaginatedResult, Property, PropertyDetail } from "@/types";
+import type {
+  ListingType,
+  PaginatedResult,
+  Property,
+  PropertyDetail,
+} from "@/types";
 
 import { MOCK_PROPERTIES } from "./mocks/properties.mock";
 
@@ -15,6 +20,16 @@ export type PropertySort = "newest" | "price_asc" | "price_desc";
 export interface PropertyFilters {
   q?: string;
   category?: PropertyCategory;
+  /**
+   * Sale vs. Rent. `listing_type` is a confirmed backend column (see
+   * docs/PRODUCT_BACKEND_RECONCILIATION.md §6) and the developer's own
+   * `GET /developers/me/listings` already filters on it — the public catalogue
+   * simply never exposed it, so buyers and renters browsed one interleaved
+   * list. TODO(backend): `GET /api/v1/properties` needs to accept this too;
+   * docs/API_CONTRACT.md §3's params block predates it (contract addendum
+   * proposed in CHANGELOG.md, not applied here).
+   */
+  listingType?: ListingType;
   city?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -52,6 +67,8 @@ function filterProperties(
 ): PropertyDetail[] {
   return items.filter((item) => {
     if (filters.category && item.category !== filters.category) return false;
+    if (filters.listingType && item.listingType !== filters.listingType)
+      return false;
     if (filters.city && item.city !== filters.city) return false;
     if (filters.minPrice !== undefined && item.price < filters.minPrice)
       return false;
@@ -100,6 +117,29 @@ export const propertyService = {
       filters.sort,
     );
     return delay(paginate(results, page, pageSize));
+  },
+
+  /**
+   * Resolves an explicit set of property ids, preserving the order given.
+   * Exists for Saved Properties: `favoriteService` owns *which* ids a browser
+   * has saved (localStorage today) but knows nothing about properties, so the
+   * catalogue resolves them — the same composition Analytics uses rather than
+   * giving one service a second domain's data.
+   *
+   * Silently drops ids with no matching property: a saved listing can be
+   * delisted or sold out from under a browser whose localStorage still names
+   * it, and that should quietly disappear from the saved list, not error.
+   *
+   * TODO(backend): once `GET /favorites` exists (see favorite.service.ts) it
+   * returns the properties directly and this composition collapses server-side.
+   */
+  getPropertiesByIds: (ids: string[]): Promise<Property[]> => {
+    const byId = new Map(MOCK_PROPERTIES.map((item) => [item.id, item]));
+    return delay(
+      ids
+        .map((id) => byId.get(id))
+        .filter((item): item is PropertyDetail => item !== undefined),
+    );
   },
 
   getPropertyBySlug: (slug: string): Promise<PropertyDetail> => {

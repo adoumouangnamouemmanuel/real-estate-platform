@@ -9,6 +9,7 @@ import { DashboardWelcome } from "@/components/dashboard/home/DashboardWelcome";
 import { NotificationsPreview } from "@/components/dashboard/home/NotificationsPreview";
 import { QuickActions } from "@/components/dashboard/home/QuickActions";
 import { RecentListings } from "@/components/dashboard/home/RecentListings";
+import { MotionReveal } from "@/components/motion";
 import { APP_NAME } from "@/constants/config";
 
 export const metadata: Metadata = {
@@ -26,27 +27,40 @@ export const metadata: Metadata = {
  * (welcome + quick actions), what needs attention today, portfolio health,
  * then the operational detail (listings, appointments, notifications,
  * activity) a developer drills into once they know what to focus on.
+ *
+ * Each section gets its own mount/scroll reveal (not one shared stagger
+ * container) since every widget fetches independently and settles at its
+ * own pace — a single stagger would desync from when each one's data
+ * actually resolves.
  */
 export default function DashboardHomePage() {
   return (
     <DashboardPageContainer>
-      <div className="flex flex-col gap-4">
+      <MotionReveal className="flex flex-col gap-4">
         <DashboardWelcome />
         <QuickActions />
-      </div>
+      </MotionReveal>
 
-      <DashboardActionNeeded />
+      <MotionReveal>
+        <DashboardActionNeeded />
+      </MotionReveal>
 
-      <DashboardKpis />
+      <MotionReveal>
+        <DashboardKpis />
+      </MotionReveal>
 
-      <RecentListings />
+      <MotionReveal>
+        <RecentListings />
+      </MotionReveal>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <MotionReveal className="grid gap-6 lg:grid-cols-2">
         <AppointmentOverview />
         <NotificationsPreview />
-      </div>
+      </MotionReveal>
 
-      <DashboardActivity />
+      <MotionReveal>
+        <DashboardActivity />
+      </MotionReveal>
     </DashboardPageContainer>
   );
 }
