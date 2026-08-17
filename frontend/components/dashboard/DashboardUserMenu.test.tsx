@@ -74,3 +74,30 @@ describe("DashboardUserMenu", () => {
     ).toHaveAttribute("href", "/");
   });
 });
+
+/**
+ * The trigger previously had an always-on `ring-1 ring-inset` and `outline-none`
+ * with no focus replacement, so keyboard focus was invisible (WCAG 2.4.7). The
+ * resting hairline ring stays; the focus ring now renders outside the avatar
+ * rather than inset over the solid primary circle, where teal-on-teal was
+ * effectively invisible.
+ */
+it("shows a keyboard focus ring on the account trigger, rendered outside the avatar", () => {
+  // Sets its own auth state: this test sits outside the describe above, so that
+  // block's beforeEach doesn't run for it.
+  useAuthStore.getState().setAuth(
+    {
+      id: "u2",
+      fullName: "Kwame Mensah",
+      email: "developer@byte.africa",
+      role: "DEVELOPER",
+    },
+    "token",
+  );
+  render(<DashboardUserMenu />);
+
+  const trigger = screen.getByLabelText(/^Account menu for/);
+  expect(trigger.className).toContain("focus-visible:ring-3");
+  expect(trigger.className).toContain("focus-visible:ring-ring/50");
+  expect(trigger.className).not.toContain("ring-inset");
+});

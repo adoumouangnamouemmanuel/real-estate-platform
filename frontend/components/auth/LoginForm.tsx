@@ -51,8 +51,20 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     }
   }
 
+  /*
+   * `method="post"` below is a security control, not a formality. React's
+   * onSubmit handler only exists after hydration; a form submitted before then
+   * is handled natively by the browser, and a form with no method defaults to
+   * GET — which appends every field to the URL. Reproduced on the running app:
+   * an early submit navigated to `/login?email=…&password=Password123`, putting
+   * the password into browser history, server logs and the next request's
+   * Referer header. With `method="post"` the same pre-hydration submit sends the
+   * fields in the request body instead. Keep this on every form that carries a
+   * credential.
+   */
   return (
     <form
+      method="post"
       onSubmit={handleSubmit(onSubmit)}
       noValidate
       className="flex flex-col gap-4"

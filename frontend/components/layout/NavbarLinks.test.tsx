@@ -68,3 +68,18 @@ describe("NavbarLinks", () => {
     );
   });
 });
+
+/**
+ * WCAG 2.5.8 (AA) requires a 24x24 CSS-pixel target. These links measured 18px
+ * tall on mobile before this padding was added. jsdom computes no layout, so
+ * the real measurement is a Playwright check (e2e/saved-properties.spec.ts);
+ * this asserts the class that produces it survives refactors.
+ */
+it("gives each link vertical padding so the touch target clears the AA minimum", () => {
+  usePathname.mockReturnValue("/");
+  render(<NavbarLinks />);
+
+  for (const name of ["Properties", "Developers", "Saved", "Search"]) {
+    expect(screen.getByRole("link", { name }).className).toContain("py-1.5");
+  }
+});

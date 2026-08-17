@@ -40,7 +40,13 @@ export function NavbarLinks() {
               href={link.href}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "focus-visible:ring-ring/50 rounded-sm transition-colors outline-none focus-visible:ring-3",
+                // `py-1.5` is a touch-target fix, not spacing. These links
+                // measured 18px tall on mobile — below the 24px WCAG 2.5.8 (AA)
+                // minimum — on the site's primary navigation. Because the anchor
+                // is inline, vertical padding grows the hit area (and the focus
+                // ring with it) to ~30px without adding to the line box, so the
+                // navbar's height is unchanged and it doesn't turn bulky.
+                "focus-visible:ring-ring/50 rounded-sm py-1.5 transition-colors outline-none focus-visible:ring-3",
                 isActive
                   ? "text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground",

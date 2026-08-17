@@ -73,6 +73,14 @@ export function PropertyMediaGallery({
               onClick={() => setActiveIndex(index)}
               className={cn(
                 "bg-muted relative size-16 shrink-0 overflow-hidden rounded-md border-2 transition-transform duration-150 outline-none hover:scale-105",
+                // Focus and "currently showing" are two different states and a
+                // keyboard user needs to tell them apart while arrowing along
+                // the strip. Active keeps the solid border; focus adds the
+                // app-standard ring, which sits outside the border box — so a
+                // thumbnail that is both focused and active shows both without
+                // either one masking the other. Previously `outline-none` here
+                // had no focus replacement at all, so focus was invisible.
+                "focus-visible:ring-ring/50 focus-visible:ring-3",
                 index === activeIndex ? "border-primary" : "border-transparent",
               )}
             >

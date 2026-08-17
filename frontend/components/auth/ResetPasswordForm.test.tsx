@@ -92,3 +92,16 @@ describe("ResetPasswordForm", () => {
     );
   });
 });
+
+/** Security regression guard — see the equivalent test in LoginForm.test.tsx
+ *  for why `method="post"` matters (pre-hydration native submits default to
+ *  GET and would put form fields in the URL). */
+it("submits as POST so a pre-hydration native submit cannot put fields in the URL", async () => {
+  // The form only renders once the token validates, so this has to wait for it
+  // the same way the other tests in this file do.
+  validateResetToken.mockResolvedValue({ valid: true, expired: false });
+  const { container } = render(<ResetPasswordForm token="valid-token" />);
+
+  await screen.findByLabelText("New password");
+  expect(container.querySelector("form")).toHaveAttribute("method", "post");
+});

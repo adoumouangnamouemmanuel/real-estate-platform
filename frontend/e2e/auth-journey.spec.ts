@@ -205,3 +205,68 @@ test.describe("Logout", () => {
     await expect(page.getByRole("button", { name: "Log out" })).toHaveCount(0);
   });
 });
+
+/**
+ * The security property behind `method="post"` on the auth forms.
+ *
+ * React's onSubmit handler only exists after hydration. A submit before then is
+ * handled natively by the browser, and a form with no `method` defaults to GET —
+ * appending every named field to the URL. That was reproduced on the running
+ * app: an early submit navigated to `/login?email=…&password=Password123`,
+ * putting the password into browser history, server logs, and the Referer
+ * header of the next request.
+ *
+ * Blocking scripts is a deterministic stand-in for "the user submitted before
+ * the JS finished loading" — otherwise this is a race that only shows up on a
+ * slow connection. With scripts blocked React never hydrates, so the native
+ * path is guaranteed to be the one exercised.
+ */
+test.describe("Pre-hydration form safety", () => {
+  const CREDENTIAL = "Password123";
+
+  test("a login submitted before hydration cannot put the password in the URL", async ({
+    page,
+  }) => {
+    await page.route("**/*.js", (route) => route.abort());
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
+
+    await page.locator('input[type="email"]').fill("developer@byte.africa");
+    await page.locator('input[type="password"]').fill(CREDENTIAL);
+
+    // requestSubmit() goes through the browser's own submit path, which is
+    // exactly what an un-hydrated page does.
+    await page
+      .locator("form")
+      .first()
+      .evaluate((form: HTMLFormElement) => {
+        form.requestSubmit();
+      });
+    await page.waitForLoadState("domcontentloaded");
+
+    expect(page.url()).not.toContain(CREDENTIAL);
+    expect(page.url()).not.toContain("password=");
+    expect(page.url()).not.toContain("email=");
+  });
+
+  test("the same holds for register, forgot-password and reset-password", async ({
+    page,
+  }) => {
+    for (const path of [
+      "/register",
+      "/forgot-password",
+      "/reset-password?token=valid-token-demo",
+    ]) {
+      await page.route("**/*.js", (route) => route.abort());
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+
+      const form = page.locator("form").first();
+      // reset-password renders its form only after the token resolves, which
+      // needs JS — so with scripts blocked there is nothing to submit there.
+      // Assert the method on whatever form the server did render.
+      if (await form.count()) {
+        await expect(form).toHaveAttribute("method", "post");
+      }
+      await page.unroute("**/*.js");
+    }
+  });
+});

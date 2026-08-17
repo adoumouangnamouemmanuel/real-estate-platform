@@ -52,8 +52,12 @@ export function ForgotPasswordForm() {
     );
   }
 
+  // `method="post"` keeps a pre-hydration native submit out of the URL — see
+  // the full explanation in LoginForm. No password here, but an email address
+  // in a URL is still a disclosure.
   return (
     <form
+      method="post"
       onSubmit={handleSubmit(onSubmit)}
       noValidate
       className="flex flex-col gap-4"

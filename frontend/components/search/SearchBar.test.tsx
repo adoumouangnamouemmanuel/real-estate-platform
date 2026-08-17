@@ -58,3 +58,29 @@ describe("SearchBar", () => {
     expect(push).toHaveBeenCalledWith("/search?q=East%20Legon");
   });
 });
+
+/**
+ * The input is deliberately borderless and transparent so the bar reads as one
+ * control, which meant a keyboard user got no visible focus at all on the
+ * homepage's primary action (WCAG 2.4.7). The indicator therefore lives on the
+ * wrapper via `focus-within`, using the same ring the rest of the app uses.
+ * The glass variant sits over hero imagery where the teal ring has too little
+ * contrast, so it gets a white ring instead.
+ */
+describe("focus visibility", () => {
+  it("puts a focus ring on the wrapper, since the focused element is the child input", () => {
+    const { container } = render(<SearchBar />);
+    const form = container.querySelector("form");
+
+    expect(form?.className).toContain("focus-within:ring-3");
+    expect(form?.className).toContain("focus-within:ring-ring/50");
+  });
+
+  it("uses a white ring on the glass variant for contrast over imagery", () => {
+    const { container } = render(<SearchBar variant="glass" />);
+    const form = container.querySelector("form");
+
+    expect(form?.className).toContain("focus-within:ring-3");
+    expect(form?.className).toContain("focus-within:ring-white/70");
+  });
+});

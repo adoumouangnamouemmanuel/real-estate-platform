@@ -43,8 +43,11 @@ export function RegisterForm() {
     }
   }
 
+  // `method="post"` keeps a pre-hydration native submit out of the URL — see
+  // the full explanation in LoginForm.
   return (
     <form
+      method="post"
       onSubmit={handleSubmit(onSubmit)}
       noValidate
       className="flex flex-col gap-4"

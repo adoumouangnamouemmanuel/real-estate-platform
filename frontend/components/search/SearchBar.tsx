@@ -28,9 +28,18 @@ export function SearchBar({ variant = "solid" }: SearchBarProps) {
       onSubmit={handleSubmit}
       className={cn(
         "flex w-full max-w-xl items-center gap-2 rounded-lg border p-2",
+        // The focus indicator lives on the wrapper, not the input: the input is
+        // deliberately borderless and transparent so the bar reads as one
+        // control, which left a keyboard user with no visible focus at all on
+        // the homepage's primary action. Same ring treatment the rest of the
+        // app uses, just triggered by `focus-within` because the focused
+        // element is a child. The glass variant sits over hero imagery, where
+        // the teal ring has too little contrast — it gets a white ring instead,
+        // mirroring how this component already swaps border and text colour.
+        "focus-within:ring-3",
         variant === "glass"
-          ? "border-white/25 bg-white/10 backdrop-blur-md"
-          : "border-border bg-background",
+          ? "border-white/25 bg-white/10 backdrop-blur-md focus-within:ring-white/70"
+          : "border-border bg-background focus-within:ring-ring/50",
       )}
     >
       <label htmlFor="search-query" className="sr-only">

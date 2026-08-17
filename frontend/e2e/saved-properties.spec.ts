@@ -117,3 +117,44 @@ test.describe("Property contact path", () => {
     ).toBeInViewport();
   });
 });
+
+/**
+ * WCAG 2.5.8 (AA) requires a 24x24 CSS-pixel target. The public nav links
+ * measured 18px tall at every mobile width before `py-1.5` was added — on the
+ * site's primary navigation. Measured here rather than asserted as a class,
+ * because the whole point is the rendered hit area.
+ */
+test.describe("Public navbar touch targets", () => {
+  for (const width of [375, 390, 412]) {
+    test(`nav links meet the AA minimum target size at ${width}px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/properties");
+      await page.waitForLoadState("domcontentloaded");
+
+      for (const name of ["Properties", "Developers", "Saved", "Search"]) {
+        const box = await page
+          .getByRole("link", { name, exact: true })
+          .first()
+          .boundingBox();
+        expect(box, `${name} should be rendered`).not.toBeNull();
+        expect(
+          box!.height,
+          `${name} height at ${width}`,
+        ).toBeGreaterThanOrEqual(24);
+        expect(box!.width, `${name} width at ${width}`).toBeGreaterThanOrEqual(
+          24,
+        );
+      }
+
+      // The fix must not have introduced a scrollbar.
+      const overflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+      );
+      expect(overflow, `no horizontal overflow at ${width}`).toBe(false);
+    });
+  }
+});

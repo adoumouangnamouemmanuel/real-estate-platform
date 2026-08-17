@@ -34,7 +34,13 @@ export function DashboardUserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Account menu for ${user.fullName}`}
-        className="ring-border flex items-center gap-2 rounded-full ring-1 outline-none ring-inset"
+        // The resting hairline ring stays, but `ring-inset` had to go: an inset
+        // focus ring would be drawn *inside* the avatar's solid primary circle,
+        // where a teal-on-teal ring is effectively invisible. Rendering it
+        // outside instead makes focus legible against the top bar, and moves
+        // the resting ring by 1px — imperceptible. Same ring treatment used
+        // everywhere else in the app; previously focus had no indicator at all.
+        className="ring-border focus-visible:ring-ring/50 flex items-center gap-2 rounded-full ring-1 outline-none focus-visible:ring-3"
       >
         <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-full text-xs font-semibold">
           {initials(user.fullName)}

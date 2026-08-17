@@ -45,3 +45,11 @@ describe("ForgotPasswordForm", () => {
     expect(requestPasswordReset).not.toHaveBeenCalled();
   });
 });
+
+/** Security regression guard — see the equivalent test in LoginForm.test.tsx
+ *  for why `method="post"` matters (pre-hydration native submits default to
+ *  GET and would put form fields in the URL). */
+it("submits as POST so a pre-hydration native submit cannot put fields in the URL", () => {
+  const { container } = render(<ForgotPasswordForm />);
+  expect(container.querySelector("form")).toHaveAttribute("method", "post");
+});

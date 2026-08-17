@@ -73,8 +73,12 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     return <InvalidResetLink reason={tokenStatus} />;
   }
 
+  // `method="post"` keeps a pre-hydration native submit out of the URL — see
+  // the full explanation in LoginForm. This form carries both the new password
+  // and the reset token, so the leak would be doubly sensitive.
   return (
     <form
+      method="post"
       onSubmit={handleSubmit(onSubmit)}
       noValidate
       className="flex flex-col gap-4"

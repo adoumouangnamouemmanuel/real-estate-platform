@@ -138,3 +138,25 @@ describe("LoginForm", () => {
     });
   });
 });
+
+/**
+ * Security regression guard. React's onSubmit only exists after hydration; a
+ * submit before then is handled natively, and a form with no `method` defaults
+ * to GET — which appends every field, including the password, to the URL. That
+ * was reproduced on the running app before this was fixed. `method="post"`
+ * makes the pre-hydration submit send the fields in the request body instead.
+ * The end-to-end proof lives in e2e/auth-journey.spec.ts; this keeps the
+ * attribute from being dropped in a refactor.
+ */
+it("submits as POST so a pre-hydration native submit cannot put the password in the URL", () => {
+  const { container } = render(<LoginForm />);
+  const form = container.querySelector("form");
+
+  expect(form).toHaveAttribute("method", "post");
+  // The password field must carry a name, or the leak wouldn't have been
+  // possible in the first place — asserting it keeps this test honest about
+  // what it is guarding.
+  expect(container.querySelector('input[type="password"]')).toHaveAttribute(
+    "name",
+  );
+});
