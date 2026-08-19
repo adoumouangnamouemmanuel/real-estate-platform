@@ -4,6 +4,7 @@ import { Heart, Info } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/common/EmptyState";
+import { PageHeader } from "@/components/common/PageHeader";
 import { AnimatedNumber } from "@/components/motion";
 import { PropertyGrid } from "@/components/property/PropertyGrid";
 import { buttonVariants } from "@/components/ui/button";
@@ -28,57 +29,64 @@ export function SavedPropertiesView() {
     useSavedProperties();
 
   return (
-    <div className="container-page flex flex-col gap-6 py-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Saved Properties
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          {isLoading ? (
-            "Loading your saved properties"
-          ) : (
-            <>
-              <AnimatedNumber value={savedCount} />
-              {savedCount === 1 ? " property saved" : " properties saved"}
-            </>
-          )}
-        </p>
+    <div className="flex flex-1 flex-col">
+      <PageHeader
+        eyebrow="Your shortlist"
+        title="Saved Properties"
+        meta={
+          <p
+            className="text-muted-foreground text-sm"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {isLoading ? (
+              "Loading your saved properties"
+            ) : (
+              <>
+                <AnimatedNumber value={savedCount} />
+                {savedCount === 1 ? " property saved" : " properties saved"}
+              </>
+            )}
+          </p>
+        }
+      />
+
+      <div className="container-page page-section flex flex-col gap-6">
+        {savedCount > 0 && (
+          <p className="text-muted-foreground border-border flex items-start gap-2 border-l-2 py-1 pl-3 text-sm">
+            <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>
+              Saved properties are stored in this browser only — they won&apos;t
+              follow you to another device yet.
+            </span>
+          </p>
+        )}
+
+        {!isLoading && !isError && savedCount === 0 ? (
+          <EmptyState
+            title="Nothing saved yet"
+            description="Use the heart on any listing to keep it here while you compare."
+            action={
+              <Link
+                href={ROUTES.PROPERTIES}
+                className={buttonVariants({ className: "mt-2 gap-2" })}
+              >
+                <Heart className="size-4" aria-hidden />
+                Browse properties
+              </Link>
+            }
+          />
+        ) : (
+          <PropertyGrid
+            properties={properties}
+            isLoading={isLoading}
+            isError={isError}
+            error={error}
+            skeletonCount={Math.min(Math.max(savedCount, 1), 8)}
+            emptyDescription="The properties you saved are no longer listed."
+          />
+        )}
       </div>
-
-      {savedCount > 0 && (
-        <p className="text-muted-foreground border-border flex items-start gap-2 border-l-2 py-1 pl-3 text-sm">
-          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            Saved properties are stored in this browser only — they won&apos;t
-            follow you to another device yet.
-          </span>
-        </p>
-      )}
-
-      {!isLoading && !isError && savedCount === 0 ? (
-        <EmptyState
-          title="Nothing saved yet"
-          description="Use the heart on any listing to keep it here while you compare."
-          action={
-            <Link
-              href={ROUTES.PROPERTIES}
-              className={buttonVariants({ className: "mt-2 gap-2" })}
-            >
-              <Heart className="size-4" aria-hidden />
-              Browse properties
-            </Link>
-          }
-        />
-      ) : (
-        <PropertyGrid
-          properties={properties}
-          isLoading={isLoading}
-          isError={isError}
-          error={error}
-          skeletonCount={Math.min(Math.max(savedCount, 1), 8)}
-          emptyDescription="The properties you saved are no longer listed."
-        />
-      )}
     </div>
   );
 }

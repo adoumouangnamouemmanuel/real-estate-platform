@@ -7,8 +7,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/constants/features";
 import { ROUTES } from "@/constants/routes";
 import type { FeatureFlag } from "@/constants/features";
@@ -22,10 +21,9 @@ interface QuickAction {
 }
 
 /**
- * Reuses the shell's feature-flag idiom (dashboard-nav.ts / FEATURES): each action
- * points at a real route and renders as a live link once its phase ships, or as a
- * disabled "Soon" control until then — so the panel never links to a page that
- * doesn't exist yet. No data or client state, so this stays a Server Component.
+ * Reuses the shell's feature-flag idiom (dashboard-nav.ts / FEATURES): each
+ * action points at a real route and appears once its phase ships. No data or
+ * client state, so this stays a Server Component.
  */
 const QUICK_ACTIONS: QuickAction[] = [
   {
@@ -62,31 +60,23 @@ const QUICK_ACTIONS: QuickAction[] = [
  * destination in its own right.
  */
 export function QuickActions() {
+  // Same rule the primary nav follows (getAvailableNavItems): an action the
+  // product cannot perform yet is omitted, not rendered as a disabled "Soon"
+  // control. A quick-actions toolbar is a set of things you can do, so an
+  // action you cannot do does not belong in it. The flag architecture is
+  // untouched — an action returns the moment its flag flips, and no page is
+  // faked in the meantime.
+  const availableActions = QUICK_ACTIONS.filter(
+    (action) => !action.flag || isFeatureEnabled(action.flag),
+  );
+
   return (
     <div
       aria-label="Quick actions"
       className="flex flex-wrap items-center gap-2"
     >
-      {QUICK_ACTIONS.map((action, index) => {
+      {availableActions.map((action, index) => {
         const Icon = action.icon;
-        const enabled = !action.flag || isFeatureEnabled(action.flag);
-
-        if (!enabled) {
-          return (
-            <Button
-              key={action.label}
-              type="button"
-              variant="outline"
-              disabled
-              title={`${action.label} — coming soon`}
-              className="gap-2"
-            >
-              <Icon aria-hidden />
-              {action.label}
-              <Badge variant="outline">Soon</Badge>
-            </Button>
-          );
-        }
 
         return (
           <Link

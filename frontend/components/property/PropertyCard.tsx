@@ -46,7 +46,7 @@ export function PropertyCard({
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
-    <article className="bg-card ring-border relative flex flex-col overflow-hidden rounded-xl ring-1 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <article className="card-surface card-interactive relative flex flex-col overflow-hidden">
       {/*
         A normal block-level flex container, not `display: contents` — a
         `contents` element has no box of its own, which left Playwright (and

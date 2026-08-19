@@ -10,7 +10,7 @@ import {
   BEDROOM_CATEGORIES,
   LISTING_TYPE_OPTIONS,
 } from "@/lib/propertyFilters";
-import type { GetPropertiesParams, PropertySort } from "@/services";
+import type { GetPropertiesParams } from "@/services";
 import type { ListingType } from "@/types";
 
 const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
@@ -20,12 +20,6 @@ interface FilterPanelProps {
   onApply: (filters: Partial<GetPropertiesParams>) => void;
 }
 
-const SORT_OPTIONS: { value: PropertySort; label: string }[] = [
-  { value: "newest", label: "Newest" },
-  { value: "price_asc", label: "Price: Low to High" },
-  { value: "price_desc", label: "Price: High to Low" },
-];
-
 const CONTROL_BASE =
   "border-border bg-background h-9 rounded-md border px-2.5 text-sm transition-colors hover:border-foreground/30 focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none";
 const SELECT_CLASSNAME = CONTROL_BASE;
@@ -33,7 +27,9 @@ const INPUT_CLASSNAME = `${CONTROL_BASE} w-28`;
 
 /**
  * Keyword + price are uncontrolled and submit-on-Apply (avoids a nav per keystroke); category,
- * city, and sort are controlled directly from `filters` and apply immediately. The form's `key`
+ * listing type, location and bedrooms are controlled directly from `filters` and apply
+ * immediately. Sorting lives in SortSelect, above the grid — it reorders results rather than
+ * narrowing them. The form's `key`
  * forces a remount — resetting the uncontrolled fields' defaultValue — whenever a filter changes
  * from elsewhere (e.g. a FilterChip removal), without needing an effect to re-sync local state.
  */
@@ -56,7 +52,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
     <form
       key={`${filters.q ?? ""}-${filters.minPrice ?? ""}-${filters.maxPrice ?? ""}`}
       onSubmit={handleSubmit}
-      className="border-border bg-card flex flex-wrap items-end gap-4 rounded-xl border p-4 shadow-sm sm:p-5"
+      className="border-border/60 bg-muted/40 flex flex-wrap items-end gap-4 rounded-xl border p-4 sm:p-5"
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="filter-q" className="text-muted-foreground text-xs">
@@ -215,26 +211,6 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           </select>
         </div>
       )}
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="filter-sort" className="text-muted-foreground text-xs">
-          Sort by
-        </label>
-        <select
-          id="filter-sort"
-          value={filters.sort ?? "newest"}
-          onChange={(event) =>
-            onApply({ sort: event.target.value as PropertySort })
-          }
-          className={SELECT_CLASSNAME}
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
 
       <Button type="submit" size="lg">
         Apply

@@ -30,7 +30,7 @@ export function DeveloperCard({ developer, bio }: DeveloperCardProps) {
   return (
     <Link
       href={ROUTES.DEVELOPER_DETAIL(developer.slug)}
-      className="group bg-card ring-border hover:ring-primary/30 focus-visible:ring-ring/50 relative flex h-full flex-col gap-4 rounded-xl p-5 ring-1 transition-[box-shadow,transform,--tw-ring-color] duration-300 outline-none hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-3"
+      className="group card-surface card-interactive focus-visible:ring-ring/50 relative flex h-full flex-col gap-4 p-5 outline-none focus-visible:ring-3"
     >
       <div className="flex items-start gap-4">
         <DeveloperAvatar

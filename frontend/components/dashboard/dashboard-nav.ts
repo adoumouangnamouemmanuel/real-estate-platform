@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import { ROUTES } from "@/constants/routes";
-import type { FeatureFlag } from "@/constants/features";
+import { isFeatureEnabled, type FeatureFlag } from "@/constants/features";
 
 export interface DashboardNavItem {
   label: string;
@@ -65,6 +65,23 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     flag: "DASHBOARD_SETTINGS",
   },
 ];
+
+/**
+ * The destinations a user can actually reach right now.
+ *
+ * Navigation used to render every item and disable the unshipped ones behind a
+ * "Soon" badge, which meant the first authenticated screen advertised two
+ * things the product cannot do — in the primary rail, above the fold. A nav is
+ * a list of places you can go; a place you cannot go does not belong in it.
+ *
+ * Nothing about the flag architecture changes: an item reappears the moment its
+ * flag flips, and no page is faked in the meantime.
+ */
+export function getAvailableNavItems(): DashboardNavItem[] {
+  return DASHBOARD_NAV_ITEMS.filter(
+    (item) => !item.flag || isFeatureEnabled(item.flag),
+  );
+}
 
 /** The bottom tab bar only has room for a handful of destinations on mobile. */
 export const MOBILE_PRIMARY_NAV_COUNT = 3;

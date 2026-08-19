@@ -54,7 +54,11 @@ describe("DashboardMobileNav", () => {
 
     expect(screen.getByText("Analytics")).toBeInTheDocument();
     expect(screen.getByText("Notifications")).toBeInTheDocument();
-    expect(screen.getByText("Account Settings")).toBeInTheDocument();
+    // "Account Settings" and "Profile & Company" are no longer listed at all.
+    // The sheet used to carry them as disabled rows with a "Soon" badge; unbuilt
+    // destinations are now omitted from navigation until their flag ships.
+    expect(screen.queryByText("Account Settings")).not.toBeInTheDocument();
+    expect(screen.queryByText("Soon")).not.toBeInTheDocument();
   });
 
   it("shows an unread count badge next to Notifications in the More sheet", async () => {

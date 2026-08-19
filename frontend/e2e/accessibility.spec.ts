@@ -277,6 +277,14 @@ test.describe("Accessibility (axe)", () => {
       .textContent();
     await expect(page).toHaveTitle(new RegExp(escapeRegExp(developerHeading!)));
     await page.waitForLoadState("networkidle");
+    // Same mid-fade false positive documented on the Notifications scan above.
+    // Measured directly on this page: the offending elements' colour is a
+    // constant lab(48.496) (#737373 — 4.6:1 on white, which passes), but their
+    // effective opacity is 0.672 at 150ms and only reaches 1.0 around 900ms.
+    // Axe blends that partial opacity against white and reports #7c7c7c at
+    // 4.17:1 — a violation of a state no settled page ever shows. Without this
+    // wait the scan failed 4 runs in 5. Let the reveal finish, then scan.
+    await page.waitForTimeout(1000);
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

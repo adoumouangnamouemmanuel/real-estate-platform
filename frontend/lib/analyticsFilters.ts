@@ -8,12 +8,14 @@ export type RawAnalyticsSearchParams = Record<
 const PERIOD_VALUES: AnalyticsPeriod[] = ["7d", "30d", "90d"];
 const DEFAULT_PERIOD: AnalyticsPeriod = "30d";
 
-export const ANALYTICS_PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] =
-  [
-    { value: "7d", label: "Last 7 days" },
-    { value: "30d", label: "Last 30 days" },
-    { value: "90d", label: "Last 90 days" },
-  ];
+export const ANALYTICS_PERIOD_OPTIONS: {
+  value: AnalyticsPeriod;
+  label: string;
+}[] = [
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "90d", label: "Last 90 days" },
+];
 
 function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

@@ -30,8 +30,12 @@ test.describe("Homepage → Search → Listing → Details → Developer journey
     ).toBeVisible();
     await expect(page.locator("a[href^='/properties/']").first()).toBeVisible();
 
-    // Property Listing — direct nav via the Properties link
-    await page.getByRole("link", { name: "Properties", exact: true }).click();
+    // Property Listing — direct nav via the navbar's Properties link. Scoped to
+    // the navigation landmark because the footer links to the same destination.
+    await page
+      .getByRole("navigation")
+      .getByRole("link", { name: "Properties", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/properties$/);
     await expect(
       page.getByRole("heading", { level: 1, name: "Properties" }),

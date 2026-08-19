@@ -40,10 +40,7 @@ export function DashboardWelcome() {
       className="flex flex-col gap-1"
     >
       <p className="text-muted-foreground text-sm">{formatFullDate(now)}</p>
-      <h1
-        id="dashboard-welcome-heading"
-        className="text-2xl font-semibold tracking-tight"
-      >
+      <h1 id="dashboard-welcome-heading" className="text-dashboard-title">
         {greeting(now.getHours())}
         {name ? `, ${name}` : ""}
       </h1>

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { AppointmentActionPolicy, isOverdueAppointment } from "./appointmentActionPolicy";
+import {
+  AppointmentActionPolicy,
+  isOverdueAppointment,
+} from "./appointmentActionPolicy";
 
 describe("AppointmentActionPolicy.getActions", () => {
   it("offers Confirm and Cancel for a REQUESTED appointment", () => {

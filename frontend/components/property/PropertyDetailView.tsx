@@ -54,9 +54,7 @@ export function PropertyDetailView({
                 />
               </div>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {property.title}
-            </h1>
+            <h1 className="text-page-title">{property.title}</h1>
             <p className="text-xl font-semibold">
               {formatPrice(property.price)}
               {property.listingType === "RENT" && (
@@ -94,7 +92,7 @@ export function PropertyDetailView({
           </MotionReveal>
 
           <MotionReveal as="section" className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold">Description</h2>
+            <h2 className="text-subsection-title">Description</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {property.description}
             </p>
@@ -102,13 +100,13 @@ export function PropertyDetailView({
 
           {property.amenities.length > 0 && (
             <MotionReveal as="section" className="flex flex-col gap-2">
-              <h2 className="text-lg font-semibold">Amenities</h2>
+              <h2 className="text-subsection-title">Amenities</h2>
               <PropertyAmenities amenities={property.amenities} />
             </MotionReveal>
           )}
 
           <MotionReveal as="section" className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold">Location</h2>
+            <h2 className="text-subsection-title">Location</h2>
             <PropertyLocation property={property} />
           </MotionReveal>
         </div>
@@ -117,7 +115,7 @@ export function PropertyDetailView({
             on the <aside> itself, only within it, so lg:sticky positioning
             can't be affected by an in-flight transform. */}
         <aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:h-fit lg:self-start">
-          <h2 className="text-lg font-semibold">Contact</h2>
+          <h2 className="text-subsection-title">Contact</h2>
           <DeveloperInfoCard developer={property.developer} />
           {isFeatureEnabled("WHATSAPP_CONTACT") ? (
             <WhatsAppCTA message={buildWhatsAppMessage(property)} />
@@ -132,7 +130,7 @@ export function PropertyDetailView({
 
       {relatedProperties.length > 0 && (
         <MotionReveal as="section" className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Similar Properties</h2>
+          <h2 className="text-subsection-title">Similar Properties</h2>
           <MotionReveal
             stagger
             className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"

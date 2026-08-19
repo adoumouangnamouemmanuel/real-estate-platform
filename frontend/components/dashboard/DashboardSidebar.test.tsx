@@ -65,18 +65,20 @@ describe("DashboardSidebar", () => {
     getUnreadCount.mockResolvedValue(0);
     renderWithQueryClient(<DashboardSidebar />);
 
-    expect(
-      screen.getByRole("link", { name: /Appointments/ }),
-    ).toHaveAttribute("href", "/appointments");
+    expect(screen.getByRole("link", { name: /Appointments/ })).toHaveAttribute(
+      "href",
+      "/appointments",
+    );
   });
 
   it("renders Notifications as a live link now that Phase 6.6 has shipped", () => {
     getUnreadCount.mockResolvedValue(0);
     renderWithQueryClient(<DashboardSidebar />);
 
-    expect(
-      screen.getByRole("link", { name: /Notifications/ }),
-    ).toHaveAttribute("href", "/notifications");
+    expect(screen.getByRole("link", { name: /Notifications/ })).toHaveAttribute(
+      "href",
+      "/notifications",
+    );
   });
 
   it("shows an unread count badge on Notifications when there are unread notifications", async () => {
@@ -95,7 +97,9 @@ describe("DashboardSidebar", () => {
     renderWithQueryClient(<DashboardSidebar />);
 
     await waitFor(() =>
-      expect(screen.getByRole("link", { name: /Notifications/ })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("link", { name: /Notifications/ }),
+      ).toBeInTheDocument(),
     );
     expect(
       screen.getByRole("link", { name: /Notifications/ }),
@@ -106,21 +110,30 @@ describe("DashboardSidebar", () => {
     getUnreadCount.mockResolvedValue(0);
     renderWithQueryClient(<DashboardSidebar />);
 
-    expect(
-      screen.getByRole("link", { name: /Analytics/ }),
-    ).toHaveAttribute("href", "/analytics");
+    expect(screen.getByRole("link", { name: /Analytics/ })).toHaveAttribute(
+      "href",
+      "/analytics",
+    );
   });
 
-  it("renders not-yet-shipped destinations as disabled, with a Soon badge, not as broken links", () => {
+  // Previously these were rendered as disabled buttons carrying a "Soon" badge.
+  // Primary navigation now lists only destinations that can actually be
+  // reached — a nav is a list of places you can go, and advertising two dead
+  // entries in the rail was the first thing a developer saw on signing in. The
+  // flag architecture is unchanged: each item returns the moment its flag flips.
+  it("omits not-yet-shipped destinations instead of disabling them", () => {
     getUnreadCount.mockResolvedValue(0);
     renderWithQueryClient(<DashboardSidebar />);
 
-    const profile = screen.getByRole("button", { name: /Profile & Company/ });
-    expect(profile).toBeDisabled();
-    expect(screen.getAllByText("Soon").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Profile & Company")).not.toBeInTheDocument();
+    expect(screen.queryByText("Account Settings")).not.toBeInTheDocument();
+    expect(screen.queryByText("Soon")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Profile & Company/ }),
+    ).not.toBeInTheDocument();
   });
 
-  it("renders every nav destination from the shared config", () => {
+  it("renders every shipped nav destination from the shared config", () => {
     getUnreadCount.mockResolvedValue(0);
     renderWithQueryClient(<DashboardSidebar />);
 
@@ -130,7 +143,6 @@ describe("DashboardSidebar", () => {
       "Appointments",
       "Analytics",
       "Notifications",
-      "Account Settings",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }

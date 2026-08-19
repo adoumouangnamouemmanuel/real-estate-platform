@@ -80,23 +80,19 @@ test.describe("Dashboard shell", () => {
     );
   });
 
-  test("not-yet-shipped nav destinations are visibly disabled, not broken links", async ({
+  test("not-yet-shipped destinations are absent from navigation, not disabled in it", async ({
     page,
   }) => {
     await loginAsDeveloper(page);
 
-    // My Properties (6.2), Appointments (6.4), Notifications (6.6), and
-    // Analytics (6.7) have all shipped — Profile & Company is the next
-    // still-gated destination.
-    const profile = page
-      .getByRole("button", { name: /Profile & Company/ })
-      .first();
-    await expect(profile).toBeDisabled();
-    // The "Soon" badge itself is only ever shown in the desktop sidebar's expanded
-    // (lg+) state and the mobile "More" sheet — not the icon-only tablet rail or the
-    // primary mobile tab bar — so assert presence in the DOM, not viewport-dependent
-    // visibility.
-    await expect(page.getByText("Soon").first()).toHaveCount(1);
+    // Profile & Company and Account Settings are still gated. They used to be
+    // rendered as disabled rows carrying a "Soon" badge, which meant the first
+    // authenticated screen advertised two things the product cannot do, in the
+    // primary rail, above the fold. Navigation now lists only what can be
+    // reached; the feature flags are untouched, so each returns when it ships.
+    await expect(page.getByText("Profile & Company")).toHaveCount(0);
+    await expect(page.getByText("Account Settings")).toHaveCount(0);
+    await expect(page.getByText("Soon")).toHaveCount(0);
   });
 
   test("the account menu shows the developer's identity and logs out cleanly", async ({
@@ -119,7 +115,7 @@ test.describe("Dashboard shell", () => {
     await expect(page).toHaveURL("/login?redirect=%2Fdashboard");
   });
 
-  test("the mobile bottom nav and its More sheet expose every destination", async ({
+  test("the mobile bottom nav and its More sheet expose every shipped destination", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -136,6 +132,8 @@ test.describe("Dashboard shell", () => {
     const sheet = page.getByRole("dialog");
     await expect(sheet.getByText("Analytics")).toBeVisible();
     await expect(sheet.getByText("Notifications")).toBeVisible();
-    await expect(sheet.getByText("Account Settings")).toBeVisible();
+    // Account Settings is gated and therefore no longer listed here either —
+    // the sheet is the same nav config as the desktop rail.
+    await expect(sheet.getByText("Account Settings")).toHaveCount(0);
   });
 });

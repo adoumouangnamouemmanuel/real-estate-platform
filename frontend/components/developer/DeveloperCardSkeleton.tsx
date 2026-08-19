@@ -5,10 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  *  doesn't shift once real cards render. */
 export function DeveloperCardSkeleton(props: React.ComponentProps<"div">) {
   return (
-    <div
-      className="ring-border flex h-full flex-col gap-4 rounded-xl p-5 ring-1"
-      {...props}
-    >
+    <div className="card-surface flex h-full flex-col gap-4 p-5" {...props}>
       <div className="flex items-start gap-4">
         <Skeleton className="size-18 shrink-0 rounded-full" />
         <div className="flex flex-1 flex-col gap-2 pt-1">

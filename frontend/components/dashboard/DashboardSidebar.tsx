@@ -5,11 +5,10 @@ import { usePathname } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
-import { isFeatureEnabled } from "@/constants/features";
 import { useUnreadNotificationCount } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
-import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
+import { getAvailableNavItems } from "./dashboard-nav";
 
 function isItemActive(pathname: string, href: string): boolean {
   return href === ROUTES.DASHBOARD
@@ -32,32 +31,11 @@ export function DashboardSidebar() {
         aria-label="Dashboard"
         className="flex w-full flex-col gap-1 p-2 lg:p-3"
       >
-        {DASHBOARD_NAV_ITEMS.map((item) => {
+        {getAvailableNavItems().map((item) => {
           const Icon = item.icon;
-          const enabled = !item.flag || isFeatureEnabled(item.flag);
           const active = isItemActive(pathname, item.href);
           const showUnreadBadge =
-            enabled && item.href === ROUTES.NOTIFICATIONS && hasUnread;
-
-          if (!enabled) {
-            return (
-              <button
-                key={item.href}
-                type="button"
-                disabled
-                title={`${item.label} — coming soon`}
-                className="text-muted-foreground flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium opacity-50 lg:justify-between"
-              >
-                <span className="flex items-center gap-3">
-                  <Icon className="size-4.5 shrink-0" aria-hidden />
-                  <span className="hidden lg:inline">{item.label}</span>
-                </span>
-                <Badge variant="outline" className="hidden lg:inline-flex">
-                  Soon
-                </Badge>
-              </button>
-            );
-          }
+            item.href === ROUTES.NOTIFICATIONS && hasUnread;
 
           return (
             <Link

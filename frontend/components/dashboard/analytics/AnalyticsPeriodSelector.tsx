@@ -15,7 +15,10 @@ export function AnalyticsPeriodSelector({
 }: AnalyticsPeriodSelectorProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor="analytics-period" className="text-muted-foreground text-xs">
+      <label
+        htmlFor="analytics-period"
+        className="text-muted-foreground text-xs"
+      >
         Period
       </label>
       <select

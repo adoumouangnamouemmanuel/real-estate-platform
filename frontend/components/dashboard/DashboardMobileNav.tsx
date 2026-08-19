@@ -15,11 +15,13 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { ROUTES } from "@/constants/routes";
-import { isFeatureEnabled } from "@/constants/features";
 import { useUnreadNotificationCount } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
-import { DASHBOARD_NAV_ITEMS, MOBILE_PRIMARY_NAV_COUNT } from "./dashboard-nav";
+import {
+  getAvailableNavItems,
+  MOBILE_PRIMARY_NAV_COUNT,
+} from "./dashboard-nav";
 
 function isItemActive(pathname: string, href: string): boolean {
   return href === ROUTES.DASHBOARD
@@ -38,8 +40,9 @@ export function DashboardMobileNav() {
   const { data: unreadCount } = useUnreadNotificationCount();
   const hasUnread = Boolean(unreadCount);
 
-  const primaryItems = DASHBOARD_NAV_ITEMS.slice(0, MOBILE_PRIMARY_NAV_COUNT);
-  const moreItems = DASHBOARD_NAV_ITEMS.slice(MOBILE_PRIMARY_NAV_COUNT);
+  const availableItems = getAvailableNavItems();
+  const primaryItems = availableItems.slice(0, MOBILE_PRIMARY_NAV_COUNT);
+  const moreItems = availableItems.slice(MOBILE_PRIMARY_NAV_COUNT);
   const moreIsActive = moreItems.some((item) =>
     isItemActive(pathname, item.href),
   );
@@ -47,12 +50,7 @@ export function DashboardMobileNav() {
   // tabs) — an aggregate dot on "More" itself gives a glance-able signal
   // without reordering already-shipped primary destinations.
   const moreHasUnread =
-    hasUnread &&
-    moreItems.some(
-      (item) =>
-        item.href === ROUTES.NOTIFICATIONS &&
-        (!item.flag || isFeatureEnabled(item.flag)),
-    );
+    hasUnread && moreItems.some((item) => item.href === ROUTES.NOTIFICATIONS);
 
   return (
     <nav
@@ -61,22 +59,7 @@ export function DashboardMobileNav() {
     >
       {primaryItems.map((item) => {
         const Icon = item.icon;
-        const enabled = !item.flag || isFeatureEnabled(item.flag);
         const active = isItemActive(pathname, item.href);
-
-        if (!enabled) {
-          return (
-            <button
-              key={item.href}
-              type="button"
-              disabled
-              className="text-muted-foreground flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.68rem] font-medium opacity-50"
-            >
-              <Icon className="size-5" aria-hidden />
-              {item.label}
-            </button>
-          );
-        }
 
         return (
           <Link
@@ -123,25 +106,7 @@ export function DashboardMobileNav() {
           <div className="flex flex-col gap-1 p-4 pt-2">
             {moreItems.map((item) => {
               const Icon = item.icon;
-              const enabled = !item.flag || isFeatureEnabled(item.flag);
               const active = isItemActive(pathname, item.href);
-
-              if (!enabled) {
-                return (
-                  <button
-                    key={item.href}
-                    type="button"
-                    disabled
-                    className="text-muted-foreground flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium opacity-50"
-                  >
-                    <span className="flex items-center gap-3">
-                      <Icon className="size-4.5" aria-hidden />
-                      {item.label}
-                    </span>
-                    <Badge variant="outline">Soon</Badge>
-                  </button>
-                );
-              }
 
               const showUnreadBadge =
                 item.href === ROUTES.NOTIFICATIONS && hasUnread;

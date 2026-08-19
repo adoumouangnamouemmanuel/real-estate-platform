@@ -71,9 +71,7 @@ export function DeveloperProfileView({
 
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {developer.name}
-                  </h1>
+                  <h1 className="text-page-title">{developer.name}</h1>
                   {developer.isVerified && (
                     <Badge variant="secondary">
                       <BadgeCheck className="size-3.5" aria-hidden />
@@ -172,7 +170,7 @@ export function DeveloperProfileView({
           >
             <h2
               id="developer-contact-heading"
-              className="text-lg font-semibold"
+              className="text-subsection-title"
             >
               Contact
             </h2>
@@ -205,7 +203,7 @@ export function DeveloperProfileView({
           </section>
 
           <div className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold">Location</h2>
+            <h2 className="text-subsection-title">Location</h2>
             {!isFeatureEnabled("MAP_VIEW") && <MapPlaceholder />}
           </div>
         </MotionReveal>
@@ -213,7 +211,7 @@ export function DeveloperProfileView({
         <MotionReveal as="section" className="flex flex-col gap-4">
           {/* The count comes straight off the resolved list, so the heading and
               the grid can never disagree. */}
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-subsection-title">
             Active listings
             {activeListings.length > 0 && (
               <span className="text-muted-foreground font-normal">

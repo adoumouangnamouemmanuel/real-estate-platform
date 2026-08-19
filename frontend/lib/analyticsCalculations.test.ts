@@ -107,21 +107,11 @@ describe("buildAppointmentFunnel", () => {
 
     const funnel = buildAppointmentFunnel(appointments, "30d", NOW);
     expect(funnel.totalRequested).toBe(5);
-    expect(
-      funnel.stages.find((s) => s.status === "REQUESTED")?.count,
-    ).toBe(1);
-    expect(
-      funnel.stages.find((s) => s.status === "CONFIRMED")?.count,
-    ).toBe(1);
-    expect(
-      funnel.stages.find((s) => s.status === "COMPLETED")?.count,
-    ).toBe(1);
-    expect(
-      funnel.stages.find((s) => s.status === "CANCELLED")?.count,
-    ).toBe(1);
-    expect(
-      funnel.stages.find((s) => s.status === "NO_SHOW")?.count,
-    ).toBe(1);
+    expect(funnel.stages.find((s) => s.status === "REQUESTED")?.count).toBe(1);
+    expect(funnel.stages.find((s) => s.status === "CONFIRMED")?.count).toBe(1);
+    expect(funnel.stages.find((s) => s.status === "COMPLETED")?.count).toBe(1);
+    expect(funnel.stages.find((s) => s.status === "CANCELLED")?.count).toBe(1);
+    expect(funnel.stages.find((s) => s.status === "NO_SHOW")?.count).toBe(1);
   });
 
   it("computes responseRate as the share of the cohort no longer just REQUESTED", () => {
@@ -192,15 +182,15 @@ describe("buildPortfolioComposition", () => {
 
     const composition = buildPortfolioComposition(properties);
     expect(composition.totalListings).toBe(3);
-    expect(
-      composition.byStatus.find((s) => s.status === "ACTIVE")?.count,
-    ).toBe(2);
-    expect(
-      composition.byStatus.find((s) => s.status === "DRAFT")?.count,
-    ).toBe(1);
-    expect(
-      composition.byStatus.find((s) => s.status === "SOLD")?.count,
-    ).toBe(0);
+    expect(composition.byStatus.find((s) => s.status === "ACTIVE")?.count).toBe(
+      2,
+    );
+    expect(composition.byStatus.find((s) => s.status === "DRAFT")?.count).toBe(
+      1,
+    );
+    expect(composition.byStatus.find((s) => s.status === "SOLD")?.count).toBe(
+      0,
+    );
     expect(
       composition.byCategory.find((c) => c.category === "apartment")?.count,
     ).toBe(2);
@@ -247,9 +237,9 @@ describe("buildActionNeeded", () => {
     );
 
     const items = buildActionNeeded(overdue, [], emptyFunnel, NOW);
-    expect(
-      items.find((i) => i.type === "OVERDUE_APPOINTMENTS")?.severity,
-    ).toBe("high");
+    expect(items.find((i) => i.type === "OVERDUE_APPOINTMENTS")?.severity).toBe(
+      "high",
+    );
   });
 
   it("does not flag a CONFIRMED appointment with a past date as overdue", () => {
@@ -259,7 +249,9 @@ describe("buildActionNeeded", () => {
     });
 
     const items = buildActionNeeded([pastConfirmed], [], emptyFunnel, NOW);
-    expect(items.find((i) => i.type === "OVERDUE_APPOINTMENTS")).toBeUndefined();
+    expect(
+      items.find((i) => i.type === "OVERDUE_APPOINTMENTS"),
+    ).toBeUndefined();
   });
 
   it("flags stale drafts untouched past the threshold", () => {
@@ -355,8 +347,12 @@ describe("buildAnalyticsStats", () => {
       NOW,
     );
 
-    expect(stats.find((s) => s.key === "completed_viewings")?.trend).toHaveLength(7);
-    expect(stats.find((s) => s.key === "active_listings")?.trend).toBeUndefined();
+    expect(
+      stats.find((s) => s.key === "completed_viewings")?.trend,
+    ).toHaveLength(7);
+    expect(
+      stats.find((s) => s.key === "active_listings")?.trend,
+    ).toBeUndefined();
     expect(stats.find((s) => s.key === "response_rate")?.trend).toBeUndefined();
   });
 });

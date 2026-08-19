@@ -45,14 +45,13 @@ describe("FilterPanel", () => {
     expect(onApply).toHaveBeenCalledWith({ city: "Accra" });
   });
 
-  it("applies sort changes immediately", async () => {
-    const user = userEvent.setup();
-    const onApply = vi.fn();
-    render(<FilterPanel filters={{}} onApply={onApply} />);
+  // Sorting moved out to SortSelect (see SortSelect.test.tsx) — it reorders the
+  // result set rather than filtering it, so it now sits above the grid with the
+  // result count instead of inside this panel.
+  it("does not render a sort control", () => {
+    render(<FilterPanel filters={{}} onApply={vi.fn()} />);
 
-    await user.selectOptions(screen.getByLabelText("Sort by"), "price_asc");
-
-    expect(onApply).toHaveBeenCalledWith({ sort: "price_asc" });
+    expect(screen.queryByLabelText("Sort by")).not.toBeInTheDocument();
   });
 
   it("only applies keyword and price on Apply, not per keystroke", async () => {

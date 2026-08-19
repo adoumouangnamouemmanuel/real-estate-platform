@@ -29,6 +29,7 @@ import {
 import { ROUTES } from "@/constants/routes";
 import { getContactTrustPoint } from "@/lib/contactTrustPoint";
 import { getCategoryImageUrl, HERO_IMAGES } from "@/lib/demoImagery";
+import { cn } from "@/lib/utils";
 import { propertyService } from "@/services";
 import type { Property } from "@/types";
 
@@ -50,28 +51,67 @@ function sortByPopularity(properties: Property[]): Property[] {
   );
 }
 
-export default async function Home() {
-  // TODO(backend): "featured" should come from GET /api/v1/properties?featured=true
-  // once that flag exists; today it's just the newest page. The second fetch
-  // (pageSize 100) is a mock-scale-only stand-in for what a real backend
-  // would expose as GET /properties?sort=popular and GET /properties?category=land
-  // directly — see analytics.service.ts for the identical "fetch enough rows
-  // to derive views client-side" pattern and its own caveat about this not
-  // surviving real data volume.
-  const [featuredResult, catalogueResult] = await Promise.all([
-    propertyService.getProperties({ pageSize: 8 }),
-    propertyService.getProperties({ pageSize: 100 }),
-  ]);
+/**
+ * Mobile: a horizontal snap rail, so a three-card section costs one card of
+ * vertical height instead of three. sm and up: an ordinary grid. Used only for
+ * the two secondary sections — the primary inventory below the hero stays a
+ * vertical grid, because burying the main catalogue behind a sideways swipe
+ * would be worse discovery, not better.
+ */
+const RAIL =
+  "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:snap-none sm:overflow-visible sm:pb-0";
+const RAIL_ITEM = "min-w-[78%] snap-start sm:min-w-0";
 
-  const featured = featuredResult.items;
-  const trending = sortByPopularity(catalogueResult.items).slice(0, 4);
-  const landOpportunities = catalogueResult.items
-    .filter((property) => property.category === "land")
-    .slice(0, 3);
+export default async function Home() {
+  // One fetch, one pool. Previously this made two requests and each section
+  // sliced the results independently, so the same property could headline three
+  // different sections — 15 card slots rendered only 10 distinct properties.
+  //
+  // TODO(backend): sections are still derived client-side from a single page of
+  // results. A real backend would expose GET /properties?sort=popular and
+  // ?category=land directly — see analytics.service.ts for the identical
+  // "fetch enough rows to derive the view client-side" pattern and its own
+  // caveat about not surviving real data volume. There is deliberately no
+  // `featured` flag here, because the backend has none.
+  const { items: catalogue } = await propertyService.getProperties({
+    pageSize: 100,
+  });
+
+  // Sections claim their properties in order of how specific their claim is,
+  // and a property is only ever claimed once. Trending goes first because
+  // "what buyers are saving most" is a falsifiable statement about a specific
+  // property; the newest-listings rail is the least specific, so it takes
+  // whatever is left rather than crowding out the sections that mean something.
+  const claimed = new Set<string>();
+  function claim(candidates: Property[], count: number): Property[] {
+    const picked = candidates
+      .filter((property) => !claimed.has(property.id))
+      .slice(0, count);
+    picked.forEach((property) => claimed.add(property.id));
+    return picked;
+  }
+
+  const trending = claim(sortByPopularity(catalogue), 3);
+  const landOpportunities = claim(
+    catalogue.filter((property) => property.category === "land"),
+    3,
+  );
+  const latest = claim(catalogue, 6);
+
+  // A section that can't fill its grid is hidden rather than padded. Three is
+  // the width of the secondary grids; four keeps the main grid from rendering
+  // as a stranded single row.
+  const showTrending = trending.length >= 3;
+  const showLand = landOpportunities.length >= 3;
+  const showLatest = latest.length >= 4;
 
   return (
     <div className="flex flex-1 flex-col">
-      <section className="relative flex min-h-[560px] items-center justify-center overflow-hidden sm:min-h-[640px] lg:min-h-[720px]">
+      {/* Hero height is set so the section below breaks the fold at 1440x900:
+          64px of navbar plus 600px of hero leaves the next section's heading
+          and the top of its cards visible, which is what tells a first-time
+          visitor the page is a catalogue rather than a landing page. */}
+      <section className="relative flex min-h-[520px] items-center justify-center overflow-hidden sm:min-h-[560px] lg:min-h-[600px]">
         <ImageCrossfade images={HERO_IMAGES} className="absolute inset-0" />
         <div
           aria-hidden
@@ -80,11 +120,11 @@ export default async function Home() {
 
         <MotionReveal
           stagger
-          className="container-page relative flex flex-col items-center gap-6 py-24 text-center text-white"
+          className="container-page relative flex flex-col items-center gap-6 py-16 text-center text-white"
         >
           <MotionRevealItem
             as="h1"
-            className="max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl"
+            className="font-display max-w-2xl text-4xl leading-[1.1] font-semibold tracking-tight text-balance sm:text-5xl"
           >
             Find your next home across African markets.
           </MotionRevealItem>
@@ -94,13 +134,35 @@ export default async function Home() {
           <MotionRevealItem className="flex w-full max-w-xl justify-center">
             <SearchBar variant="glass" />
           </MotionRevealItem>
+          {/* The exploratory path out of the hero, for the visitor who has no
+              search term in mind. Solid white rather than a translucent glass
+              button so its contrast is deterministic over the photograph
+              behind it, and visually distinct from the search bar's primary
+              button so the two actions don't compete.
+
+              Wrapped in cn() rather than passing these through
+              buttonVariants({ className }): cva concatenates without resolving
+              conflicts, so the default variant's `text-primary-foreground`
+              (a near-white) survived alongside `text-neutral-900` and won on
+              stylesheet order — white text on a white button. cn()'s
+              tailwind-merge drops the losing `text-*` so the override holds. */}
+          <MotionRevealItem>
+            <Link
+              href={ROUTES.PROPERTIES}
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "gap-2 bg-white text-neutral-900 hover:bg-white/90 focus-visible:ring-white/50",
+              )}
+            >
+              Browse properties
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </MotionRevealItem>
         </MotionReveal>
       </section>
 
-      <section className="container-page flex flex-col gap-6 py-16">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Explore by category
-        </h2>
+      <section className="container-page page-section flex flex-col gap-6">
+        <h2 className="text-section-title">Explore by category</h2>
         <MotionReveal
           stagger
           className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
@@ -139,73 +201,87 @@ export default async function Home() {
         </MotionReveal>
       </section>
 
-      <MotionReveal
-        as="section"
-        className="container-page flex flex-col gap-6 py-8"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Featured Properties
-          </h2>
-          <Link
-            href={ROUTES.PROPERTIES}
-            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm transition-colors"
-          >
-            View all
-            <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
-      </MotionReveal>
-
-      {trending.length > 0 && (
+      {/* "Latest listings", not "Featured": nothing on this platform is
+          featured. There is no featured flag in the data model or the backend
+          contract, and this section is literally the newest page of results —
+          so it says so. */}
+      {showLatest && (
         <MotionReveal
           as="section"
-          className="container-page flex flex-col gap-6 py-8"
+          className="container-page page-section flex flex-col gap-6"
+        >
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="text-section-title">Latest listings</h2>
+            <Link
+              href={ROUTES.PROPERTIES}
+              className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 text-sm transition-colors"
+            >
+              View all
+              <ArrowRight className="size-3.5" aria-hidden />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {latest.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        </MotionReveal>
+      )}
+
+      {showTrending && (
+        <MotionReveal
+          as="section"
+          className="container-page page-section flex flex-col gap-6"
         >
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <TrendingUp className="text-brand-gold size-5" aria-hidden />
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Trending Now
-              </h2>
+              <h2 className="text-section-title">Trending now</h2>
             </div>
             <p className="text-muted-foreground text-sm">
               The properties buyers are saving the most.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            className={`${RAIL} sm:grid-cols-3`}
+            tabIndex={0}
+            role="group"
+            aria-label="Trending properties"
+          >
             {trending.map((property) => (
-              <PropertyCard key={property.id} property={property} />
+              <div key={property.id} className={RAIL_ITEM}>
+                <PropertyCard property={property} />
+              </div>
             ))}
           </div>
         </MotionReveal>
       )}
 
-      {landOpportunities.length > 0 && (
+      {showLand && (
         <MotionReveal
           as="section"
-          className="container-page flex flex-col gap-6 py-8"
+          className="container-page page-section flex flex-col gap-6"
         >
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Land Opportunities
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <h2 className="text-section-title">Land opportunities</h2>
+          <div
+            className={`${RAIL} sm:grid-cols-3`}
+            tabIndex={0}
+            role="group"
+            aria-label="Land opportunities"
+          >
             {landOpportunities.map((property) => (
-              <PropertyCard key={property.id} property={property} />
+              <div key={property.id} className={RAIL_ITEM}>
+                <PropertyCard property={property} />
+              </div>
             ))}
           </div>
         </MotionReveal>
       )}
 
-      <section className="bg-muted/40 py-16">
+      <section className="bg-muted/40">
         <MotionReveal
           stagger
-          className="container-page grid gap-8 sm:grid-cols-3"
+          className="container-page page-section grid gap-8 sm:grid-cols-3"
         >
           <MotionRevealItem>
             <TrustPoint
@@ -231,9 +307,9 @@ export default async function Home() {
 
       <MotionReveal
         as="section"
-        className="container-page flex flex-col items-center gap-4 py-20 text-center"
+        className="container-page page-section flex flex-col items-center gap-4 text-center"
       >
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h2 className="text-section-title">
           Ready to find your next property?
         </h2>
         <p className="text-muted-foreground max-w-md">

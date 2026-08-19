@@ -81,6 +81,12 @@
   --radius-DEFAULT: var(--radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Two-tier heading system, deliberately not one font for everything:
+     `font-display` (Newsreader) carries the editorial voice on page titles and
+     major section headings, while `font-heading` stays on the UI sans for the
+     dense stuff — card titles, dialog/drawer titles, dashboard section headers.
+     A serif at 15–16px inside a data table reads as a mistake, not as premium. */
+  --font-display: var(--font-newsreader);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -140,6 +146,108 @@
 /* Wider than container-page: dashboard tables need the extra room desktop screens have. */
 @utility container-dashboard {
   @apply mx-auto w-full max-w-(--breakpoint-xl) px-4 py-6 lg:px-6;
+}
+
+/* ---------------------------------------------------------------------------
+ * The primary card family: property cards, developer cards and their
+ * skeletons. The homepage category tiles deliberately stay outside it — they
+ * are full-bleed image tiles with their own aspect ratio and overlay, not
+ * content cards, and giving them `bg-card` would be meaningless.
+ *
+ * Edge treatment is a ring rather than a border on purpose. A ring is painted
+ * outside the box without occupying layout, so cards sitting in a grid stay
+ * geometrically aligned with their skeletons and with each other; mixing the
+ * two (as this codebase was doing) shifts content by a pixel per side.
+ *
+ * `card-interactive` is the single hover signature. PropertyCard and
+ * DeveloperCard had drifted to different lift distances (4px vs 2px) and only
+ * one of them changed its ring colour, so two cards on the same page answered
+ * the pointer differently. 2px is the restrained end deliberately.
+ *
+ * Reduced motion is already handled globally: the prefers-reduced-motion block
+ * at the bottom of this file flattens transition durations to ~0, so the hover
+ * state still applies, it just doesn't animate. Do not add a motion-reduce:
+ * variant here — it would be redundant.
+ * ------------------------------------------------------------------------- */
+@utility card-surface {
+  @apply bg-card ring-border rounded-xl ring-1;
+}
+
+@utility card-interactive {
+  @apply hover:ring-primary/30 transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:-translate-y-0.5 hover:shadow-lg;
+}
+
+/* ---------------------------------------------------------------------------
+ * Page-shell vertical rhythm.
+ *
+ * Three intentional spacings, replacing the nine ad-hoc `py-*` combinations
+ * that had accumulated on `container-page` (py-4/6/8/10/12/16/20/24 and two
+ * responsive variants). Surfaces that are deliberately different — the
+ * full-bleed homepage hero, the dashboard's own `container-dashboard` — keep
+ * their own spacing and are not forced into this scale.
+ * ------------------------------------------------------------------------- */
+
+/* Editorial header band at the top of a discovery page. */
+@utility page-band {
+  @apply py-12 sm:py-16;
+}
+
+/* Standard content section. */
+@utility page-section {
+  @apply py-10 sm:py-14;
+}
+
+/* ---------------------------------------------------------------------------
+ * Type scale.
+ *
+ * Five tiers, expressed as utilities rather than repeated class strings so the
+ * scale is enforceable — before this existed the app had four different h1
+ * sizes (20/24/30/36px) and three h2 sizes across surfaces that are supposed to
+ * feel like one product.
+ *
+ * Tiers 1–2 use the display face; 3–5 stay on the UI sans. Semantic heading
+ * level and visual tier are chosen independently: a page can legitimately have
+ * an `h2` styled as a subsection.
+ * ------------------------------------------------------------------------- */
+
+/* Tier 1 — page title. Discovery pages, entity pages, hero. */
+@utility text-page-title {
+  @apply font-display text-3xl leading-[1.15] font-semibold tracking-tight text-balance sm:text-4xl;
+}
+
+/* Tier 2 — section heading. Major bands within a page. */
+@utility text-section-title {
+  @apply font-display text-2xl leading-snug font-semibold tracking-tight;
+}
+
+/* Tier 3 — subsection heading inside an entity page ("Description", "Contact",
+   "Active listings"). Stays on the UI sans: at this size a serif starts to
+   compete with the body copy it is introducing rather than framing it.
+   Matches the `text-lg font-semibold` these headings already used, so this
+   codifies the existing convention instead of introducing a new size.
+
+   Note this is a different family from the card/dialog/drawer chrome titles in
+   components/ui, which are `font-heading text-base font-medium` and are already
+   internally consistent — those are chrome labels, not content headings. */
+@utility text-subsection-title {
+  @apply font-heading text-lg leading-snug font-semibold tracking-tight;
+}
+
+/* Tier 4 — supporting lede that sits under a tier-1 title. */
+@utility text-page-lede {
+  @apply text-muted-foreground max-w-2xl leading-relaxed;
+}
+
+/* Tier 5 — eyebrow above a tier-1 title, and generic meta text. */
+@utility text-eyebrow {
+  @apply text-muted-foreground text-sm font-medium tracking-wide uppercase;
+}
+
+/* Dashboard page title. Deliberately a separate, smaller tier: the dashboard is
+   a working tool, so it keeps the display face for continuity with the public
+   product but not the editorial size. */
+@utility text-dashboard-title {
+  @apply font-display text-xl leading-tight font-semibold tracking-tight sm:text-2xl;
 }
 
 body {

@@ -78,16 +78,19 @@ test.describe("Public navigation active state", () => {
   test("marks the current section, including on a nested route", async ({
     page,
   }) => {
+    // Scoped to the navbar landmark: the footer legitimately links to the same
+    // destinations, so an unscoped "Properties" link is ambiguous. Active state
+    // is a property of the primary nav specifically, which is what this asserts.
+    const navProperties = page
+      .getByRole("navigation")
+      .getByRole("link", { name: "Properties", exact: true });
+
     await page.goto("/properties");
-    await expect(
-      page.getByRole("link", { name: "Properties", exact: true }),
-    ).toHaveAttribute("aria-current", "page");
+    await expect(navProperties).toHaveAttribute("aria-current", "page");
 
     await page.locator("a[href^='/properties/']").first().click();
     await page.waitForURL(/\/properties\/.+/);
-    await expect(
-      page.getByRole("link", { name: "Properties", exact: true }),
-    ).toHaveAttribute("aria-current", "page");
+    await expect(navProperties).toHaveAttribute("aria-current", "page");
   });
 });
 

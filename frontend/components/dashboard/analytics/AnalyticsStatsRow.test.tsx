@@ -40,9 +40,9 @@ describe("AnalyticsStatsRow", () => {
   });
 
   it("shows loading skeletons when isLoading", () => {
-    const { container } = render(
-      <AnalyticsStatsRow stats={[]} isLoading />,
-    );
-    expect(container.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(0);
+    const { container } = render(<AnalyticsStatsRow stats={[]} isLoading />);
+    expect(
+      container.querySelectorAll("[data-slot='skeleton']").length,
+    ).toBeGreaterThan(0);
   });
 });

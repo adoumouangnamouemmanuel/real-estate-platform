@@ -37,10 +37,19 @@ const CATEGORY_IMAGE_POOL: Record<PropertyCategory, string[]> = {
     "1570129477492-45c003edd2be",
     "1600596542815-ffad4c1539a9",
   ],
-  // Only one verified, unambiguous vacant-land/field photo was found — a
-  // pool of 1 is deliberate (see buildPropertyMedia's dedupe below) rather
-  // than padding it with another category's image or an unverified guess.
-  land: ["1500382017468-9049fed747ef"],
+  // Expanded from one photo to three. A pool of 1 meant every land listing —
+  // and all three cards in the homepage's land section — rendered the same
+  // photograph, which read as placeholder content. Each addition was resolved
+  // from its Unsplash page, downloaded and opened before being added, per the
+  // rule above; candidates that turned out to be grazing pasture with cattle,
+  // a storm-lit deforested slope, and a badlands canyon were rejected as
+  // misleading or tonally wrong for a land listing rather than accepted to
+  // pad the pool.
+  land: [
+    "1500382017468-9049fed747ef", // wheat field at sunset, distant treeline
+    "1697627903173-e22b6e04734d", // flat open field, autumn treeline, clear sky
+    "1599809563132-4b678fb6f611", // bare cleared plot, dramatic cloud cover
+  ],
   commercial: [
     "1587293852726-70cdb56c2866", // warehouse interior, shelving
     "1565793298595-6a879b1d9492", // aerial view, logistics yard
