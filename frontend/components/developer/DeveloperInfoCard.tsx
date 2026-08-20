@@ -55,7 +55,11 @@ export function DeveloperInfoCard({ developer }: DeveloperInfoCardProps) {
       <Link
         href={ROUTES.DEVELOPER_CONTACT(developer.slug)}
         className={buttonVariants({
-          variant: "outline",
+          // Primary, not outline. This is the page's only working contact
+          // action: the WhatsApp slot below it is gated off, and it used to
+          // render a disabled "coming soon" button that took the primary
+          // visual weight while the real action looked secondary.
+          variant: "default",
           // `lg` is the design system's largest non-icon size and what every
           // other primary CTA uses (the homepage CTA, FilterPanel's Apply) —
           // the default `h-8` is a row-action size, too small for the only

@@ -67,7 +67,7 @@ describe("Property details flow", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("omits the Similar Properties section when there are none", () => {
+  it("omits the Similar properties section when there are none", () => {
     const property = makePropertyDetail();
 
     renderWithQueryClient(
@@ -75,21 +75,31 @@ describe("Property details flow", () => {
     );
 
     expect(
-      screen.queryByRole("heading", { name: "Similar Properties" }),
+      screen.queryByRole("heading", { name: "Similar properties" }),
     ).not.toBeInTheDocument();
   });
 
-  it("shows a disabled WhatsApp CTA while FEATURES.WHATSAPP_CONTACT is off", () => {
+  it("offers no WhatsApp affordance at all while FEATURES.WHATSAPP_CONTACT is off", () => {
     const property = makePropertyDetail();
 
     renderWithQueryClient(
       <PropertyDetailView property={property} relatedProperties={[]} />,
     );
 
-    const button = screen.getByRole("button", {
-      name: /Contact on WhatsApp \(coming soon\)/,
-    });
-    expect(button).toBeDisabled();
+    // The gated slot used to render a disabled "Contact on WhatsApp (coming
+    // soon)" button, which implied a capability the product does not have and
+    // outranked the one contact action that does work. Nothing WhatsApp-shaped
+    // should be present, and the real contact route must be a live link.
+    expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: /WhatsApp/i })).toHaveLength(
+      0,
+    );
+
+    const contact = screen.getByRole("link", { name: /^Contact / });
+    expect(contact).toHaveAttribute(
+      "href",
+      expect.stringContaining("#contact"),
+    );
   });
 
   it("shows '/ month' next to the price only for RENT listings", () => {

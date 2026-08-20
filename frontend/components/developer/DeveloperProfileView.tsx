@@ -1,12 +1,4 @@
-import {
-  BadgeCheck,
-  Building2,
-  Globe,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Star,
-} from "lucide-react";
+import { BadgeCheck, Building2, Globe, Mail, MapPin, Star } from "lucide-react";
 
 import { WhatsAppCTA } from "@/components/common/WhatsAppCTA";
 import { MapPlaceholder } from "@/components/common/MapPlaceholder";
@@ -15,7 +7,7 @@ import { DeveloperAvatar } from "@/components/developer/DeveloperAvatar";
 import { MotionReveal } from "@/components/motion";
 import { PropertyGrid } from "@/components/property/PropertyGrid";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/constants/features";
 import { buildDeveloperWhatsAppMessage } from "@/lib/whatsapp";
 import type { DeveloperProfile, Property } from "@/types";
@@ -122,16 +114,16 @@ export function DeveloperProfileView({
                 <Mail className="size-4" aria-hidden />
                 Contact
               </a>
-              {isFeatureEnabled("WHATSAPP_CONTACT") ? (
+              {/* Rendered only when the flag is on — the same rule the property
+                  detail page follows. This previously fell back to a disabled
+                  "Message on WhatsApp (coming soon)" button, which advertised a
+                  channel the product does not have. The `#contact` action above
+                  remains the real, always-available contact path. */}
+              {isFeatureEnabled("WHATSAPP_CONTACT") && (
                 <WhatsAppCTA
                   message={buildDeveloperWhatsAppMessage(developer)}
                   label="Message on WhatsApp"
                 />
-              ) : (
-                <Button disabled size="lg" className="gap-2">
-                  <MessageCircle aria-hidden />
-                  Message on WhatsApp (coming soon)
-                </Button>
               )}
             </div>
           </div>

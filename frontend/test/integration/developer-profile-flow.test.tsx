@@ -81,6 +81,32 @@ describe("Developer profile flow", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("offers no WhatsApp affordance at all while FEATURES.WHATSAPP_CONTACT is off", () => {
+    renderWithQueryClient(
+      <DeveloperProfileView
+        developer={makeDeveloperProfile()}
+        activeListings={[]}
+      />,
+    );
+
+    // The gated slot used to render a disabled "Message on WhatsApp (coming
+    // soon)" button, advertising a channel the product does not have. Nothing
+    // WhatsApp-shaped should be present, and the real contact path must stay.
+    // Scoped to WhatsApp deliberately: MapPlaceholder's "Map view coming soon"
+    // is a different, honest thing — it describes an unbuilt map, not a contact
+    // channel the page is pretending to offer.
+    expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: /WhatsApp/i })).toHaveLength(
+      0,
+    );
+    expect(
+      screen.queryByText(/Message on WhatsApp \(coming soon\)/i),
+    ).not.toBeInTheDocument();
+
+    const contact = screen.getByRole("link", { name: "Contact" });
+    expect(contact).toHaveAttribute("href", "#contact");
+  });
+
   it("shows the map placeholder while FEATURES.MAP_VIEW is off", () => {
     renderWithQueryClient(
       <DeveloperProfileView
