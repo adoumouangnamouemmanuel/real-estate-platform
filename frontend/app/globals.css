@@ -344,3 +344,121 @@ body {
     transform: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Accessibility preferences.
+ *
+ * Everything below is driven by attributes the preference layer writes onto
+ * <html> (see lib/preferences.ts applyPreferences). Keeping it here — rather
+ * than as `dark:` / conditional classes inside components — means the whole
+ * component library inherits these capabilities without modification, and a
+ * preference can be added or reset in exactly one place.
+ * ------------------------------------------------------------------------- */
+
+/* Text scaling. Tailwind sizes in rem, so scaling the root font size scales
+   type, padding, gaps and rem-based max-widths together — the layout keeps its
+   proportions instead of text overflowing fixed boxes. Deliberately not
+   `transform: scale()`, which would blur text and create horizontal overflow. */
+:root {
+  --a11y-font-scale: 1;
+}
+
+html {
+  font-size: calc(100% * var(--a11y-font-scale));
+}
+
+/* Reading spacing. `em`-based so they track the scaled font size. Applied to
+   body copy containers rather than globally: forcing extra leading onto every
+   button and badge would break control heights, not improve readability. */
+:root[data-line-spacing="increased"] p,
+:root[data-line-spacing="increased"] li,
+:root[data-line-spacing="increased"] dd,
+:root[data-line-spacing="increased"] blockquote {
+  line-height: 2 !important;
+}
+
+:root[data-letter-spacing="increased"] p,
+:root[data-letter-spacing="increased"] li,
+:root[data-letter-spacing="increased"] dd,
+:root[data-letter-spacing="increased"] blockquote,
+:root[data-letter-spacing="increased"] h1,
+:root[data-letter-spacing="increased"] h2,
+:root[data-letter-spacing="increased"] h3 {
+  letter-spacing: 0.05em !important;
+}
+
+/* App-level reduced motion. Mirrors the prefers-reduced-motion block above so
+   the panel's "Reduced" setting behaves identically to the OS setting —
+   including the [data-motion-reveal] guarantee that content is never left
+   hidden by an animation that did not run. This is the same architecture, keyed
+   on a second selector; it is not a second motion system. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-motion="reduced"] [data-motion-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* High contrast. Re-points the existing semantic tokens rather than adding new
+   ones, so every component that already reads --foreground / --border / --ring
+   gets stronger contrast with no component changes.
+
+   The muted-foreground move is the substantive one: at its standard value it
+   measures 4.6:1 on white — passing, but with almost no headroom. Here it goes
+   to pure black/white, and borders go from a hairline grey to a clearly visible
+   edge, which is what actually helps low-vision users find inputs and cards. */
+:root[data-contrast="high"] {
+  --foreground: oklch(0 0 0);
+  --muted-foreground: oklch(0.25 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --secondary-foreground: oklch(0 0 0);
+  --accent-foreground: oklch(0 0 0);
+  --border: oklch(0.45 0 0);
+  --input: oklch(0.35 0 0);
+  --primary: oklch(0.24 0.07 217);
+  --ring: oklch(0.24 0.07 217 / 0.85);
+  --sidebar-foreground: oklch(0 0 0);
+  --sidebar-border: oklch(0.45 0 0);
+  --sidebar-ring: oklch(0.24 0.07 217 / 0.85);
+  --destructive: oklch(0.45 0.24 27.325);
+  --brand-gold-foreground: oklch(0.15 0.03 75);
+}
+
+:root[data-contrast="high"].dark {
+  --foreground: oklch(1 0 0);
+  --muted-foreground: oklch(0.88 0 0);
+  --card-foreground: oklch(1 0 0);
+  --popover-foreground: oklch(1 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --accent-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0 / 45%);
+  --input: oklch(1 0 0 / 50%);
+  --primary: oklch(0.9 0.06 217);
+  --primary-foreground: oklch(0.12 0.02 217);
+  --ring: oklch(0.9 0.06 217 / 0.85);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(1 0 0 / 45%);
+  --destructive: oklch(0.78 0.19 22.216);
+}
+
+/* Focus indicators must survive high contrast — a subtle ring is exactly what
+   this mode exists to fix. */
+:root[data-contrast="high"] :focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Glass relies on translucency for legibility, which is the first thing to fail
+   when a user asks for maximum contrast. Make those surfaces opaque instead. */
+:root[data-contrast="high"] [data-glass-surface] {
+  background-color: var(--background);
+  backdrop-filter: none;
+}

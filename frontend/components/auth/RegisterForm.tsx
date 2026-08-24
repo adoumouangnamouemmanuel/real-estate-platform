@@ -110,16 +110,28 @@ export function RegisterForm() {
           htmlFor="register-terms"
           className="flex items-start gap-2 text-sm"
         >
+          {/* This field predates FormField's layout and can't use it — the
+              control sits inside its label rather than beside it. The error
+              association is therefore wired by hand, following the same
+              contract FormField applies everywhere else: id derived from the
+              control id, referenced only while the error exists. */}
           <Checkbox
             id="register-terms"
             className="mt-0.5"
             aria-invalid={!!errors.acceptTerms}
+            aria-describedby={
+              errors.acceptTerms ? "register-terms-error" : undefined
+            }
             {...register("acceptTerms")}
           />
           <span>I agree to the Terms of Service and Privacy Policy.</span>
         </label>
         {errors.acceptTerms?.message && (
-          <p role="alert" className="text-destructive text-xs">
+          <p
+            id="register-terms-error"
+            role="alert"
+            className="text-destructive text-xs"
+          >
             {errors.acceptTerms.message}
           </p>
         )}

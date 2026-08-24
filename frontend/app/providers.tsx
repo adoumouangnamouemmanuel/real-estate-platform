@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
  * A 4xx response means the request itself was wrong (bad id, validation,
@@ -41,11 +42,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Belt-and-suspenders alongside the manual useReducedMotion checks in
-          components/motion/*: this covers any framer-motion transform/scale
-          animation (hover, tap) that doesn't go through those primitives. */}
-      <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      <AppMotionConfig>{children}</AppMotionConfig>
       <Toaster />
     </QueryClientProvider>
+  );
+}
+
+/**
+ * Belt-and-suspenders alongside the manual useReducedMotion checks in
+ * components/motion/*: this covers any framer-motion transform/scale animation
+ * (hover, tap) that doesn't go through those primitives.
+ *
+ * "user" only reads the OS media query, so on its own it would ignore a visitor
+ * who chose Reduced in the accessibility panel. Promoting to "always" when the
+ * effective preference is reduced makes both routes to the setting behave
+ * identically — still one motion system, just fed by both signals.
+ */
+function AppMotionConfig({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
+  return (
+    <MotionConfig reducedMotion={reduced ? "always" : "user"}>
+      {children}
+    </MotionConfig>
   );
 }

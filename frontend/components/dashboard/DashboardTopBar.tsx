@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AccessibilityPanel } from "@/components/common/AccessibilityPanel";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { DashboardUserMenu } from "@/components/dashboard/DashboardUserMenu";
 import { GlassSurface } from "@/components/motion";
 import { APP_NAME } from "@/constants/config";
@@ -18,7 +20,11 @@ export function DashboardTopBar() {
           {APP_NAME}{" "}
           <span className="text-muted-foreground font-normal">/ Dashboard</span>
         </Link>
-        <DashboardUserMenu />
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <AccessibilityPanel />
+          <DashboardUserMenu />
+        </div>
       </div>
     </GlassSurface>
   );

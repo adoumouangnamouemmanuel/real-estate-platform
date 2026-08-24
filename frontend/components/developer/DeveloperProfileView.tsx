@@ -167,12 +167,20 @@ export function DeveloperProfileView({
               Contact
             </h2>
             <div className="border-border flex flex-col gap-2 rounded-lg border p-4 text-sm">
+              {/* An email address has no spaces, so it has no natural wrap
+                  opportunity: at 150% text scaling this one needed 350px inside
+                  a 277px column and pushed the whole document to 399px on a
+                  375px screen. `anywhere` lets it break only when it otherwise
+                  would not fit, and `min-w-0` lets the flex child actually
+                  shrink to its container instead of forcing it wider. */}
               <a
                 href={`mailto:${developer.email}`}
-                className="focus-visible:ring-ring/50 flex items-center gap-1.5 rounded-sm outline-none hover:underline focus-visible:ring-3"
+                className="focus-visible:ring-ring/50 flex min-w-0 items-center gap-1.5 rounded-sm outline-none hover:underline focus-visible:ring-3"
               >
                 <Mail className="size-3.5 shrink-0" aria-hidden />
-                {developer.email}
+                <span className="[overflow-wrap:anywhere]">
+                  {developer.email}
+                </span>
               </a>
               {/* Only the social links this developer actually has — the mock
                     records vary (one has all three, one has only Instagram). */}

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AccessibilityPanel } from "@/components/common/AccessibilityPanel";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { NavbarAuthSection } from "@/components/layout/NavbarAuthSection";
 import { NavbarLinks } from "@/components/layout/NavbarLinks";
 import { APP_NAME } from "@/constants/config";
@@ -28,7 +30,14 @@ export function Navbar() {
         </Link>
         <NavbarLinks />
 
-        <NavbarAuthSection />
+        {/* Display controls sit next to the account section rather than in the
+            destination list: they are settings, not places. Two icon-sized
+            triggers keep the header from growing a row on mobile. */}
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <AccessibilityPanel />
+          <NavbarAuthSection />
+        </div>
       </nav>
     </header>
   );

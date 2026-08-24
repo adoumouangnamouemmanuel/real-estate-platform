@@ -24,10 +24,14 @@ interface DeveloperInfoCardProps {
 export function DeveloperInfoCard({ developer }: DeveloperInfoCardProps) {
   return (
     <div className="border-border flex flex-col gap-3 rounded-lg border p-4">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <DeveloperAvatar logoUrl={developer.logoUrl} name={developer.name} />
-        <div className="flex flex-1 flex-col gap-0.5">
-          <div className="flex items-center gap-2">
+        {/* min-w-0: a flex item defaults to min-width:auto, so this column
+            refuses to shrink below its content and pushes the card wider than
+            its grid track. At 150% text scaling that overflowed the page by
+            13px at 1024. The wrappers below need it for the same reason. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Link
               href={ROUTES.DEVELOPER_DETAIL(developer.slug)}
               className="font-medium hover:underline"

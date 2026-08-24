@@ -29,6 +29,10 @@ export function GlassSurface<T extends ElementType = "div">({
   const Component = as ?? "div";
   return (
     <Component
+      // Marks every glass surface for the high-contrast override in globals.css,
+      // which makes them opaque — translucency is the first thing to fail for a
+      // user who has explicitly asked for maximum contrast.
+      data-glass-surface=""
       className={cn("border", GLASS_TONE[tone], className)}
       {...props}
     />
