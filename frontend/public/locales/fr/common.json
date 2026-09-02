@@ -1,0 +1,50 @@
+{
+  "nav": {
+    "properties": "Propriétés",
+    "developers": "Développeurs",
+    "saved": "Favoris",
+    "search": "Recherche",
+    "dashboard": "Tableau de bord",
+    "login": "Connexion",
+    "logout": "Déconnexion"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent"
+  },
+  "auth": {
+    "welcome": "Bienvenue",
+    "loginTitle": "Connexion",
+    "registerTitle": "Inscription",
+    "email": "Email",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "noAccount": "Pas encore de compte ?",
+    "hasAccount": "Déjà un compte ?"
+  },
+  "properties": {
+    "title": "Propriétés",
+    "subtitle": "Découvrez notre sélection de propriétés",
+    "noResults": "Aucune propriété trouvée",
+    "viewDetails": "Voir les détails",
+    "price": "Prix",
+    "bedrooms": "Chambres",
+    "bathrooms": "Salles de bain",
+    "area": "Surface"
+  },
+  "language": {
+    "fr": "Français",
+    "en": "English",
+    "toggle": "Changer de langue"
+  }
+}

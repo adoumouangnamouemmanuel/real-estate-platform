@@ -1,0 +1,50 @@
+{
+  "nav": {
+    "properties": "Properties",
+    "developers": "Developers",
+    "saved": "Saved",
+    "search": "Search",
+    "dashboard": "Dashboard",
+    "login": "Log in",
+    "logout": "Log out"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "auth": {
+    "welcome": "Welcome",
+    "loginTitle": "Login",
+    "registerTitle": "Register",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "properties": {
+    "title": "Properties",
+    "subtitle": "Discover our selection of properties",
+    "noResults": "No properties found",
+    "viewDetails": "View details",
+    "price": "Price",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "area": "Area"
+  },
+  "language": {
+    "fr": "Français",
+    "en": "English",
+    "toggle": "Switch language"
+  }
+}
