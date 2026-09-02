@@ -1,5 +1,8 @@
 import "@testing-library/jest-dom/vitest";
 
+// Initialize i18n for tests
+import "@/lib/i18n";
+
 // jsdom doesn't implement matchMedia — components reading prefers-reduced-motion
 // (see hooks/useReducedMotion.ts, used by the motion primitives in components/motion)
 // would otherwise throw as soon as they're rendered in a test. Default to "no

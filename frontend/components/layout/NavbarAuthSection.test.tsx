@@ -24,7 +24,7 @@ describe("NavbarAuthSection", () => {
   it("shows a Log in link when signed out", () => {
     render(<NavbarAuthSection />);
 
-    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Connexion" })).toHaveAttribute(
       "href",
       "/login",
     );
@@ -44,9 +44,9 @@ describe("NavbarAuthSection", () => {
     render(<NavbarAuthSection />);
 
     expect(screen.getByText("Ama Boateng")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Déconnexion" })).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Log in" }),
+      screen.queryByRole("link", { name: "Connexion" }),
     ).not.toBeInTheDocument();
   });
 
@@ -81,11 +81,11 @@ describe("NavbarAuthSection", () => {
 
     render(<NavbarAuthSection />);
 
-    expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /tableau de bord/i })).toHaveAttribute(
       "href",
       "/dashboard",
     );
-    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Déconnexion" })).toBeInTheDocument();
   });
 
   it("clears the session when Log out is clicked", async () => {
@@ -101,7 +101,7 @@ describe("NavbarAuthSection", () => {
     const user = userEvent.setup();
     render(<NavbarAuthSection />);
 
-    await user.click(screen.getByRole("button", { name: "Log out" }));
+    await user.click(screen.getByRole("button", { name: "Déconnexion" }));
 
     expect(logout).toHaveBeenCalled();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);

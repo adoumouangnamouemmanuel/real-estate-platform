@@ -12,28 +12,28 @@ describe("NavbarLinks", () => {
     render(<NavbarLinks />);
 
     expect(
-      screen.getByRole("link", { name: "Properties" }),
+      screen.getByRole("link", { name: "Propriétés" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Developers" }),
+      screen.getByRole("link", { name: "Développeurs" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Saved" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Favoris" })).toHaveAttribute(
       "href",
       "/saved",
     );
-    expect(screen.getByRole("link", { name: "Search" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Recherche" })).toBeInTheDocument();
   });
 
   it("marks the current route with aria-current=page", () => {
     usePathname.mockReturnValue("/properties");
     render(<NavbarLinks />);
 
-    expect(screen.getByRole("link", { name: "Properties" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Propriétés" })).toHaveAttribute(
       "aria-current",
       "page",
     );
     expect(
-      screen.getByRole("link", { name: "Developers" }),
+      screen.getByRole("link", { name: "Développeurs" }),
     ).not.toHaveAttribute("aria-current");
   });
 
@@ -41,7 +41,7 @@ describe("NavbarLinks", () => {
     usePathname.mockReturnValue("/properties/luxury-3br-apartment-east-legon");
     render(<NavbarLinks />);
 
-    expect(screen.getByRole("link", { name: "Properties" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Propriétés" })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -51,7 +51,7 @@ describe("NavbarLinks", () => {
     usePathname.mockReturnValue("/login");
     render(<NavbarLinks />);
 
-    for (const name of ["Properties", "Developers", "Saved", "Search"]) {
+    for (const name of ["Propriétés", "Développeurs", "Favoris", "Recherche"]) {
       expect(screen.getByRole("link", { name })).not.toHaveAttribute(
         "aria-current",
       );
@@ -63,7 +63,7 @@ describe("NavbarLinks", () => {
     render(<NavbarLinks />);
 
     // WCAG 1.4.1: colour must not be the only visual channel carrying meaning.
-    expect(screen.getByRole("link", { name: "Saved" }).className).toContain(
+    expect(screen.getByRole("link", { name: "Favoris" }).className).toContain(
       "font-medium",
     );
   });
@@ -79,7 +79,7 @@ it("gives each link vertical padding so the touch target clears the AA minimum",
   usePathname.mockReturnValue("/");
   render(<NavbarLinks />);
 
-  for (const name of ["Properties", "Developers", "Saved", "Search"]) {
+  for (const name of ["Propriétés", "Développeurs", "Favoris", "Recherche"]) {
     expect(screen.getByRole("link", { name }).className).toContain("py-1.5");
   }
 });
