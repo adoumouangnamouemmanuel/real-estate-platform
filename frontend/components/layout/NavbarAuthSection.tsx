@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
@@ -15,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
  */
 export function NavbarAuthSection() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { t } = useTranslation("common");
 
   if (isAuthenticated && user) {
     const hasDashboard = user.role === "DEVELOPER" || user.role === "ADMIN";
@@ -34,11 +36,11 @@ export function NavbarAuthSection() {
             })}
           >
             <LayoutDashboard className="size-4" aria-hidden />
-            Dashboard
+            {t("nav.dashboard")}
           </Link>
         )}
         <Button variant="outline" size="sm" onClick={() => logout()}>
-          Log out
+          {t("nav.logout")}
         </Button>
       </div>
     );
@@ -49,7 +51,7 @@ export function NavbarAuthSection() {
       href={ROUTES.LOGIN}
       className={buttonVariants({ variant: "outline", size: "sm" })}
     >
-      Log in
+      {t("nav.login")}
     </Link>
   );
 }

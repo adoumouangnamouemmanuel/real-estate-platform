@@ -5,9 +5,13 @@ import { isAxiosError } from "axios";
 import { MotionConfig } from "framer-motion";
 import { useState } from "react";
 
+import { LanguageProvider } from "@/components/common/LanguageContext";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+
+// Initialize i18n (side effect import)
+import "@/lib/i18n";
 
 /**
  * A 4xx response means the request itself was wrong (bad id, validation,
@@ -41,10 +45,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useAuthBootstrap();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppMotionConfig>{children}</AppMotionConfig>
-      <Toaster />
-    </QueryClientProvider>
+    <LanguageProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppMotionConfig>{children}</AppMotionConfig>
+        <Toaster />
+      </QueryClientProvider>
+    </LanguageProvider>
   );
 }
 

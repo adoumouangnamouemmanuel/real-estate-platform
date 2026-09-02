@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AccessibilityPanel } from "@/components/common/AccessibilityPanel";
+import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { NavbarAuthSection } from "@/components/layout/NavbarAuthSection";
 import { NavbarLinks } from "@/components/layout/NavbarLinks";
@@ -34,6 +35,7 @@ export function Navbar() {
             destination list: they are settings, not places. Two icon-sized
             triggers keep the header from growing a row on mobile. */}
         <div className="flex items-center gap-1">
+          <LanguageToggle />
           <ThemeToggle />
           <AccessibilityPanel />
           <NavbarAuthSection />

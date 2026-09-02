@@ -2,16 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
-
-const NAV_LINKS = [
-  { href: ROUTES.PROPERTIES, label: "Properties" },
-  { href: ROUTES.DEVELOPERS, label: "Developers" },
-  { href: ROUTES.SAVED, label: "Saved" },
-  { href: ROUTES.SEARCH, label: "Search" },
-];
 
 /**
  * The public nav's link list, split out of `Navbar` purely because active state
@@ -24,6 +18,14 @@ const NAV_LINKS = [
  */
 export function NavbarLinks() {
   const pathname = usePathname();
+  const { t } = useTranslation("common");
+
+  const NAV_LINKS = [
+    { href: ROUTES.PROPERTIES, labelKey: "nav.properties" },
+    { href: ROUTES.DEVELOPERS, labelKey: "nav.developers" },
+    { href: ROUTES.SAVED, labelKey: "nav.saved" },
+    { href: ROUTES.SEARCH, labelKey: "nav.search" },
+  ];
 
   return (
     <ul className="flex flex-wrap items-center gap-6 text-sm">
@@ -52,7 +54,7 @@ export function NavbarLinks() {
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {link.label}
+              {t(link.labelKey)}
             </Link>
           </li>
         );
