@@ -112,7 +112,7 @@ function RowActions({
     <div className="flex items-center justify-end gap-1">
       {canEdit ? (
         <Link
-          href={ROUTES.EDIT_LISTING(property.slug)}
+          href={ROUTES.EDIT_LISTING(property.id)}
           aria-label={`Edit ${property.title}`}
           title="Edit listing"
           aria-disabled={disabled}

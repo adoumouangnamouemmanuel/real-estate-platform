@@ -25,6 +25,7 @@ datasource db {
 enum Role {
   USER
   PROPERTY_DEVELOPER
+  ADMIN
 }
 
 enum PropertyCategory {
@@ -44,6 +45,7 @@ enum PropertyStatus {
   ACTIVE // visible
   RESERVED // hidden
   SOLD // hidden
+  SUSPENDED // hidden
 }
 
 enum MediaType {
@@ -58,8 +60,16 @@ enum TransactionType {
 }
 
 enum NotificationType {
-  PROPERTY_LIKED
-  PROPERTY_VIEWED_MILESTONE
+  APPOINTMENT_REQUESTED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_RESCHEDULED
+  APPOINTMENT_COMPLETED
+  APPOINTMENT_NO_SHOW
+  LISTING_PUBLISHED
+  LISTING_SUSPENDED
+  DRAFT_REMINDER
+  SYSTEM
 }
 
 enum ReportTargetType {
@@ -74,6 +84,21 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
 // ─────────────────────────────────────────────
 // 1.1 User — the login account
 // ─────────────────────────────────────────────
@@ -84,12 +109,14 @@ model User {
   passwordHash String   @map("password_hash")
   role         Role
   createdAt    DateTime @default(now()) @map("created_at")
+  fullName     String?  @map("full_name")
 
-  developerProfile PropertyDeveloper?
-  favorites        PropertyFavorite[]
-  ratingsGiven     PropertyDeveloperRating[]
-  reports          Report[]
-  refreshTokens    RefreshToken[]
+  clientAppointments Appointment[] @relation("AppointmentClient")
+  developerProfile   PropertyDeveloper?
+  favorites          PropertyFavorite[]
+  ratingsGiven       PropertyDeveloperRating[]
+  reports            Report[]
+  refreshTokens      RefreshToken[]
 
   @@map("user")
 }
@@ -127,6 +154,7 @@ model PropertyDeveloper {
   properties    Property[]
   ratings       PropertyDeveloperRating[]
   notifications Notification[]
+  appointments  Appointment[]
 
   @@index([isVerified], map: "idx_developer_verified")
   @@index([averageRating], map: "idx_developer_rating")
@@ -172,6 +200,7 @@ model Property {
   media      PropertyMedia[]
   favorites  PropertyFavorite[]
   analytics  PropertyAnalytics[]
+  appointments Appointment[]
 
   @@index([status], map: "idx_property_status")
   @@index([cityId], map: "idx_property_city")
@@ -322,20 +351,21 @@ model PropertyDeveloperRating {
 // ─────────────────────────────────────────────
 
 model Notification {
-  id                  String           @id @default(cuid())
-  propertyDeveloperId String           @map("property_developer_id")
+  id                  String             @id @default(cuid())
+  propertyDeveloperId String             @map("property_developer_id")
   type                NotificationType
   title               String
   message             String
   metadata            Json?
-  isRead              Boolean          @default(false) @map("is_read")
-  readAt              DateTime?        @map("read_at")
-  createdAt           DateTime         @default(now()) @map("created_at")
+  readAt              DateTime?          @map("read_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  status              NotificationStatus @default(UNREAD)
+  link                String?
 
   developer PropertyDeveloper @relation(fields: [propertyDeveloperId], references: [id], onDelete: Cascade)
 
   @@index([propertyDeveloperId], map: "idx_notification_developer")
-  @@index([propertyDeveloperId, isRead], map: "idx_notification_read")
+  @@index([propertyDeveloperId, status], map: "idx_notification_status")
   @@map("notification")
 }
 
@@ -385,7 +415,49 @@ model Report {
 }
 
 // ─────────────────────────────────────────────
-// 1.14 RefreshToken — secure auto-login
+// 1.14 Appointment — property viewing requests
+// ─────────────────────────────────────────────
+
+model Appointment {
+  id                   String            @id @default(cuid())
+  propertyId           String            @map("property_id")
+  propertyDeveloperId  String            @map("property_developer_id")
+  clientUserId         String            @map("client_user_id")
+  clientName           String            @map("client_name")
+  scheduledFor         DateTime          @map("scheduled_for")
+  previousScheduledFor DateTime?         @map("previous_scheduled_for")
+  status               AppointmentStatus @default(REQUESTED)
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  client   User              @relation("AppointmentClient", fields: [clientUserId], references: [id])
+  developer PropertyDeveloper @relation(fields: [propertyDeveloperId], references: [id], onDelete: Cascade)
+  property  Property          @relation(fields: [propertyId], references: [id])
+  history   AppointmentHistory[]
+
+  @@index([propertyDeveloperId], map: "idx_appointment_developer")
+  @@index([propertyId], map: "idx_appointment_property")
+  @@index([clientUserId], map: "idx_appointment_client")
+  @@index([status], map: "idx_appointment_status")
+  @@index([scheduledFor], map: "idx_appointment_scheduled")
+  @@map("appointment")
+}
+
+model AppointmentHistory {
+  id            String      @id @default(cuid())
+  appointmentId String      @map("appointment_id")
+  type          String
+  message       String
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId], map: "idx_appointment_history_appointment")
+  @@map("appointment_history")
+}
+
+// ─────────────────────────────────────────────
+// 1.15 RefreshToken — secure auto-login
 // ─────────────────────────────────────────────
 
 model RefreshToken {

@@ -9,16 +9,16 @@ import { ROUTES } from "@/constants/routes";
 import { listingService } from "@/services";
 
 interface EditListingPageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({
   params,
 }: EditListingPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { id } = await params;
 
   try {
-    const listing = await listingService.getListingForEdit(slug);
+    const listing = await listingService.getListingForEdit(id);
     return { title: `Edit ${listing.title} | ${APP_NAME}` };
   } catch {
     return { title: `Listing not found | ${APP_NAME}` };
@@ -28,10 +28,10 @@ export async function generateMetadata({
 export default async function EditListingPage({
   params,
 }: EditListingPageProps) {
-  const { slug } = await params;
+  const { id } = await params;
 
   const listing = await listingService
-    .getListingForEdit(slug)
+    .getListingForEdit(id)
     .catch(() => notFound());
 
   return (

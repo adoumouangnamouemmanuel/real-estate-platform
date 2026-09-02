@@ -154,7 +154,7 @@ describe("ListingsTable", () => {
 
     expect(screen.getByLabelText("Edit Draft Listing")).toHaveAttribute(
       "href",
-      "/listings/test-property/edit",
+      "/listings/d1/edit",
     );
   });
 

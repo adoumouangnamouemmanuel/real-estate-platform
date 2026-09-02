@@ -8,16 +8,16 @@ import { listingService, type ListingPatch } from "@/services";
 const EDIT_KEY = [...LISTINGS_KEY, "edit"] as const;
 
 /**
- * Loads the developer's own full editable record for /listings/[slug]/edit.
+ * Loads the developer's own full editable record for /listings/[id]/edit.
  * A separate query key from the My Properties table's [...LISTINGS_KEY, params] —
  * this fetches one record's full editable shape (address/amenities included),
  * not a filtered page of the list-view shape. Built from the same LISTINGS_KEY
  * root so an invalidation of the root key can't miss this branch.
  */
-export function useListingForEdit(slug: string) {
+export function useListingForEdit(id: string) {
   return useQuery({
-    queryKey: [...EDIT_KEY, slug],
-    queryFn: () => listingService.getListingForEdit(slug),
+    queryKey: [...EDIT_KEY, id],
+    queryFn: () => listingService.getListingForEdit(id),
   });
 }
 
@@ -43,11 +43,11 @@ export function useUpdateListing() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ slug, patch }: { slug: string; patch: ListingPatch }) =>
-      listingService.updateListing(slug, patch),
+    mutationFn: ({ id, patch }: { id: string; patch: ListingPatch }) =>
+      listingService.updateListing(id, patch),
     onSuccess: (listing) => {
       queryClient.invalidateQueries({ queryKey: LISTINGS_KEY });
-      queryClient.setQueryData([...EDIT_KEY, listing.slug], listing);
+      queryClient.setQueryData([...EDIT_KEY, listing.id], listing);
     },
   });
 }

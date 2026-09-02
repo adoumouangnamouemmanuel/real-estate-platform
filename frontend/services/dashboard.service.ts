@@ -1,4 +1,4 @@
-import { buildDashboardActionNeeded } from "@/lib/dashboardActionNeeded";
+import { api } from "@/lib/api";
 import type {
   ActionNeededItem,
   ActivityItem,
@@ -7,102 +7,58 @@ import type {
   DashboardSummary,
   Notification,
   Property,
+  ApiResponse,
 } from "@/types";
 
-import {
-  MOCK_ACTIVITY,
-  MOCK_APPOINTMENTS,
-  MOCK_DASHBOARD_LISTINGS,
-  MOCK_DASHBOARD_SUMMARY,
-  MOCK_NOTIFICATIONS,
-} from "./mocks/dashboard.mock";
-
-const MOCK_LATENCY_MS = 400;
-
-function delay<T>(value: T): Promise<T> {
-  return new Promise((resolve) =>
-    setTimeout(() => resolve(value), MOCK_LATENCY_MS),
-  );
-}
-
-/**
- * The developer dashboard's data seam. Every method mirrors one future endpoint
- * (see the TODO(backend) notes in mocks/dashboard.mock.ts); the components and
- * hooks that consume these never touch a mock or Axios directly, so wiring the
- * real backend is a change here and nowhere else — same contract as
- * propertyService/developerService.
- */
+/** The developer dashboard's data seam. Every method calls one backend endpoint. */
 export const dashboardService = {
-  getSummary: (): Promise<DashboardSummary> => delay(MOCK_DASHBOARD_SUMMARY),
+  getDashboard: (): Promise<{
+    summary: DashboardSummary;
+    metrics: DashboardMetrics;
+    recentListings: Property[];
+    appointmentOverview: AppointmentOverview;
+    actionNeeded: ActionNeededItem[];
+    recentNotifications: Notification[];
+    recentActivity: ActivityItem[];
+  }> =>
+    api
+      .get<
+        ApiResponse<{
+          summary: DashboardSummary;
+          metrics: DashboardMetrics;
+          recentListings: Property[];
+          appointmentOverview: AppointmentOverview;
+          actionNeeded: ActionNeededItem[];
+          recentNotifications: Notification[];
+          recentActivity: ActivityItem[];
+        }>
+      >("/developers/me/dashboard")
+      .then((res) => res.data.data),
 
-  getMetrics: (): Promise<DashboardMetrics> => {
-    const listings = MOCK_DASHBOARD_LISTINGS;
-    return delay({
-      totalProperties: listings.length,
-      activeListings: listings.filter((l) => l.status === "ACTIVE").length,
-      draftListings: listings.filter((l) => l.status === "DRAFT").length,
-      appointmentRequests: MOCK_APPOINTMENTS.filter(
-        (a) => a.status === "REQUESTED",
-      ).length,
-      unreadNotifications: MOCK_NOTIFICATIONS.filter(
-        (n) => n.status === "UNREAD",
-      ).length,
-      // `totalPropertyViews` is deliberately absent, not zero: every metric
-      // here is derived from real mock data, and there is no per-view data to
-      // derive it from. It used to be a hardcoded 3742 — a fabricated headline
-      // number on the developer's first screen, while Analytics next door
-      // refuses to make any view-based claim for exactly that reason
-      // (ADR-016). TODO(backend): populate from the `property_analytics` daily
-      // rollups (ARCHITECTURE.md §11) — a real value, or none at all.
-    });
-  },
+  getSummary: (): Promise<DashboardSummary> =>
+    dashboardService.getDashboard().then((d) => d.summary),
+
+  getMetrics: (): Promise<DashboardMetrics> =>
+    dashboardService.getDashboard().then((d) => d.metrics),
 
   getRecentListings: (limit = 5): Promise<Property[]> =>
-    delay(MOCK_DASHBOARD_LISTINGS.slice(0, limit)),
+    dashboardService
+      .getDashboard()
+      .then((d) => d.recentListings.slice(0, limit)),
 
-  /**
-   * "What needs my attention today" — the dashboard home's own first-class
-   * feature (see the Dashboard UX audit), computed via
-   * lib/dashboardActionNeeded.ts over this domain's own listings/appointments
-   * rather than Analytics'/Appointments' separate copies.
-   */
   getActionNeeded: (): Promise<ActionNeededItem[]> =>
-    delay(
-      buildDashboardActionNeeded(
-        MOCK_DASHBOARD_LISTINGS,
-        MOCK_APPOINTMENTS,
-        new Date(),
-      ),
-    ),
+    dashboardService.getDashboard().then((d) => d.actionNeeded),
 
-  getAppointmentOverview: (): Promise<AppointmentOverview> => {
-    const bySoonest = (
-      a: { scheduledFor: string },
-      b: { scheduledFor: string },
-    ) =>
-      new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime();
-    const byMostRecent = (
-      a: { scheduledFor: string },
-      b: { scheduledFor: string },
-    ) =>
-      new Date(b.scheduledFor).getTime() - new Date(a.scheduledFor).getTime();
-
-    return delay({
-      upcoming: MOCK_APPOINTMENTS.filter((a) => a.status === "CONFIRMED").sort(
-        bySoonest,
-      ),
-      requested: MOCK_APPOINTMENTS.filter((a) => a.status === "REQUESTED").sort(
-        bySoonest,
-      ),
-      completed: MOCK_APPOINTMENTS.filter((a) => a.status === "COMPLETED").sort(
-        byMostRecent,
-      ),
-    });
-  },
+  getAppointmentOverview: (): Promise<AppointmentOverview> =>
+    dashboardService.getDashboard().then((d) => d.appointmentOverview),
 
   getNotifications: (limit = 5): Promise<Notification[]> =>
-    delay(MOCK_NOTIFICATIONS.slice(0, limit)),
+    dashboardService
+      .getDashboard()
+      .then((d) => d.recentNotifications.slice(0, limit)),
 
   getActivity: (limit = 6): Promise<ActivityItem[]> =>
-    delay(MOCK_ACTIVITY.slice(0, limit)),
+    dashboardService
+      .getDashboard()
+      .then((d) => d.recentActivity.slice(0, limit)),
 };

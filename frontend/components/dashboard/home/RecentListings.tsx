@@ -59,7 +59,7 @@ function ListingActions({ property }: { property: Property }) {
         <DropdownMenuItem
           disabled={!canEdit}
           {...(canEdit
-            ? { render: <Link href={ROUTES.EDIT_LISTING(property.slug)} /> }
+            ? { render: <Link href={ROUTES.EDIT_LISTING(property.id)} /> }
             : {})}
         >
           {canEdit ? "Edit listing" : "Edit listing (soon)"}

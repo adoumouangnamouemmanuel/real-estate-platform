@@ -234,15 +234,15 @@ describe("listingService mutations", () => {
     expect(created.amenities).toEqual([]);
   });
 
-  it("getListingForEdit resolves by slug and rejects for an unknown slug", async () => {
+  it("getListingForEdit resolves by id and rejects for an unknown id", async () => {
     snapshot = snapshotListings();
     const existing = MOCK_LISTINGS[0];
 
     await expect(
-      listingService.getListingForEdit(existing.slug),
+      listingService.getListingForEdit(existing.id),
     ).resolves.toMatchObject({ id: existing.id });
     await expect(
-      listingService.getListingForEdit("no-such-slug"),
+      listingService.getListingForEdit("no-such-id"),
     ).rejects.toThrow(/not found/);
   });
 
@@ -250,7 +250,7 @@ describe("listingService mutations", () => {
     snapshot = snapshotListings();
     const created = await listingService.createListing({ title: "Original" });
 
-    const updated = await listingService.updateListing(created.slug, {
+    const updated = await listingService.updateListing(created.id, {
       price: 5000,
     });
 
@@ -263,7 +263,7 @@ describe("listingService mutations", () => {
     snapshot = snapshotListings();
     const created = await listingService.createListing({ title: "Original" });
 
-    const updated = await listingService.updateListing(created.slug, {
+    const updated = await listingService.updateListing(created.id, {
       title: "Renamed",
     });
 
@@ -271,10 +271,10 @@ describe("listingService mutations", () => {
     expect(updated.slug).toBe(created.slug);
   });
 
-  it("updateListing rejects an unknown slug", async () => {
+  it("updateListing rejects an unknown id", async () => {
     snapshot = snapshotListings();
     await expect(
-      listingService.updateListing("no-such-slug", { price: 1 }),
+      listingService.updateListing("no-such-id", { price: 1 }),
     ).rejects.toThrow(/not found/);
   });
 });

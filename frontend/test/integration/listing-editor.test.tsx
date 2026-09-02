@@ -104,7 +104,7 @@ describe("Property Editor (ListingForm, all flows composed)", () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(
       null,
       "",
-      "/listings/new-title/edit",
+      "/listings/new-1/edit",
     );
     expect(replace).not.toHaveBeenCalled();
     // The component is still the same mounted instance — the title field
@@ -129,7 +129,7 @@ describe("Property Editor (ListingForm, all flows composed)", () => {
 
     await waitFor(
       () =>
-        expect(svc.updateListing).toHaveBeenCalledWith("my-listing", {
+        expect(svc.updateListing).toHaveBeenCalledWith("l1", {
           price: 5000,
         }),
       { timeout: 2000 },

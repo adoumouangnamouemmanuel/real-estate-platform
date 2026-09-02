@@ -134,7 +134,7 @@ function toFormValues(listing?: Property): ListingFormValues {
 }
 
 /**
- * Top-level orchestrator for both /listings/new and /listings/[slug]/edit —
+ * Top-level orchestrator for both /listings/new and /listings/[id]/edit —
  * one component, parameterized by mode, since the fields are identical and
  * only the initial values / submit semantics differ. Sets up the single React
  * Hook Form instance (the source of truth for field values, shared with every
@@ -199,7 +199,7 @@ function ListingFormInner({
    *
    * The address bar is updated to the real edit URL via `history.replaceState`
    * directly — deliberately NOT `router.replace()`. `/listings/new` and
-   * `/listings/[slug]/edit` are different leaf routes in the App Router, so a
+   * `/listings/[id]/edit` are different leaf routes in the App Router, so a
    * real `router.replace()` navigation between them unmounts this component
    * and remounts a fresh one from the server-fetched listing, discarding
    * whatever the developer typed after the autosave snapshot that triggered
@@ -215,12 +215,12 @@ function ListingFormInner({
       const created = await createListing.mutateAsync(patch as ListingPatch);
       const newIdentity = { id: created.id, slug: created.slug };
       setIdentity(newIdentity);
-      window.history.replaceState(null, "", ROUTES.EDIT_LISTING(created.slug));
+      window.history.replaceState(null, "", ROUTES.EDIT_LISTING(created.id));
       return newIdentity;
     }
 
     const updated = await updateListing.mutateAsync({
-      slug: identity.slug,
+      id: identity.id,
       patch: patch as ListingPatch,
     });
     return { id: updated.id, slug: updated.slug };
@@ -337,7 +337,7 @@ function ListingFormInner({
 
       <form
         onSubmit={(event) => event.preventDefault()}
-        className="flex flex-col gap-6 pb-4"
+        className="flex flex-1 flex-col gap-6 pb-4 [&_[data-slot=card]]:overflow-visible"
       >
         <ListingBasicsSection />
         <ListingLocationSection />
