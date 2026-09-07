@@ -25,7 +25,7 @@ export function getEnv(): Env {
   if (!_env) {
     const result = envSchema.safeParse(process.env);
     if (!result.success) {
-      console.error("❌ Invalid environment variables:");
+      console.error("Error@lumavok: Invalid environment variables:");
       console.error(result.error.format());
       process.exit(1);
     }
