@@ -162,6 +162,7 @@ export default async function Home() {
       </section>
 
       <section className="container-page page-section flex flex-col gap-6">
+        {/* Translation point */}
         <h2 className="text-section-title">Explore by category</h2>
         <MotionReveal
           stagger
@@ -191,6 +192,7 @@ export default async function Home() {
                   <div className="relative flex items-center gap-2 p-3 text-white">
                     <Icon className="size-4 shrink-0" aria-hidden />
                     <span className="text-sm font-medium">
+                      {/* Translation point */}
                       {category.label}
                     </span>
                   </div>
@@ -211,6 +213,7 @@ export default async function Home() {
           className="container-page page-section flex flex-col gap-6"
         >
           <div className="flex items-end justify-between gap-4">
+            {/* Translation point */}
             <h2 className="text-section-title">Latest listings</h2>
             <Link
               href={ROUTES.PROPERTIES}

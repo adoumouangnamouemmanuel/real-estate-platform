@@ -6,7 +6,8 @@
     "search": "Search",
     "dashboard": "Dashboard",
     "login": "Log in",
-    "logout": "Log out"
+    "logout": "Log out",
+    "browse": "Browse"
   },
   "common": {
     "loading": "Loading...",
@@ -20,7 +21,9 @@
     "confirm": "Confirm",
     "back": "Back",
     "next": "Next",
-    "previous": "Previous"
+    "previous": "Previous",
+
+    "contact": "Contact"
   },
   "auth": {
     "welcome": "Welcome",
@@ -30,7 +33,10 @@
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "account": "Account",
+    "signIn": "Sign in",
+    "createAccount": "Create an account"
   },
   "properties": {
     "title": "Properties",
@@ -40,11 +46,21 @@
     "price": "Price",
     "bedrooms": "Bedrooms",
     "bathrooms": "Bathrooms",
-    "area": "Area"
+    "area": "Area",
+
+    "sale": "For Sale",
+    "rent": "For Rent",
+    "popular": "Popular",
+    "similar": "Similar properties",
+    "backTo": "Back to properties"
   },
   "language": {
     "fr": "Français",
     "en": "English",
     "toggle": "Switch language"
+  },
+  "text": {
+    "foot": "Property discovery and trust platform for African markets.",
+    "copyright": "All rights reserved."
   }
 }

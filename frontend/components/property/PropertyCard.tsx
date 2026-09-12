@@ -16,6 +16,10 @@ import { getPrimaryMeasurement } from "@/lib/propertyMeasurements";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/types";
 
+// For Translation
+import { useTranslation } from "react-i18next";
+
+
 /** Above this, a property earns a "Popular" signal on its card — see favoriteService for what backs the count. */
 const POPULAR_THRESHOLD = 100;
 
@@ -44,6 +48,8 @@ export function PropertyCard({
   const isPopular = favoriteCount >= POPULAR_THRESHOLD;
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+
+  const { t } = useTranslation("common");
 
   return (
     <article className="card-surface card-interactive relative flex flex-col overflow-hidden">
@@ -83,12 +89,12 @@ export function PropertyCard({
 
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
             <Badge className="bg-background/90 text-foreground border-0 backdrop-blur-sm">
-              {property.listingType === "SALE" ? "For Sale" : "For Rent"}
+              {property.listingType === "SALE" ? t("properties.sale") : t("properties.rent")}
             </Badge>
             {isPopular && (
               <Badge className="bg-brand-gold text-brand-gold-foreground border-0">
                 <TrendingUp className="size-3" aria-hidden />
-                Popular
+                {t("properties.popular")}
               </Badge>
             )}
           </div>

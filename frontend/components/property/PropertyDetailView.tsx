@@ -1,3 +1,4 @@
+"use client";
 import { ArrowLeft, Bath, Bed, Ruler } from "lucide-react";
 import Link from "next/link";
 
@@ -20,6 +21,10 @@ import type { ScoredProperty } from "@/lib/similarProperties";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
 import type { PropertyDetail } from "@/types";
 
+// For Translation
+import { useTranslation } from "react-i18next";
+
+
 interface PropertyDetailViewProps {
   property: PropertyDetail;
   relatedProperties: ScoredProperty[];
@@ -35,6 +40,8 @@ export function PropertyDetailView({
     property.bathrooms !== undefined ||
     Boolean(measurement);
 
+  const { t } = useTranslation("common");
+
   return (
     <div className="container-page flex flex-col gap-10 py-8">
       <Link
@@ -42,7 +49,7 @@ export function PropertyDetailView({
         className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 -mb-2 inline-flex w-fit items-center gap-1.5 rounded-sm text-sm transition-colors outline-none focus-visible:ring-3"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        Back to properties
+        {t("properties.backTo")}
       </Link>
 
       {/*
@@ -79,7 +86,7 @@ export function PropertyDetailView({
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">
-                {property.listingType === "SALE" ? "For Sale" : "For Rent"}
+              {property.listingType === "SALE" ? t("properties.sale") : t("properties.rent")}
               </Badge>
               <span className="text-muted-foreground text-sm">
                 {formatPropertyLocation(property)}
@@ -173,7 +180,7 @@ export function PropertyDetailView({
 
       {relatedProperties.length > 0 && (
         <MotionReveal as="section" className="flex flex-col gap-4">
-          <h2 className="text-subsection-title">Similar properties</h2>
+          <h2 className="text-subsection-title">{t("properties.similar")}</h2>
           <MotionReveal
             stagger
             className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"

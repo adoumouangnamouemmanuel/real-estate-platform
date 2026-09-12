@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
 
 import { APP_NAME } from "@/constants/config";
 import { ROUTES } from "@/constants/routes";
+
+// For Translation
+import { useTranslation } from "react-i18next";
+
 
 /**
  * Every destination here is a route that exists and renders. There are
@@ -13,6 +19,7 @@ import { ROUTES } from "@/constants/routes";
  * The description is the app's own metadata line (see app/layout.tsx), not new
  * marketing copy.
  */
+/*
 const FOOTER_SECTIONS: {
   heading: string;
   links: { href: string; label: string }[];
@@ -34,8 +41,33 @@ const FOOTER_SECTIONS: {
     ],
   },
 ];
-
+*/
 export function Footer() {
+  const { t } = useTranslation("common");
+
+  // I had to put this inside in order for the useTranslation context to apply
+  const FOOTER_SECTIONS: {
+    heading: string;
+    links: { href: string; label: string }[];
+  }[] = [
+    {
+      heading: t("nav.browse"),
+      links: [
+        { href: ROUTES.PROPERTIES, label: t("nav.properties") },
+        { href: ROUTES.SEARCH, label: t("nav.search") },
+        { href: ROUTES.SAVED, label: t("nav.saved") },
+        { href: ROUTES.DEVELOPERS, label: t("nav.developers") },
+      ],
+    },
+    {
+      heading: t("auth.account"),
+      links: [
+        { href: ROUTES.LOGIN, label: t("auth.signIn") },
+        { href: ROUTES.REGISTER, label: t("auth.createAccount") },
+      ],
+    },
+  ];
+
   return (
     <footer className="border-border mt-auto border-t">
       <div className="container-page page-section grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -48,7 +80,7 @@ export function Footer() {
             {APP_NAME}
           </p>
           <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-            Property discovery and trust platform for African markets.
+            {t("text.foot")}
           </p>
         </div>
 
@@ -79,7 +111,7 @@ export function Footer() {
 
       <div className="border-border border-t">
         <div className="container-page text-muted-foreground py-6 text-sm">
-          © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
+          © {new Date().getFullYear()} {APP_NAME}. {t("text.copyright")}
         </div>
       </div>
     </footer>

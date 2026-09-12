@@ -1,12 +1,13 @@
 {
   "nav": {
     "properties": "Propriétés",
-    "developers": "Développeurs",
+    "developers": "Agents",
     "saved": "Favoris",
     "search": "Recherche",
     "dashboard": "Tableau de bord",
     "login": "Connexion",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "browse": "Explorer"
   },
   "common": {
     "loading": "Chargement...",
@@ -20,7 +21,9 @@
     "confirm": "Confirmer",
     "back": "Retour",
     "next": "Suivant",
-    "previous": "Précédent"
+    "previous": "Précédent",
+
+    "contact": "Contacter"
   },
   "auth": {
     "welcome": "Bienvenue",
@@ -30,7 +33,10 @@
     "password": "Mot de passe",
     "forgotPassword": "Mot de passe oublié ?",
     "noAccount": "Pas encore de compte ?",
-    "hasAccount": "Déjà un compte ?"
+    "hasAccount": "Déjà un compte ?",
+    "account": "Compte",
+    "signIn": "Se connecter",
+    "createAccount": "Créer un compte"
   },
   "properties": {
     "title": "Propriétés",
@@ -40,11 +46,21 @@
     "price": "Prix",
     "bedrooms": "Chambres",
     "bathrooms": "Salles de bain",
-    "area": "Surface"
+    "area": "Surface",
+
+    "sale": "À Vendre",
+    "rent": "À Louer",
+    "popular": "Populaire",
+    "similar": "Propriétés Similaires",
+    "backTo": "Retour aux propriétés"
   },
   "language": {
     "fr": "Français",
     "en": "English",
     "toggle": "Changer de langue"
+  },
+  "text": {
+    "foot": "Plateforme de découverte immobilière et de confiance pour les marchés africains.",
+    "copyright": "Tous droits réservés."
   }
 }
