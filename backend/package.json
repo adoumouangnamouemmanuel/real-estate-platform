@@ -9,8 +9,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "db:generate": "cd ../database/full-database-design && npx prisma generate",
-    "db:migrate": "cd ../database/full-database-design && npx prisma migrate deploy"
+    "db:generate": "prisma generate --schema=../database/full-database-design/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema=../database/full-database-design/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "5.20.0",
@@ -33,7 +33,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^20.19.43",
     "prisma": "5.20.0",
-    "tsx": "^4.19.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.5.4"
   }
 }
