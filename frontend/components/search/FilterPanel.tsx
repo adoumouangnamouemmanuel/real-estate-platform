@@ -13,6 +13,9 @@ import {
 import type { GetPropertiesParams } from "@/services";
 import type { ListingType } from "@/types";
 
+// For Translation
+import { useTranslation } from "react-i18next";
+
 const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
 
 interface FilterPanelProps {
@@ -48,6 +51,8 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
     });
   }
 
+  const { t } = useTranslation("common");
+
   return (
     <form
       key={`${filters.q ?? ""}-${filters.minPrice ?? ""}-${filters.maxPrice ?? ""}`}
@@ -56,14 +61,14 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="filter-q" className="text-muted-foreground text-xs">
-          Keyword
+          {t("filter.key")}
         </label>
         <input
           id="filter-q"
           name="q"
           type="text"
           defaultValue={filters.q ?? ""}
-          placeholder="Title, city, address…"
+          placeholder= {t("filter.keyHolder")}
           className={`${INPUT_CLASSNAME} w-48`}
         />
       </div>
@@ -73,7 +78,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           htmlFor="filter-category"
           className="text-muted-foreground text-xs"
         >
-          Category
+          {t("filter.category")}
         </label>
         <select
           id="filter-category"
@@ -86,7 +91,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           }
           className={SELECT_CLASSNAME}
         >
-          <option value="">All categories</option>
+          <option value="">{t("filter.categAll")}</option>
           {PROPERTY_CATEGORIES.map((category) => (
             <option key={category.value} value={category.value}>
               {category.label}
@@ -103,7 +108,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           htmlFor="filter-listing-type"
           className="text-muted-foreground text-xs"
         >
-          Listing type
+          {t("filter.type")}
         </label>
         <select
           id="filter-listing-type"
@@ -116,7 +121,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           }
           className={SELECT_CLASSNAME}
         >
-          <option value="">Sale &amp; Rent</option>
+          <option value="">{t("filter.typeSR")}</option>
           {LISTING_TYPE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -127,7 +132,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
 
       <div className="flex flex-col gap-1">
         <label htmlFor="filter-city" className="text-muted-foreground text-xs">
-          Location
+          {t("filter.loc")}
         </label>
         <select
           id="filter-city"
@@ -137,7 +142,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           }
           className={SELECT_CLASSNAME}
         >
-          <option value="">All locations</option>
+          <option value="">{t("filter.locHolder")}</option>
           {CITIES.map((city) => (
             <option key={city} value={city}>
               {city}
@@ -151,7 +156,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           htmlFor="filter-min-price"
           className="text-muted-foreground text-xs"
         >
-          Min price
+          {t("filter.minPrice")}
         </label>
         <input
           id="filter-min-price"
@@ -169,7 +174,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           htmlFor="filter-max-price"
           className="text-muted-foreground text-xs"
         >
-          Max price
+          {t("filter.maxPrice")}
         </label>
         <input
           id="filter-max-price"
@@ -188,7 +193,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
             htmlFor="filter-bedrooms"
             className="text-muted-foreground text-xs"
           >
-            Bedrooms
+            {t("properties.bedrooms")}
           </label>
           <select
             id="filter-bedrooms"
@@ -202,7 +207,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
             }
             className={SELECT_CLASSNAME}
           >
-            <option value="">Any</option>
+            <option value="">{t("filter.bedroomCount")}</option>
             {BEDROOM_OPTIONS.map((count) => (
               <option key={count} value={count}>
                 {count}+
@@ -213,7 +218,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
       )}
 
       <Button type="submit" size="lg">
-        Apply
+        {t("filter.apply")}
       </Button>
     </form>
   );

@@ -9,6 +9,9 @@ import { useFilterNavigation } from "@/hooks/useFilterNavigation";
 import { buildDeveloperFilterChips } from "@/lib/developerFilters";
 import type { GetDevelopersParams } from "@/services";
 
+// For Translation
+import { useTranslation } from "react-i18next";
+
 interface DevelopersViewProps {
   filters: GetDevelopersParams;
 }
@@ -26,6 +29,8 @@ export function DevelopersView({ filters }: DevelopersViewProps) {
     handleFilterChange({ [key]: undefined });
   }
 
+  const { t } = useTranslation("common");
+
   return (
     // `flex-1` is a layout fix, not styling: the public <main> is a column flex
     // container, and without it a short result set (three developers is one
@@ -41,7 +46,7 @@ export function DevelopersView({ filters }: DevelopersViewProps) {
           Hidden while loading rather than showing a zero that would flicker. */}
       {data && (
         <p className="text-muted-foreground text-sm" aria-live="polite">
-          {data.total} {data.total === 1 ? "developer" : "developers"}
+          {data.total} {data.total === 1 ? "developer" : t("nav.developers")}
         </p>
       )}
 

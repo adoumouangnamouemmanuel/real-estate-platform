@@ -1,3 +1,5 @@
+"use client";
+
 import { ArrowRight, BadgeCheck, Building2, MapPin, Star } from "lucide-react";
 import Link from "next/link";
 
@@ -5,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { DeveloperAvatar } from "@/components/developer/DeveloperAvatar";
 import { ROUTES } from "@/constants/routes";
 import type { Developer } from "@/types";
+
+// For Translation
+import { useTranslation } from "react-i18next";
 
 interface DeveloperCardProps {
   developer: Developer;
@@ -27,6 +32,8 @@ interface DeveloperCardProps {
  * rather than being promoted into the directory's primary hierarchy.
  */
 export function DeveloperCard({ developer, bio }: DeveloperCardProps) {
+  const { t } = useTranslation("common");
+  
   return (
     <Link
       href={ROUTES.DEVELOPER_DETAIL(developer.slug)}
@@ -58,7 +65,7 @@ export function DeveloperCard({ developer, bio }: DeveloperCardProps) {
             {developer.isVerified && (
               <Badge variant="secondary" className="shrink-0">
                 <BadgeCheck className="size-3.5" aria-hidden />
-                Verified
+                {t("common.verified")}
               </Badge>
             )}
           </div>
@@ -92,7 +99,7 @@ export function DeveloperCard({ developer, bio }: DeveloperCardProps) {
         <div className="flex items-center gap-4 text-sm">
           <span className="text-muted-foreground flex items-center gap-1.5">
             <Building2 className="size-3.5 shrink-0" aria-hidden />
-            {developer.activeListings} active
+            {developer.activeListings} {t("common.active")}
           </span>
           {developer.rating !== undefined && (
             <span className="flex items-center gap-1.5">
@@ -117,7 +124,7 @@ export function DeveloperCard({ developer, bio }: DeveloperCardProps) {
           aria-hidden
           className="text-primary flex shrink-0 items-center gap-1 text-sm font-medium"
         >
-          View
+          {t("common.view")}
           <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
         </span>
       </div>

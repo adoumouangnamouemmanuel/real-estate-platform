@@ -23,7 +23,11 @@
     "next": "Suivant",
     "previous": "Précédent",
 
-    "contact": "Contacter"
+    "contact": "Contacter",
+    "active": "actif",
+    "verified": "Vérifié",
+    "view": "Voir",
+    "directory": "Annuaire"
   },
   "auth": {
     "welcome": "Bienvenue",
@@ -60,7 +64,44 @@
     "toggle": "Changer de langue"
   },
   "text": {
-    "foot": "Plateforme de découverte immobilière et de confiance pour les marchés africains.",
-    "copyright": "Tous droits réservés."
+    "foot": "Plateforme de recherche immobilière et de confiance pour les marchés africains.",
+    "copyright": "Tous droits réservés.",
+    "searchRes": "Résultats de recherche",
+    "devMain": "Les promoteurs derrière chaque annonce Lumavok",
+    "devDescription": "Chaque propriété sur Lumavok est publiée par un promoteur identifié. Découvrez qui ils sont, où ils construisent et leurs biens actuellement disponibles.",
+    "noSavedMain": "Impossible de charger les propriétés",
+    "noSavedDesc": "Aucun jeton de rafraîchissement fourni",
+    "savedMain": "Propriétés enregistrées",
+    "savedTitle": "Votre sélection",
+    "savedCount": "propriétés enregistrées",
+    "propertiesDescription": "Chaque annonce est publiée par un promoteur identifié. Affinez le catalogue par localisation, type de bien et budget."
+  },
+  "filter": {
+    "key": "Mot-clé",
+    "category": "Catégorie",
+    "type": "Type d'annonce",
+    "loc": "Emplacement",
+    "minPrice": "Prix min.",
+    "maxPrice": "Prix max.",
+    "apply": "Appliquer",
+    "listings": "Annonces",
+    "sort": "Trier par",
+    "new": "Plus récents",
+    "priceL": "Prix : Du plus bas au plus élevé",
+    "priceH": "Prix : Du plus élevé au plus bas",
+    "keyHolder": "Titre, ville, adresse...",
+    "categAll": "Toutes les catégories",
+    "categAppart": "Appartements",
+    "categHouses": "Maisons",
+    "categLand": "Terrains",
+    "categComm": "Locaux commerciaux",
+    "categOffice": "Bureaux",
+    "typeSR": "Vente & Location",
+    "locHolder": "Toutes les localisations",
+    "bedroomCount": "Indifférent",
+    "keyHolderDev": "Nom de l'entreprise, ville...",
+    "sortHR": "Les mieux notés",
+    "sortML": "Plus d'annonces",
+    "sortName": "Nom A-Z"
   }
 }

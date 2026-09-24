@@ -3,17 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { CITIES } from "@/constants/locations";
 import type { DeveloperSort, GetDevelopersParams } from "@/services";
+// For Translation
+import { useTranslation } from "react-i18next";
 
 interface DeveloperFilterPanelProps {
   filters: GetDevelopersParams;
   onApply: (filters: Partial<GetDevelopersParams>) => void;
 }
 
-const SORT_OPTIONS: { value: DeveloperSort; label: string }[] = [
-  { value: "rating_desc", label: "Highest Rated" },
-  { value: "listings_desc", label: "Most Listings" },
-  { value: "name_asc", label: "Name A–Z" },
-];
+
 
 const SELECT_CLASSNAME =
   "border-border bg-background h-8 rounded-md border px-2 text-sm";
@@ -32,6 +30,14 @@ export function DeveloperFilterPanel({
     onApply({ q: q || undefined });
   }
 
+  const { t } = useTranslation("common");
+
+  const SORT_OPTIONS: { value: DeveloperSort; label: string }[] = [
+    { value: "rating_desc", label: t("filter.sortHR") },
+    { value: "listings_desc", label: t("filter.sortML") },
+    { value: "name_asc", label: t("filter.sortName") },
+  ];
+
   return (
     <form
       key={filters.q ?? ""}
@@ -40,14 +46,14 @@ export function DeveloperFilterPanel({
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="dev-filter-q" className="text-muted-foreground text-xs">
-          Keyword
+          {t("filter.key")}
         </label>
         <input
           id="dev-filter-q"
           name="q"
           type="text"
           defaultValue={filters.q ?? ""}
-          placeholder="Company name, city…"
+          placeholder={t("filter.keyHolderDev")}
           className={INPUT_CLASSNAME}
         />
       </div>
@@ -57,7 +63,7 @@ export function DeveloperFilterPanel({
           htmlFor="dev-filter-city"
           className="text-muted-foreground text-xs"
         >
-          Location
+          {t("filter.loc")}
         </label>
         <select
           id="dev-filter-city"
@@ -67,7 +73,7 @@ export function DeveloperFilterPanel({
           }
           className={SELECT_CLASSNAME}
         >
-          <option value="">All locations</option>
+          <option value="">{t("filter.locHolder")}</option>
           {CITIES.map((city) => (
             <option key={city} value={city}>
               {city}
@@ -81,7 +87,7 @@ export function DeveloperFilterPanel({
           htmlFor="dev-filter-sort"
           className="text-muted-foreground text-xs"
         >
-          Sort by
+          {t("filter.sort")}
         </label>
         <select
           id="dev-filter-sort"
@@ -100,7 +106,7 @@ export function DeveloperFilterPanel({
       </div>
 
       <Button type="submit" size="sm">
-        Apply
+        {t("filter.apply")}
       </Button>
     </form>
   );

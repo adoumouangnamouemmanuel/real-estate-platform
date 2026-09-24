@@ -23,7 +23,11 @@
     "next": "Next",
     "previous": "Previous",
 
-    "contact": "Contact"
+    "contact": "Contact",
+    "active": "active",
+    "verified": "Verified",
+    "view": "View",
+    "directory": "Directory"
   },
   "auth": {
     "welcome": "Welcome",
@@ -61,6 +65,44 @@
   },
   "text": {
     "foot": "Property discovery and trust platform for African markets.",
-    "copyright": "All rights reserved."
+    "copyright": "All rights reserved.",
+    "searchRes": "Search Results",
+    "devMain": "The developers behind every Lumavok listing",
+    "devDescription": "Every property on Lumavok is listed by a named developer. Browse who they are, where they build, and what they currently have available.",
+    "noSavedMain": "Couldn't load properties",
+    "noSavedDesc": "No refresh token provided",
+    "savedMain": "Saved Properties",
+    "savedTitle": "Your shortlist",
+    "savedCount": "properties saved",
+    "propertiesDescription": "Every listing is published by a named developer. Narrow the catalogue by location, property type and budget."
+  },
+  "filter": {
+    "key": "Keyword",
+    "category": "Category",
+    "type": "Listing Type",
+    "loc": "Location",
+    "minPrice": "Min Price",
+    "maxPrice": "Max Price",
+    "apply": "Apply",
+    "listings": "Listings",
+    "sort": "Sort by",
+    "new": "Newest",
+    "priceL": "Price: Low to High",
+    "priceH": "Price: High to Low",
+    "keyHolder": "Title, city, address...",
+    "categAll": "All Categories",
+    "categAppart": "Appartments",
+    "categHouses": "Houses",
+    "categLand": "Land",
+    "categComm": "Commercial",
+    "categOffice": "Offcice Space",
+    "typeSR": "Sale & Rent",
+    "locHolder": "All Locations",
+    "bedroomCount": "Any",
+
+    "keyHolderDev": "Company name, city...",
+    "sortHR": "Highest Rated",
+    "sortML": "Most Listings",
+    "sortName": "Name A-Z"
   }
 }
