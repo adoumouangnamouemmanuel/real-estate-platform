@@ -7,11 +7,16 @@
   "scripts": {
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
-    "migrate:deploy": "prisma migrate deploy",
-    "seed": "ts-node seeds/index.ts",
-    "studio": "prisma studio"
+    "migrate:deploy": "node scripts/deploy-reviewed.cjs --apply",
+    "seed": "node scripts/seed-local.cjs",
+    "studio": "prisma studio",
+    "test": "node --test tests/*.test.cjs",
+    "migrate:preflight": "node scripts/deploy-reviewed.cjs",
+    "content:check": "node scripts/backfill-reviewed-content.cjs",
+    "content:apply": "node scripts/backfill-reviewed-content.cjs --apply"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.19.43",
     "prisma": "5.20.0",
@@ -20,6 +25,7 @@
   },
   "dependencies": {
     "@prisma/client": "5.20.0",
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^2.4.3",
+    "pg": "8.16.3"
   }
 }

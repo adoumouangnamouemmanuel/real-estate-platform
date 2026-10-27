@@ -1,3 +1,5 @@
+> Current approved redesign: see [implementation status](../../docs/database-review/IMPLEMENTATION.md) and [rollout gates](../../docs/database-review/ROLLOUT.md). The historical examples below are not a deployment procedure for the expanded schema. Use the guarded migration scripts; do not reset or seed a shared database.
+
 # Database README — Auth: Clément Sampebgo
 
 **Last updated:** June 30, 2026
@@ -14,11 +16,11 @@ This guide walks you through setting everything up on your machine so you can st
 
 This package includes:
 
-* `schema.prisma` — the complete database schema with 14 tables.
-* `migrations/` — the SQL migrations used to create all database tables.
-* `seeds/` — scripts that populate the database with sample data, including cities, districts, amenities, three sample developers, and eight sample properties.
-* `docs/ER_DIAGRAM.md` and `docs/INDEX_STRATEGY.md` — explanations of the database structure and indexing strategy.
-* `docs/DATABASE.md` (located in the root `docs/` folder) — design decisions, implementation notes, and a known inconsistency in the original specification.
+- `schema.prisma` — the complete database schema with 14 tables.
+- `migrations/` — the SQL migrations used to create all database tables.
+- `seeds/` — scripts that populate the database with sample data, including cities, districts, amenities, three sample developers, and eight sample properties.
+- `docs/ER_DIAGRAM.md` and `docs/INDEX_STRATEGY.md` — explanations of the database structure and indexing strategy.
+- `docs/DATABASE.md` (located in the root `docs/` folder) — design decisions, implementation notes, and a known inconsistency in the original specification.
 
 You'll also find a `README.md` in this folder. It serves as the technical reference for the database and is worth reading after you've completed the setup.
 
@@ -47,7 +49,7 @@ F@b3456b
 Your connection string should look like this:
 
 ```text
-DATABASE_URL="postgresql://postgres:F%40b3456b@localhost:5432/lumavok_real_estate"
+DATABASE_URL="postgresql://DB_USER:DB_PASSWORD@DB_HOST:5432/DB_NAME"
 ```
 
 Here, `@` becomes `%40`.
@@ -97,7 +99,7 @@ cp .env.example .env
 Open `.env` and update the `DATABASE_URL` with your own username, password, and database name.
 
 ```text
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/lumavok_real_estate"
+DATABASE_URL="postgresql://DB_USER:DB_PASSWORD@DB_HOST:5432/DB_NAME"
 ```
 
 If your password contains special characters, remember to URL-encode them as explained earlier.
@@ -144,11 +146,11 @@ npm run seed
 
 The script should load:
 
-* 2 cities
-* 7 districts
-* 10 features
-* 3 developers
-* 8 properties
+- 2 cities
+- 7 districts
+- 10 features
+- 3 developers
+- 8 properties
 
 It should finish with:
 
@@ -198,10 +200,10 @@ npx prisma generate
 
 A few important points:
 
-* Use **soft deletes** for `Property` and `PropertyDeveloper`. Instead of deleting records, update the `deletedAt` field.
-* Always exclude soft-deleted records in public queries by filtering with `deletedAt: null`. Most public queries should also filter by `status: 'ACTIVE'`.
-* Keep the `favorite_count` field updated whenever a property is added to or removed from `PropertyFavorite`. Both operations should happen in the same transaction.
-* Before creating a `Report`, verify that the `targetId` exists. Since a report can reference either a property or a developer, this validation must happen in the service layer.
+- Use **soft deletes** for `Property` and `PropertyDeveloper`. Instead of deleting records, update the `deletedAt` field.
+- Always exclude soft-deleted records in public queries by filtering with `deletedAt: null`. Most public queries should also filter by `status: 'ACTIVE'`.
+- Keep the `favorite_count` field updated whenever a property is added to or removed from `PropertyFavorite`. Both operations should happen in the same transaction.
+- Before creating a `Report`, verify that the `targetId` exists. Since a report can reference either a property or a developer, this validation must happen in the service layer.
 
 For more details, see **Section 4** of `docs/DATABASE.md`.
 
@@ -211,9 +213,9 @@ For more details, see **Section 4** of `docs/DATABASE.md`.
 
 Even if you're not working directly on the backend, it's useful to understand how the data is organized.
 
-* Cities and districts come from predefined lists. Users cannot create new ones.
-* Amenities (`Feature`) also come from a predefined list rather than free text.
-* The `city` field on `PropertyDeveloper` is not linked to the `City` table used by properties. This is a known limitation in the original specification and is documented in `docs/DATABASE.md`.
+- Cities and districts come from predefined lists. Users cannot create new ones.
+- Amenities (`Feature`) also come from a predefined list rather than free text.
+- The `city` field on `PropertyDeveloper` is not linked to the `City` table used by properties. This is a known limitation in the original specification and is documented in `docs/DATABASE.md`.
 
 ---
 
@@ -223,14 +225,14 @@ Please update the documentation whenever you make database changes.
 
 ### If you modify `schema.prisma`
 
-* Create a new migration using:
+- Create a new migration using:
 
 ```bash
 npx prisma migrate dev --name describe_your_change
 ```
 
-* Update `docs/INDEX_STRATEGY.md` or `docs/ER_DIAGRAM.md` if your changes affect indexes or relationships.
-* If you make an important design decision, document it in `docs/DATABASE.md`.
+- Update `docs/INDEX_STRATEGY.md` or `docs/ER_DIAGRAM.md` if your changes affect indexes or relationships.
+- If you make an important design decision, document it in `docs/DATABASE.md`.
 
 ---
 
