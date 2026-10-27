@@ -8,7 +8,6 @@ import { ROUTES } from "@/constants/routes";
 // For Translation
 import { useTranslation } from "react-i18next";
 
-
 /**
  * Every destination here is a route that exists and renders. There are
  * deliberately no social accounts, office addresses, phone numbers, press

@@ -37,18 +37,21 @@ export function LanguageToggle() {
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {(Object.entries(SUPPORTED_LANGUAGES) as [Language, { label: string; short: string }][]).map(
-          ([code, { label, short }]) => (
-            <DropdownMenuItem
-              key={code}
-              onClick={() => setLanguage(code)}
-              className={language === code ? "bg-accent" : ""}
-            >
-              <span className="mr-2 font-medium">{short}</span>
-              <span className="text-muted-foreground">{label}</span>
-            </DropdownMenuItem>
-          ),
-        )}
+        {(
+          Object.entries(SUPPORTED_LANGUAGES) as [
+            Language,
+            { label: string; short: string },
+          ][]
+        ).map(([code, { label, short }]) => (
+          <DropdownMenuItem
+            key={code}
+            onClick={() => setLanguage(code)}
+            className={language === code ? "bg-accent" : ""}
+          >
+            <span className="mr-2 font-medium">{short}</span>
+            <span className="text-muted-foreground">{label}</span>
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

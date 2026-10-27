@@ -73,9 +73,7 @@ test.describe("Analytics (Phase 6.7)", () => {
     await expect(page).toHaveURL(/period=7d/);
   });
 
-  test("the funnel toggles between chart and table views", async ({
-    page,
-  }) => {
+  test("the funnel toggles between chart and table views", async ({ page }) => {
     await loginAsDeveloper(page);
     await goToAnalytics(page);
 

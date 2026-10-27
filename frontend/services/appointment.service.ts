@@ -55,9 +55,7 @@ export const appointmentService = {
 
   getAppointment: (id: string): Promise<Appointment> =>
     api
-      .get<ApiResponse<Appointment>>(
-        `/developers/me/appointments/${id}`,
-      )
+      .get<ApiResponse<Appointment>>(`/developers/me/appointments/${id}`)
       .then((res) => res.data.data),
 
   updateStatus: async (

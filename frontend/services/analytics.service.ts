@@ -7,9 +7,7 @@ import type { AnalyticsPeriod, AnalyticsSnapshot, ApiResponse } from "@/types";
  * requested period.
  */
 export const analyticsService = {
-  getSnapshot: (
-    period: AnalyticsPeriod = "30d",
-  ): Promise<AnalyticsSnapshot> =>
+  getSnapshot: (period: AnalyticsPeriod = "30d"): Promise<AnalyticsSnapshot> =>
     api
       .get<ApiResponse<AnalyticsSnapshot>>("/developers/me/analytics", {
         params: { period },
