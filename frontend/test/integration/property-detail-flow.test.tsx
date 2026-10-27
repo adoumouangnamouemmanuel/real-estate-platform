@@ -105,11 +105,16 @@ describe("Property details flow", () => {
   it("shows '/ month' next to the price only for RENT listings", () => {
     const { rerender } = renderWithQueryClient(
       <PropertyDetailView
-        property={makePropertyDetail({ listingType: "RENT", price: 3000 })}
+        property={makePropertyDetail({
+          listingType: "RENT",
+          price: 3000,
+          rentPeriod: "MONTH",
+          requestedLanguage: "en",
+        })}
         relatedProperties={[]}
       />,
     );
-    expect(screen.getByText("/ month")).toBeInTheDocument();
+    expect(screen.getByText("/month")).toBeInTheDocument();
 
     rerender(
       <PropertyDetailView
@@ -117,6 +122,6 @@ describe("Property details flow", () => {
         relatedProperties={[]}
       />,
     );
-    expect(screen.queryByText("/ month")).not.toBeInTheDocument();
+    expect(screen.queryByText("/month")).not.toBeInTheDocument();
   });
 });

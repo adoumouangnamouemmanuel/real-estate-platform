@@ -1,4 +1,5 @@
 "use client";
+import { useContentLocale as useLanguage } from "@/hooks/useContentLocale";
 
 import {
   keepPreviousData,
@@ -25,16 +26,18 @@ const UNREAD_COUNT_POLL_MS = 30_000;
 
 /** Keeps the previous page visible while the next page/filter loads, same as useListings/useAppointments. */
 export function useNotifications(params: GetNotificationsParams = {}) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...NOTIFICATIONS_KEY, params],
+    queryKey: [...NOTIFICATIONS_KEY, params, language],
     queryFn: () => notificationService.getNotifications(params),
     placeholderData: keepPreviousData,
   });
 }
 
 export function useUnreadNotificationCount() {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...NOTIFICATIONS_KEY, "unread-count"],
+    queryKey: [...NOTIFICATIONS_KEY, "unread-count", language],
     queryFn: () => notificationService.getUnreadCount(),
     refetchInterval: UNREAD_COUNT_POLL_MS,
   });

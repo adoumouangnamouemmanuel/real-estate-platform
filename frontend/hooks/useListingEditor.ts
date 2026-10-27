@@ -1,4 +1,5 @@
 "use client";
+import { useContentLocale as useLanguage } from "@/hooks/useContentLocale";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -14,10 +15,12 @@ const EDIT_KEY = [...LISTINGS_KEY, "edit"] as const;
  * not a filtered page of the list-view shape. Built from the same LISTINGS_KEY
  * root so an invalidation of the root key can't miss this branch.
  */
-export function useListingForEdit(id: string) {
+export function useListingForEdit(id: string, contentLanguage?: "en" | "fr") {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...EDIT_KEY, id],
-    queryFn: () => listingService.getListingForEdit(id),
+    queryKey: [...EDIT_KEY, id, contentLanguage ?? language],
+    queryFn: () =>
+      listingService.getListingForEdit(id, contentLanguage ?? language),
   });
 }
 
@@ -34,7 +37,10 @@ export function useCreateListing() {
     mutationFn: (patch: ListingPatch) => listingService.createListing(patch),
     onSuccess: (listing) => {
       queryClient.invalidateQueries({ queryKey: LISTINGS_KEY });
-      queryClient.setQueryData([...EDIT_KEY, listing.slug], listing);
+      queryClient.setQueryData(
+        [...EDIT_KEY, listing.id, listing.requestedLanguage],
+        listing,
+      );
     },
   });
 }
@@ -47,7 +53,10 @@ export function useUpdateListing() {
       listingService.updateListing(id, patch),
     onSuccess: (listing) => {
       queryClient.invalidateQueries({ queryKey: LISTINGS_KEY });
-      queryClient.setQueryData([...EDIT_KEY, listing.id], listing);
+      queryClient.setQueryData(
+        [...EDIT_KEY, listing.id, listing.requestedLanguage],
+        listing,
+      );
     },
   });
 }

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { DeveloperProfileView } from "@/components/developer/DeveloperProfileView";
 import { APP_NAME } from "@/constants/config";
-import { developerService } from "@/services";
+import { serverDeveloperService as developerService } from "@/lib/server-api";
 
 interface DeveloperProfilePageProps {
   params: Promise<{ slug: string }>;

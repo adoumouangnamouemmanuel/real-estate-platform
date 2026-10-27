@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config({ override: true });
 import { createApp } from "./app.js";
 import { getEnv } from "./config/env.js";
-import { prisma } from "./config/prisma.js";
+import { prisma, assertRuntimeRole } from "./config/prisma.js";
 
 async function main() {
   const env = getEnv();
@@ -10,9 +10,10 @@ async function main() {
 
   try {
     await prisma.$connect();
+    await assertRuntimeRole();
     console.log("✅ Database connected");
   } catch (err) {
-    console.error("❌ Database connection failed:", err);
+    console.error("Database startup validation failed");
     process.exit(1);
   }
 
@@ -24,6 +25,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("❌ Server failed to start:", err);
+  console.error("Server failed to start");
   process.exit(1);
 });

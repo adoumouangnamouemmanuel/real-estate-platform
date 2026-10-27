@@ -1,51 +1,59 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-
+"use client";
+import { use, useState } from "react";
 import { DashboardPageContainer } from "@/components/dashboard/DashboardPageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { ListingForm } from "@/components/dashboard/listings/ListingForm";
-import { APP_NAME } from "@/constants/config";
-import { ROUTES } from "@/constants/routes";
-import { listingService } from "@/services";
-
-interface EditListingPageProps {
+import { useListingForEdit } from "@/hooks/useListingEditor";
+import { useLanguage } from "@/components/common/LanguageContext";
+export default function EditListingPage({
+  params,
+}: {
   params: Promise<{ id: string }>;
-}
-
-export async function generateMetadata({
-  params,
-}: EditListingPageProps): Promise<Metadata> {
-  const { id } = await params;
-
-  try {
-    const listing = await listingService.getListingForEdit(id);
-    return { title: `Edit ${listing.title} | ${APP_NAME}` };
-  } catch {
-    return { title: `Listing not found | ${APP_NAME}` };
-  }
-}
-
-export default async function EditListingPage({
-  params,
-}: EditListingPageProps) {
-  const { id } = await params;
-
-  const listing = await listingService
-    .getListingForEdit(id)
-    .catch(() => notFound());
-
+}) {
+  const { id } = use(params),
+    { language } = useLanguage(),
+    [contentLanguage, setContentLanguage] = useState<"en" | "fr">(language);
+  const [dirty, setDirty] = useState(false);
+  const query = useListingForEdit(id, contentLanguage);
   return (
     <DashboardPageContainer>
       <DashboardPageHeader
-        title={listing.title || "Untitled Listing"}
-        description="Edit your listing details, pricing, and photos."
-        breadcrumbs={[
-          { label: "My Properties", href: ROUTES.LISTINGS },
-          { label: listing.title || "Untitled Listing" },
-          { label: "Edit" },
-        ]}
+        title={language === "fr" ? "Modifier le bien" : "Edit listing"}
+        description=""
       />
-      <ListingForm mode="edit" listing={listing} />
+      <label>
+        {language === "fr" ? "Langue du contenu" : "Content language"}{" "}
+        <select
+          disabled={dirty}
+          aria-label="Content language"
+          value={contentLanguage}
+          onChange={(e) => setContentLanguage(e.target.value as "en" | "fr")}
+        >
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      {dirty && (
+        <p>
+          {language === "fr"
+            ? "Enregistrez avant de changer la langue du contenu."
+            : "Save before changing the content language."}
+        </p>
+      )}
+      {query.isPending ? (
+        <p>Chargement… / Loading…</p>
+      ) : query.isError ? (
+        <p role="alert">
+          Impossible de charger le bien. / Listing could not be loaded.
+        </p>
+      ) : (
+        <ListingForm
+          key={id + contentLanguage}
+          mode="edit"
+          listing={query.data}
+          onDirtyChange={setDirty}
+        />
+      )}
     </DashboardPageContainer>
   );
 }

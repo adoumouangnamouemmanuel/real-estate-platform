@@ -1,246 +1,465 @@
+import crypto from "node:crypto";
 import { prisma } from "../../config/prisma.js";
-import { NotFoundError, BadRequestError } from "../../utils/errors.js";
+import { requireDeveloperId } from "../../middleware/auth.js";
+import {
+  NotFoundError,
+  BadRequestError,
+  ConflictError,
+} from "../../utils/errors.js";
 import { parsePagination, paginateResult } from "../../utils/pagination.js";
-import type { PaginatedResult } from "../../utils/pagination.js";
-
-type PropertyStatus = "DRAFT" | "ACTIVE" | "RESERVED" | "SOLD" | "SUSPENDED";
-
-const VALID_TRANSITIONS: Record<PropertyStatus, PropertyStatus[]> = {
+import { localeConfig, normalizeCategory } from "../../lib/localization.js";
+import {
+  mapProperty,
+  propertyInclude,
+} from "../properties/property.service.js";
+import { validateMediaReferences } from "../uploads/upload.service.js";
+import { listingPatchSchema } from "./listing.schema.js";
+type Status = "DRAFT" | "ACTIVE" | "RESERVED" | "SOLD" | "SUSPENDED";
+const transitions: Record<Status, Status[]> = {
   DRAFT: ["ACTIVE"],
   ACTIVE: ["RESERVED", "SOLD", "SUSPENDED"],
   RESERVED: ["ACTIVE", "SOLD"],
   SUSPENDED: ["ACTIVE"],
   SOLD: [],
 };
-const DELETABLE_STATUSES: PropertyStatus[] = ["DRAFT", "SUSPENDED"];
-
-function isValidTransition(from: PropertyStatus, to: PropertyStatus): boolean {
-  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
-}
-
-function slugify(input: string): string {
-  return input.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "untitled-listing";
-}
-
-async function uniqueSlug(base: string): Promise<string> {
-  let candidate = base, suffix = 1;
-  while (true) {
-    const existing = await prisma.property.findUnique({ where: { slug: candidate }, select: { id: true } });
-    if (!existing) return candidate;
-    suffix++;
-    candidate = `${base}-${suffix}`;
-  }
-}
-
-async function resolveCityId(cityName: string): Promise<string> {
-  const city = await prisma.city.findFirst({ where: { name: { equals: cityName, mode: "insensitive" } }, select: { id: true } });
-  if (!city) throw new BadRequestError("City not found");
-  return city.id;
-}
-
+const include = { ...propertyInclude, translations: true };
 export interface GetListingsParams {
-  q?: string; status?: string; category?: string; listingType?: string;
-  sort?: string; page?: number; pageSize?: number;
+  q?: string;
+  status?: string;
+  category?: string;
+  listingType?: string;
+  sort?: string;
+  page?: number;
+  pageSize?: number;
 }
-
-export async function getListings(developerId: string, params: GetListingsParams = {}): Promise<PaginatedResult<any>> {
-  const { skip, take, page, pageSize } = parsePagination(params);
+export async function getListings(
+  developerId: string,
+  params: GetListingsParams = {},
+) {
+  requireDeveloperId(developerId);
+  const locale = await localeConfig(),
+    { skip, take, page, pageSize } = parsePagination(params);
   const where: any = { propertyDeveloperId: developerId, deletedAt: null };
   if (params.status) where.status = params.status;
-  if (params.category) where.category = params.category;
+  if (params.category) where.category = normalizeCategory(params.category);
   if (params.listingType) where.listingType = params.listingType;
-  if (params.q) {
+  if (params.q)
     where.OR = [
       { title: { contains: params.q, mode: "insensitive" } },
-      { city: { contains: params.q, mode: "insensitive" } },
+      { cityRef: { name: { contains: params.q, mode: "insensitive" } } },
     ];
-  }
-
-  let orderBy: any = { updatedAt: "desc" };
-  if (params.sort === "price_asc") orderBy = { price: "asc" };
-  else if (params.sort === "price_desc") orderBy = { price: "desc" };
-  else if (params.sort === "title_asc") orderBy = { title: "asc" };
-
+  const orderBy: any =
+    params.sort === "price_asc"
+      ? { price: "asc" }
+      : params.sort === "price_desc"
+        ? { price: "desc" }
+        : params.sort === "title_asc"
+          ? { title: "asc" }
+          : { updatedAt: "desc" };
   const [items, total] = await Promise.all([
-    prisma.property.findMany({
-      where, skip, take, orderBy,
-      include: { media: { orderBy: { order: "asc" } }, cityRef: { select: { name: true } } },
-    }),
+    prisma.property.findMany({ where, skip, take, orderBy, include }),
     prisma.property.count({ where }),
   ]);
-  return paginateResult(items.map(mapListing), total, page, pageSize);
+  return paginateResult(
+    await Promise.all(items.map((p) => mapProperty(p, locale, false, true))),
+    total,
+    page,
+    pageSize,
+  );
 }
-
 export async function getStatusCounts(developerId: string) {
-  const counts = await prisma.property.groupBy({
+  requireDeveloperId(developerId);
+  const rows = await prisma.property.groupBy({
     by: ["status"],
     where: { propertyDeveloperId: developerId, deletedAt: null },
     _count: { status: true },
   });
-  const result: Record<PropertyStatus, number> = { DRAFT: 0, ACTIVE: 0, RESERVED: 0, SOLD: 0, SUSPENDED: 0 };
-  for (const c of counts) result[c.status as PropertyStatus] = c._count.status;
+  const result: Record<Status, number> = {
+    DRAFT: 0,
+    ACTIVE: 0,
+    RESERVED: 0,
+    SOLD: 0,
+    SUSPENDED: 0,
+  };
+  for (const r of rows) result[r.status] = r._count.status;
   return result;
 }
-
 export async function getListingForEdit(developerId: string, id: string) {
-  const listing = await prisma.property.findFirst({
-    where: { id, propertyDeveloperId: developerId, deletedAt: null },
-    include: {
-      media: { orderBy: { order: "asc" } },
-      cityRef: { select: { name: true } },
-      district: { select: { name: true } },
-      features: { include: { feature: true } },
-    },
-  });
-  if (!listing) throw new NotFoundError("Listing not found");
-  return {
-    ...mapListing(listing),
-    address: listing.address,
-    amenities: (listing.features ?? []).map((f: any) => f.feature.featureName),
-    district: listing.district?.name ?? undefined,
-    landSizeSqm: listing.landSizeSqM ? Number(listing.landSizeSqM) : undefined,
-    buildingSizeSqm: listing.buildingSizeSqM ? Number(listing.buildingSizeSqM) : undefined,
-    bedrooms: listing.bedrooms ?? undefined,
-    bathrooms: listing.bathrooms ?? undefined,
-    carSpaces: listing.carSpaces ?? undefined,
-    yearBuilt: listing.yearBuilt ?? undefined,
-  };
+  requireDeveloperId(developerId);
+  const locale = await localeConfig(),
+    p = await prisma.property.findFirst({
+      where: { id, propertyDeveloperId: developerId, deletedAt: null },
+      include,
+    });
+  if (!p) throw new NotFoundError("Listing not found");
+  return mapProperty(p, locale, true);
 }
-
-export async function createListing(developerId: string, patch: any = {}) {
-  const title = patch.title?.trim() || "Untitled Listing";
-  const slug = await uniqueSlug(slugify(title));
-  let cityId = "";
-  if (patch.city) { cityId = await resolveCityId(patch.city); }
-  else { const fc = await prisma.city.findFirst({ select: { id: true } }); cityId = fc?.id ?? ""; }
-
-  const listing = await prisma.property.create({
-    data: {
-      propertyDeveloperId: developerId, title, slug,
-      description: patch.description ?? "", price: patch.price ?? 0,
-      listingType: patch.listingType || "SALE", category: patch.category || "APARTMENT",
-      address: patch.address ?? "", cityId,
-      bedrooms: patch.bedrooms ?? null, bathrooms: patch.bathrooms ?? null,
-      carSpaces: patch.carSpaces ?? null, yearBuilt: patch.yearBuilt ?? null,
-      landSizeSqM: patch.landSizeSqm ?? null, buildingSizeSqM: patch.buildingSizeSqM ?? null,
-      status: "DRAFT",
-      media: patch.media?.length
-        ? { create: patch.media.map((m: any) => ({ url: m.url, publicId: m.publicId, order: m.order })) }
-        : undefined,
-    },
-    include: { media: { orderBy: { order: "asc" } }, cityRef: { select: { name: true } } },
-  });
-  return mapListing(listing);
+async function language(code: string) {
+  if (!(await prisma.language.findFirst({ where: { code, isActive: true } })))
+    throw new BadRequestError(
+      "Unsupported content language",
+      "UNSUPPORTED_LANGUAGE",
+    );
 }
-
-export async function updateListing(developerId: string, id: string, patch: any) {
-  const existing = await prisma.property.findFirst({
-    where: { id, propertyDeveloperId: developerId, deletedAt: null },
-    select: { id: true, cityId: true },
-  });
-  if (!existing) throw new NotFoundError("Listing not found");
-
-  const updateData: any = {};
-  for (const key of ["title", "description", "price", "address", "bedrooms", "bathrooms", "carSpaces", "yearBuilt"]) {
-    if (patch[key] !== undefined) updateData[key] = patch[key];
+async function location(patch: any, existing?: any) {
+  let cityId = patch.cityId || existing?.cityId;
+  if (patch.city && !patch.cityId) {
+    const c = await prisma.city.findFirst({
+      where: {
+        name: { equals: patch.city, mode: "insensitive" },
+        isActive: true,
+      },
+    });
+    cityId = c?.id;
   }
-  // Coerce empty strings to valid enum defaults for Prisma
-  if (patch.listingType !== undefined) updateData.listingType = patch.listingType || "SALE";
-  if (patch.category !== undefined) updateData.category = patch.category || "APARTMENT";
-  if (patch.landSizeSqm !== undefined) updateData.landSizeSqM = patch.landSizeSqm;
-  if (patch.buildingSizeSqm !== undefined) updateData.buildingSizeSqM = patch.buildingSizeSqm;
-  if (patch.city) updateData.cityId = await resolveCityId(patch.city);
-
-  if (patch.media !== undefined) {
-    await prisma.propertyMedia.deleteMany({ where: { propertyId: existing.id } });
-    if (patch.media.length > 0) {
-      await prisma.propertyMedia.createMany({
-        data: patch.media.map((m: any) => ({
-          propertyId: existing.id, url: m.url, publicId: m.publicId, order: m.order,
-        })),
+  if (!cityId)
+    throw new BadRequestError("Choose a city before saving", "CITY_REQUIRED");
+  if (!(await prisma.city.findFirst({ where: { id: cityId, isActive: true } })))
+    throw new BadRequestError("City not found");
+  let districtId =
+    patch.districtId === undefined
+      ? cityId === existing?.cityId
+        ? existing?.districtId
+        : null
+      : patch.districtId || null;
+  if (patch.district !== undefined && patch.districtId === undefined) {
+    if (!patch.district) districtId = null;
+    else {
+      const d = await prisma.district.findFirst({
+        where: {
+          cityId,
+          name: { equals: patch.district, mode: "insensitive" },
+          isActive: true,
+        },
       });
+      if (!d) throw new BadRequestError("District not found");
+      districtId = d.id;
     }
   }
-
-  const listing = await prisma.property.update({
-    where: { id: existing.id }, data: updateData,
-    include: { media: { orderBy: { order: "asc" } }, cityRef: { select: { name: true } } },
-  });
-  return mapListing(listing);
+  if (
+    districtId &&
+    !(await prisma.district.findFirst({
+      where: { id: districtId, cityId, isActive: true },
+    }))
+  )
+    throw new BadRequestError("District does not belong to city");
+  return { cityId, districtId };
 }
-
-export async function updateListingStatus(developerId: string, id: string, status: PropertyStatus) {
-  const listing = await prisma.property.findFirst({
+async function featureData(patch: any) {
+  if (patch.amenities?.length && patch.featureIds === undefined)
+    throw new BadRequestError(
+      "Submit feature IDs, not translated labels",
+      "FEATURE_IDS_REQUIRED",
+    );
+  if (patch.featureIds === undefined) return undefined;
+  const ids = [...new Set(patch.featureIds)] as string[];
+  if (
+    (await prisma.feature.count({ where: { id: { in: ids } } })) !== ids.length
+  )
+    throw new BadRequestError("Unknown feature");
+  return ids.map((featureId) => ({ featureId }));
+}
+export async function createListing(developerId: string, input: any = {}) {
+  requireDeveloperId(developerId);
+  const patch = listingPatchSchema.parse(input);
+  await language(patch.contentLanguage);
+  const locale = await localeConfig();
+  return prisma.$transaction(async (tx) => {
+    const place = await location(patch),
+      features = await featureData(patch),
+      media = await validateMediaReferences(developerId, patch.media ?? [], []);
+    const title =
+        patch.title ||
+        (patch.contentLanguage === "fr"
+          ? "Annonce sans titre"
+          : "Untitled Listing"),
+      description = patch.description ?? "";
+    const slug =
+      (title
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 100) || "listing") +
+      "-" +
+      crypto.randomUUID().slice(0, 8);
+    const p = await tx.property.create({
+      data: {
+        propertyDeveloperId: developerId,
+        title,
+        slug,
+        description,
+        price: patch.price ?? 0,
+        category: normalizeCategory(patch.category) || "APARTMENT",
+        listingType: patch.listingType || "SALE",
+        address: patch.address ?? "",
+        ...place,
+        bedrooms: patch.bedrooms,
+        bathrooms: patch.bathrooms,
+        carSpaces: patch.carSpaces,
+        yearBuilt: patch.yearBuilt,
+        landSizeSqM: patch.landSizeSqm,
+        buildingSizeSqM: patch.buildingSizeSqm,
+        sourceLanguageCode: patch.contentLanguage,
+        currencyCode: "XOF",
+        rentPeriod: patch.rentPeriod,
+        media: { create: media },
+        features: features ? { create: features } : undefined,
+        translations: {
+          create: { languageCode: patch.contentLanguage, title, description },
+        },
+      },
+      include,
+    });
+    return mapProperty(
+      p,
+      { ...locale, requested: patch.contentLanguage },
+      true,
+    );
+  });
+}
+async function lockedListing(developerId: string, id: string) {
+  await prisma.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${id},0))::text`;
+  const p = await prisma.property.findFirst({
     where: { id, propertyDeveloperId: developerId, deletedAt: null },
+    include,
   });
-  if (!listing) throw new NotFoundError("Listing not found");
-  if (!isValidTransition(listing.status, status)) {
-    throw new BadRequestError("Cannot move a listing from " + listing.status + " to " + status + ".", "INVALID_TRANSITION");
-  }
-  const updateData: any = { status };
-  if (status === "ACTIVE" && listing.status === "DRAFT") updateData.publishedAt = new Date();
-  const updated = await prisma.property.update({
-    where: { id }, data: updateData,
-    include: { media: { orderBy: { order: "asc" } }, cityRef: { select: { name: true } } },
-  });
-  return mapListing(updated);
+  if (!p) throw new NotFoundError("Listing not found");
+  return p;
 }
-
+export async function updateListing(
+  developerId: string,
+  id: string,
+  input: any,
+) {
+  requireDeveloperId(developerId);
+  const patch = listingPatchSchema.parse(input);
+  await language(patch.contentLanguage);
+  if (!patch.rowVersion)
+    throw new BadRequestError(
+      "Listing version is required",
+      "ROW_VERSION_REQUIRED",
+    );
+  const locale = await localeConfig();
+  return prisma.$transaction(async (tx) => {
+    const p = await lockedListing(developerId, id);
+    if (p.rowVersion !== patch.rowVersion)
+      throw new ConflictError("Listing changed. Reload before saving.");
+    const data: any = {
+      ...(await location(patch, p)),
+      rowVersion: { increment: 1 },
+    };
+    for (const key of [
+      "price",
+      "address",
+      "bedrooms",
+      "bathrooms",
+      "carSpaces",
+      "yearBuilt",
+      "rentPeriod",
+      "currencyCode",
+    ])
+      if ((patch as any)[key] !== undefined) data[key] = (patch as any)[key];
+    if (patch.category !== undefined)
+      data.category = normalizeCategory(patch.category) || p.category;
+    if (patch.listingType) data.listingType = patch.listingType;
+    if (patch.landSizeSqm !== undefined) data.landSizeSqM = patch.landSizeSqm;
+    if (patch.buildingSizeSqm !== undefined)
+      data.buildingSizeSqM = patch.buildingSizeSqm;
+    if (patch.media !== undefined) {
+      const media = await validateMediaReferences(
+        developerId,
+        patch.media,
+        p.media,
+      );
+      await tx.propertyMedia.deleteMany({ where: { propertyId: id } });
+      if (media.length)
+        await tx.propertyMedia.createMany({
+          data: media.map((m) => ({ ...m, propertyId: id })),
+        });
+    }
+    const features = await featureData(patch);
+    if (features !== undefined) {
+      await tx.propertyFeature.deleteMany({ where: { propertyId: id } });
+      if (features.length)
+        await tx.propertyFeature.createMany({
+          data: features.map((f) => ({ ...f, propertyId: id })),
+        });
+    }
+    if (patch.title !== undefined || patch.description !== undefined) {
+      const old = p.translations.find(
+        (t) => t.languageCode === patch.contentLanguage,
+      );
+      const title = patch.title ?? old?.title ?? "",
+        description = patch.description ?? old?.description ?? "";
+      const isPublished =
+        !!old?.isPublished && !!title.trim() && !!description.trim();
+      await tx.propertyTranslation.upsert({
+        where: {
+          propertyId_languageCode: {
+            propertyId: id,
+            languageCode: patch.contentLanguage,
+          },
+        },
+        create: {
+          propertyId: id,
+          languageCode: patch.contentLanguage,
+          title,
+          description,
+          isPublished,
+        },
+        update: { title, description, isPublished },
+      });
+      if (patch.contentLanguage === p.sourceLanguageCode) {
+        data.title = title;
+        data.description = description;
+        await tx.propertyTranslation.updateMany({
+          where: {
+            propertyId: id,
+            languageCode: { not: patch.contentLanguage },
+          },
+          data: { isPublished: false },
+        });
+      }
+    }
+    const updated = await tx.property.update({ where: { id }, data, include });
+    if (updated.status === "ACTIVE") ready(updated);
+    return mapProperty(
+      updated,
+      { ...locale, requested: patch.contentLanguage },
+      true,
+    );
+  });
+}
+function ready(p: any) {
+  const t = p.translations.find(
+    (t: any) => t.languageCode === p.sourceLanguageCode,
+  );
+  if (
+    !p.currencyCode ||
+    (p.listingType === "RENT" && !p.rentPeriod) ||
+    !t?.title.trim() ||
+    !t?.description.trim() ||
+    Number(p.price) <= 0 ||
+    !p.address.trim() ||
+    !p.media.length ||
+    (p.category === "LAND" && !p.landSizeSqM)
+  )
+    throw new BadRequestError(
+      "Complete the source content, price, address and photos before publication",
+      "INCOMPLETE_LISTING",
+    );
+}
+export async function updateListingStatus(
+  developerId: string,
+  id: string,
+  status: Status,
+) {
+  requireDeveloperId(developerId);
+  const locale = await localeConfig();
+  return prisma.$transaction(async (tx) => {
+    const p = await lockedListing(developerId, id);
+    if (!transitions[p.status]?.includes(status))
+      throw new BadRequestError(
+        "Invalid listing transition",
+        "INVALID_TRANSITION",
+      );
+    if (status === "ACTIVE") {
+      ready(p);
+      await tx.propertyTranslation.update({
+        where: {
+          propertyId_languageCode: {
+            propertyId: id,
+            languageCode: p.sourceLanguageCode!,
+          },
+        },
+        data: { isPublished: true },
+      });
+    }
+    const updated = await tx.property.update({
+      where: { id },
+      data: {
+        status,
+        rowVersion: { increment: 1 },
+        publishedAt:
+          status === "ACTIVE" && !p.publishedAt ? new Date() : p.publishedAt,
+      },
+      include,
+    });
+    return mapProperty(updated, locale, false, true);
+  });
+}
+export async function publishTranslation(
+  developerId: string,
+  id: string,
+  code: string,
+) {
+  requireDeveloperId(developerId);
+  await language(code);
+  return prisma.$transaction(async (tx) => {
+    const p = await lockedListing(developerId, id),
+      t = p.translations.find((t) => t.languageCode === code);
+    if (!t?.title.trim() || !t.description.trim())
+      throw new BadRequestError(
+        "Complete both translated fields",
+        "INCOMPLETE_TRANSLATION",
+      );
+    await tx.propertyTranslation.update({
+      where: {
+        propertyId_languageCode: { propertyId: id, languageCode: code },
+      },
+      data: { isPublished: true },
+    });
+    return { languageCode: code, isPublished: true };
+  });
+}
 export async function deleteListing(developerId: string, id: string) {
-  const listing = await prisma.property.findFirst({
-    where: { id, propertyDeveloperId: developerId, deletedAt: null },
+  requireDeveloperId(developerId);
+  return prisma.$transaction(async (tx) => {
+    const p = await lockedListing(developerId, id);
+    if (!["DRAFT", "SUSPENDED"].includes(p.status))
+      throw new BadRequestError(
+        "Suspend the listing before deleting",
+        "NOT_DELETABLE",
+      );
+    await tx.property.update({
+      where: { id },
+      data: { deletedAt: new Date(), rowVersion: { increment: 1 } },
+    });
   });
-  if (!listing) throw new NotFoundError("Listing not found");
-  if (!DELETABLE_STATUSES.includes(listing.status)) {
-    throw new BadRequestError("A " + listing.status.toLowerCase() + " listing can't be deleted directly.", "NOT_DELETABLE");
-  }
-  await prisma.property.update({ where: { id }, data: { deletedAt: new Date() } });
 }
-
-export async function bulkUpdateStatus(developerId: string, ids: string[], status: PropertyStatus) {
-  const updated: string[] = [], skipped: string[] = [];
-  const listings = await prisma.property.findMany({
-    where: { id: { in: ids }, propertyDeveloperId: developerId, deletedAt: null },
-  });
-  const map = new Map(listings.map(l => [l.id, l]) as [string, any][]);
-  for (const id of ids) {
-    const l = map.get(id);
-    if (l && isValidTransition(l.status, status)) {
-      const d: any = { status };
-      if (status === "ACTIVE" && l.status === "DRAFT") d.publishedAt = new Date();
-      await prisma.property.update({ where: { id }, data: d });
+export async function bulkUpdateStatus(
+  developerId: string,
+  ids: string[],
+  status: Status,
+) {
+  requireDeveloperId(developerId);
+  const updated: string[] = [],
+    skipped: string[] = [];
+  for (const id of [...new Set(ids)])
+    try {
+      await updateListingStatus(developerId, id, status);
       updated.push(id);
-    } else skipped.push(id);
-  }
+    } catch (e) {
+      if (e instanceof BadRequestError || e instanceof NotFoundError)
+        skipped.push(id);
+      else throw e;
+    }
   return { updated, skipped };
 }
-
 export async function bulkDelete(developerId: string, ids: string[]) {
-  const deleted: string[] = [], skipped: string[] = [];
-  const listings = await prisma.property.findMany({
-    where: { id: { in: ids }, propertyDeveloperId: developerId, deletedAt: null },
-  });
-  const map = new Map(listings.map(l => [l.id, l]) as [string, any][]);
-  for (const id of ids) {
-    const l = map.get(id);
-    if (l && DELETABLE_STATUSES.includes(l.status)) {
-      await prisma.property.update({ where: { id }, data: { deletedAt: new Date() } });
+  requireDeveloperId(developerId);
+  const deleted: string[] = [],
+    skipped: string[] = [];
+  for (const id of [...new Set(ids)])
+    try {
+      await deleteListing(developerId, id);
       deleted.push(id);
-    } else skipped.push(id);
-  }
+    } catch (e) {
+      if (e instanceof BadRequestError || e instanceof NotFoundError)
+        skipped.push(id);
+      else throw e;
+    }
   return { deleted, skipped };
-}
-
-function mapListing(p: any) {
-  return {
-    id: p.id, slug: p.slug, title: p.title, description: p.description,
-    price: Number(p.price), listingType: p.listingType, category: p.category,
-    city: p.cityRef?.name ?? p.city ?? "", region: "", status: p.status,
-    media: (p.media ?? []).map((m: any) => ({ url: m.url, publicId: m.publicId, order: m.order })),
-    updatedAt: p.updatedAt?.toISOString?.() ?? p.updatedAt,
-    bedrooms: p.bedrooms ?? undefined, bathrooms: p.bathrooms ?? undefined,
-    carSpaces: p.carSpaces ?? undefined, yearBuilt: p.yearBuilt ?? undefined,
-    landSizeSqm: p.landSizeSqM ? Number(p.landSizeSqM) : undefined,
-    buildingSizeSqm: p.buildingSizeSqM ? Number(p.buildingSizeSqM) : undefined,
-  };
 }

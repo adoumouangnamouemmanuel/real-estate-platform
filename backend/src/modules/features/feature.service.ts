@@ -1,34 +1,49 @@
 import { prisma } from "../../config/prisma.js";
-
+import {
+  localeConfig,
+  localeMetadata,
+  resolveTranslation,
+  normalizeCategory,
+} from "../../lib/localization.js";
 export async function getFeatures(category?: string) {
-  const where: any = {};
-  if (category) {
-    where.properties = {
-      some: { property: { category: category as any } },
-    };
-  }
-
-  const features = await prisma.feature.findMany({ where, orderBy: { featureName: "asc" } });
-
-  return features.map(f => ({
-    id: f.id,
-    name: f.featureName,
-    category: f.category ?? "",
-    iconName: f.iconName ?? "circle",
-    propertyCategories: [], // Derived from the join table — for MVP, frontend uses its own mapping
-  }));
-}
-
-export async function getFeatureByName(name: string) {
-  const feature = await prisma.feature.findFirst({
-    where: { featureName: { equals: name, mode: "insensitive" } },
+  normalizeCategory(category);
+  const locale = await localeConfig();
+  const features = await prisma.feature.findMany({
+    orderBy: { code: "asc" },
+    include: { translations: true },
   });
-  if (!feature) return null;
-  return {
-    id: feature.id,
-    name: feature.featureName,
-    category: feature.category ?? "",
-    iconName: feature.iconName ?? "circle",
-    propertyCategories: [],
-  };
+  // The catalogue does not infer eligibility from which listings already use it.
+  return features.map((f) => {
+    const t = resolveTranslation(
+      f.translations,
+      locale.requested,
+      locale.fallback,
+      f.sourceLanguageCode,
+    );
+    return {
+      id: f.id,
+      code: f.code,
+      name: t?.name ?? f.featureName,
+      category: f.category ?? "",
+      iconName: f.iconName ?? "circle",
+      propertyCategories: [
+        "apartment",
+        "house",
+        "land",
+        "commercial",
+        "office",
+      ],
+      ...localeMetadata(
+        locale.requested,
+        t?.languageCode ?? f.sourceLanguageCode,
+      ),
+    };
+  });
+}
+export async function getFeatureByName(name: string) {
+  return (
+    (await getFeatures()).find(
+      (f) => f.name.toLowerCase() === name.toLowerCase(),
+    ) ?? null
+  );
 }

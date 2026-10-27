@@ -1,11 +1,20 @@
 import type { Request, Response, NextFunction } from "express";
 import * as authService from "./auth.service.js";
-import type { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput } from "./auth.schema.js";
+import type {
+  LoginInput,
+  RegisterInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+} from "./auth.schema.js";
 import { sendSuccess } from "../../utils/response.js";
 import { getEnv } from "../../config/env.js";
 import type { AuthenticatedRequest } from "../../types/index.js";
 
-export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function login(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const input = req.body as LoginInput;
     const { session, refreshToken, expiresAt } = await authService.login(
@@ -21,23 +30,35 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
-export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function register(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const input = req.body as RegisterInput;
-    const { session, refreshToken, expiresAt } = await authService.register(
+    const result = await authService.register(
       input,
       req.headers["user-agent"],
       req.ip,
     );
 
-    setRefreshCookie(res, refreshToken, expiresAt);
-    sendSuccess(res, session, 201, "Registration successful");
+    if ("requiresEmailConfirmation" in result) {
+      sendSuccess(res, result, 202, "Check your email to confirm your account");
+      return;
+    }
+    setRefreshCookie(res, result.refreshToken, result.expiresAt);
+    sendSuccess(res, result.session, 201, "Registration successful");
   } catch (err) {
     next(err);
   }
 }
 
-export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function refresh(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const env = getEnv();
     const rawRefreshToken = req.cookies[env.AUTH_COOKIE_NAME];
@@ -64,10 +85,17 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
   }
 }
 
-export async function logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function logout(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const authReq = req as AuthenticatedRequest;
-    await authService.logout(authReq.user.userId);
+    await authService.logout(
+      req.headers.authorization?.slice(7) ?? "",
+      req.cookies[getEnv().AUTH_COOKIE_NAME] ?? "",
+    );
 
     const env = getEnv();
     res.clearCookie(env.AUTH_COOKIE_NAME, {
@@ -82,18 +110,31 @@ export async function logout(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function forgotPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const input = req.body as ForgotPasswordInput;
     await authService.forgotPassword(input);
     // Always returns 200 — anti-enumeration
-    sendSuccess(res, null, 200, "If an account with that email exists, a reset link has been sent.");
+    sendSuccess(
+      res,
+      null,
+      200,
+      "If an account with that email exists, a reset link has been sent.",
+    );
   } catch (err) {
     next(err);
   }
 }
 
-export async function resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function resetPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const input = req.body as ResetPasswordInput;
     await authService.resetPassword(input);
@@ -103,7 +144,11 @@ export async function resetPassword(req: Request, res: Response, next: NextFunct
   }
 }
 
-export async function validateResetToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function validateResetToken(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const token = req.params.token as string;
     const result = await authService.validateResetToken(token);

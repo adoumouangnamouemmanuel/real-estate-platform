@@ -1,18 +1,32 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { RequestHandler } from "express";
+import { listingPatchSchema } from "./listing.schema.js";
+import * as listingService from "./listing.service.js";
+import { sendSuccess } from "../../utils/response.js";
+import type { AuthenticatedRequest } from "../../types/index.js";
 import * as listingController from "./listing.controller.js";
 import { authenticate, authorize } from "../../middleware/auth.js";
 
 const router = Router();
 const authenticateHandler = authenticate as unknown as RequestHandler;
-const developerOnly = authorize("PROPERTY_DEVELOPER") as unknown as RequestHandler;
+const developerOnly = authorize(
+  "PROPERTY_DEVELOPER",
+) as unknown as RequestHandler;
 
 function validate(schema: z.ZodSchema): RequestHandler {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      res.status(400).json({ success: false, message: "Validation failed", code: "VALIDATION_ERROR", errors: result.error.issues.map(i => ({ field: i.path.join("."), message: i.message })) });
+      res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        code: "VALIDATION_ERROR",
+        errors: result.error.issues.map((i) => ({
+          field: i.path.join("."),
+          message: i.message,
+        })),
+      });
       return;
     }
     req.body = result.data;
@@ -20,18 +34,94 @@ function validate(schema: z.ZodSchema): RequestHandler {
   };
 }
 
-const bulkStatusSchema = z.object({ ids: z.array(z.string()).min(1), status: z.enum(["ACTIVE", "RESERVED", "SOLD", "SUSPENDED"]) });
-const bulkDeleteSchema = z.object({ ids: z.array(z.string()).min(1) });
-const statusUpdateSchema = z.object({ status: z.enum(["ACTIVE", "RESERVED", "SOLD", "SUSPENDED"]) });
+const bulkStatusSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(100),
+  status: z.enum(["ACTIVE", "RESERVED", "SOLD", "SUSPENDED"]),
+});
+const bulkDeleteSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(100),
+});
+const statusUpdateSchema = z.object({
+  status: z.enum(["ACTIVE", "RESERVED", "SOLD", "SUSPENDED"]),
+});
 
-router.get("/counts", authenticateHandler, developerOnly, listingController.getStatusCounts);
-router.patch("/bulk-status", authenticateHandler, developerOnly, validate(bulkStatusSchema), listingController.bulkUpdateStatus);
-router.post("/bulk-delete", authenticateHandler, developerOnly, validate(bulkDeleteSchema), listingController.bulkDelete);
-router.get("/", authenticateHandler, developerOnly, listingController.getListings);
-router.get("/:id", authenticateHandler, developerOnly, listingController.getListingForEdit);
-router.post("/", authenticateHandler, developerOnly, listingController.createListing);
-router.patch("/:id", authenticateHandler, developerOnly, listingController.updateListing);
-router.patch("/:id/status", authenticateHandler, developerOnly, validate(statusUpdateSchema), listingController.updateListingStatus);
-router.delete("/:id", authenticateHandler, developerOnly, listingController.deleteListing);
+router.get(
+  "/counts",
+  authenticateHandler,
+  developerOnly,
+  listingController.getStatusCounts,
+);
+router.patch(
+  "/bulk-status",
+  authenticateHandler,
+  developerOnly,
+  validate(bulkStatusSchema),
+  listingController.bulkUpdateStatus,
+);
+router.post(
+  "/bulk-delete",
+  authenticateHandler,
+  developerOnly,
+  validate(bulkDeleteSchema),
+  listingController.bulkDelete,
+);
+router.get(
+  "/",
+  authenticateHandler,
+  developerOnly,
+  listingController.getListings,
+);
+router.get(
+  "/:id",
+  authenticateHandler,
+  developerOnly,
+  listingController.getListingForEdit,
+);
+router.post(
+  "/",
+  authenticateHandler,
+  developerOnly,
+  validate(listingPatchSchema),
+  listingController.createListing,
+);
+router.patch(
+  "/:id",
+  authenticateHandler,
+  developerOnly,
+  validate(listingPatchSchema),
+  listingController.updateListing,
+);
+router.patch(
+  "/:id/status",
+  authenticateHandler,
+  developerOnly,
+  validate(statusUpdateSchema),
+  listingController.updateListingStatus,
+);
+router.delete(
+  "/:id",
+  authenticateHandler,
+  developerOnly,
+  listingController.deleteListing,
+);
 
+router.post(
+  "/:id/translations/:lang/publish",
+  authenticateHandler,
+  developerOnly,
+  async (req, res, next) => {
+    try {
+      sendSuccess(
+        res,
+        await listingService.publishTranslation(
+          (req as AuthenticatedRequest).user.developerId!,
+          req.params.id as string,
+          req.params.lang as string,
+        ),
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 export default router;

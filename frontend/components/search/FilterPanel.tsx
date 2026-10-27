@@ -5,7 +5,7 @@ import {
   PROPERTY_CATEGORIES,
   type PropertyCategory,
 } from "@/constants/categories";
-import { CITIES } from "@/constants/locations";
+import { useLocations } from "@/hooks/useLocations";
 import {
   BEDROOM_CATEGORIES,
   LISTING_TYPE_OPTIONS,
@@ -37,6 +37,7 @@ const INPUT_CLASSNAME = `${CONTROL_BASE} w-28`;
  * from elsewhere (e.g. a FilterChip removal), without needing an effect to re-sync local state.
  */
 export function FilterPanel({ filters, onApply }: FilterPanelProps) {
+  const { data: cities = [] } = useLocations();
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -68,7 +69,7 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           name="q"
           type="text"
           defaultValue={filters.q ?? ""}
-          placeholder= {t("filter.keyHolder")}
+          placeholder={t("filter.keyHolder")}
           className={`${INPUT_CLASSNAME} w-48`}
         />
       </div>
@@ -143,9 +144,9 @@ export function FilterPanel({ filters, onApply }: FilterPanelProps) {
           className={SELECT_CLASSNAME}
         >
           <option value="">{t("filter.locHolder")}</option>
-          {CITIES.map((city) => (
-            <option key={city} value={city}>
-              {city}
+          {cities.map((city) => (
+            <option key={city.id} value={city.name}>
+              {city.name}
             </option>
           ))}
         </select>

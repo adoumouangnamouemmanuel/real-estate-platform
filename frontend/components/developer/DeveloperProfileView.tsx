@@ -173,15 +173,17 @@ export function DeveloperProfileView({
                   375px screen. `anywhere` lets it break only when it otherwise
                   would not fit, and `min-w-0` lets the flex child actually
                   shrink to its container instead of forcing it wider. */}
-              <a
-                href={`mailto:${developer.email}`}
-                className="focus-visible:ring-ring/50 flex min-w-0 items-center gap-1.5 rounded-sm outline-none hover:underline focus-visible:ring-3"
-              >
-                <Mail className="size-3.5 shrink-0" aria-hidden />
-                <span className="[overflow-wrap:anywhere]">
-                  {developer.email}
-                </span>
-              </a>
+              {developer.email && (
+                <a
+                  href={`mailto:${developer.email}`}
+                  className="focus-visible:ring-ring/50 flex min-w-0 items-center gap-1.5 rounded-sm outline-none hover:underline focus-visible:ring-3"
+                >
+                  <Mail className="size-3.5 shrink-0" aria-hidden />
+                  <span className="[overflow-wrap:anywhere]">
+                    {developer.email}
+                  </span>
+                </a>
+              )}
               {/* Only the social links this developer actually has — the mock
                     records vary (one has all three, one has only Instagram). */}
               {SOCIAL_LINKS.map(

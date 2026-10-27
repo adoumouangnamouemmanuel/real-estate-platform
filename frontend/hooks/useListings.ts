@@ -1,4 +1,5 @@
 "use client";
+import { useContentLocale as useLanguage } from "@/hooks/useContentLocale";
 
 import {
   keepPreviousData,
@@ -16,16 +17,18 @@ export const LISTINGS_KEY = ["listings"] as const;
 
 /** Keeps the previous page visible while the next page/filter loads, same as useProperties. */
 export function useListings(params: GetListingsParams = {}) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...LISTINGS_KEY, params],
+    queryKey: [...LISTINGS_KEY, params, language],
     queryFn: () => listingService.getListings(params),
     placeholderData: keepPreviousData,
   });
 }
 
 export function useListingStatusCounts() {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...LISTINGS_KEY, "counts"],
+    queryKey: [...LISTINGS_KEY, "counts", language],
     queryFn: () => listingService.getStatusCounts(),
   });
 }

@@ -13,14 +13,12 @@ export interface ApiError {
   errors?: Array<{ field: string; message: string }>;
 }
 
-export interface JwtPayload {
+export interface ApplicationIdentity {
   userId: string;
   role: "USER" | "PROPERTY_DEVELOPER" | "ADMIN";
   developerId?: string;
-  iat: number;
-  exp: number;
 }
 
 export interface AuthenticatedRequest extends Request {
-  user: JwtPayload;
+  user: ApplicationIdentity;
 }

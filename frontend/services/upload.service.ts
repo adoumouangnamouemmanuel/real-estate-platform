@@ -14,14 +14,17 @@ export const uploadService = {
   uploadFile: async (file: File): Promise<UploadedFile> => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("folder", "listings");
 
-    const res = await api.post<ApiResponse<UploadedFile>>("/uploads/file", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res = await api.post<ApiResponse<UploadedFile>>(
+      "/uploads/file",
+      formData,
+      {},
+    );
     return res.data.data;
   },
 
   deleteUpload: (publicId: string): Promise<void> =>
-    api.delete(`/uploads/${publicId}`).then(() => undefined),
+    api
+      .delete(`/uploads/${encodeURIComponent(publicId)}`)
+      .then(() => undefined),
 };

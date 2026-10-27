@@ -10,21 +10,27 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate --schema=../database/full-database-design/schema.prisma",
-    "db:migrate": "prisma migrate deploy --schema=../database/full-database-design/schema.prisma"
+    "db:migrate": "node ../database/full-database-design/scripts/deploy-reviewed.cjs --apply",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@prisma/client": "5.20.0",
+    "@supabase/supabase-js": "2.118.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "express-rate-limit": "8.7.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.3.0",
-    "zod": "^3.23.8"
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.12",
+    "@electric-sql/pglite-socket": "0.0.17",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
@@ -32,7 +38,9 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/multer": "^2.2.0",
     "@types/node": "^20.19.43",
+    "@types/supertest": "6.0.3",
     "prisma": "5.20.0",
+    "supertest": "7.1.4",
     "tsx": "^4.23.13",
     "typescript": "^5.5.4"
   }

@@ -1,3 +1,5 @@
+import { getStoredLanguage } from "@/lib/locale";
+import { mapSession } from "@/lib/authSession";
 import axios, { AxiosError } from "axios";
 
 import { API_BASE_URL } from "@/constants/config";
@@ -12,6 +14,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  config.params = { lang: getStoredLanguage(), ...config.params };
   const accessToken = useAuthStore.getState().accessToken;
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -30,18 +33,24 @@ declare module "axios" {
  * authService — authService imports `api` from this file, so importing it back here
  * would be circular. Kept deliberately minimal (this one request only).
  */
+let refreshing: Promise<string> | null = null;
 function refreshAccessToken(): Promise<string> {
-  return axios
+  if (refreshing) return refreshing;
+  refreshing = axios
     .post<ApiResponse<AuthSession>>(
       `${API_BASE_URL}/auth/refresh`,
       {},
       { withCredentials: true },
     )
     .then((response) => {
-      const session = response.data.data;
+      const session = mapSession(response.data.data);
       useAuthStore.getState().setAuth(session.user, session.accessToken);
       return session.accessToken;
+    })
+    .finally(() => {
+      refreshing = null;
     });
+  return refreshing;
 }
 
 // Silent-refresh-and-retry: an access token expires (15min) well before the refresh
@@ -56,7 +65,8 @@ api.interceptors.response.use(
     if (
       error.response?.status !== 401 ||
       !originalRequest ||
-      originalRequest._retried
+      originalRequest._retried ||
+      originalRequest.url?.startsWith("/auth/")
     ) {
       return Promise.reject(error);
     }

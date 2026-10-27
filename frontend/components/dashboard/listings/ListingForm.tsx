@@ -1,7 +1,9 @@
 "use client";
 
+import { useContentLocale as useLanguage } from "@/hooks/useContentLocale";
+import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm, useWatch, type Control } from "react-hook-form";
 import { toast } from "sonner";
@@ -106,6 +108,7 @@ function ListingPublishBarConnected({
 
 interface ListingFormProps {
   mode: "create" | "edit";
+  onDirtyChange?: (dirty: boolean) => void;
   listing?: Property;
   /** Overrides the default 2s autosave debounce — exists for tests, which use a short real delay instead of fake timers to avoid the well-documented fake-timer/userEvent interaction pitfalls. */
   autosaveDebounceMs?: number;
@@ -113,16 +116,25 @@ interface ListingFormProps {
 
 function toFormValues(listing?: Property): ListingFormValues {
   return {
+    currencyCode: listing
+      ? listing.currencyCode === "XOF"
+        ? "XOF"
+        : ""
+      : "XOF",
+    rentPeriod: (listing?.rentPeriod ??
+      undefined) as ListingFormValues["rentPeriod"],
     title: listing?.title ?? "",
     description: listing?.description ?? "",
     price: listing?.price ? listing.price : undefined,
     listingType: listing?.listingType,
     category: listing?.category,
+    cityId: listing?.cityId,
+    districtId: listing?.districtId,
     city: listing?.city ?? "",
     district: listing?.district ?? "",
     region: listing?.region ?? "",
     address: listing?.address ?? "",
-    amenities: listing?.amenities ?? [],
+    amenities: listing?.featureIds ?? [],
     bedrooms: listing?.bedrooms,
     bathrooms: listing?.bathrooms,
     carSpaces: listing?.carSpaces,
@@ -146,6 +158,7 @@ export function ListingForm({
   mode,
   listing,
   autosaveDebounceMs,
+  onDirtyChange,
 }: ListingFormProps) {
   return (
     <ListingEditorProvider
@@ -154,6 +167,7 @@ export function ListingForm({
     >
       <ListingFormInner
         listing={listing}
+        onDirtyChange={onDirtyChange}
         autosaveDebounceMs={autosaveDebounceMs}
       />
     </ListingEditorProvider>
@@ -163,11 +177,22 @@ export function ListingForm({
 function ListingFormInner({
   listing,
   autosaveDebounceMs,
+  onDirtyChange,
 }: {
   listing?: Property;
+  onDirtyChange?: (dirty: boolean) => void;
   autosaveDebounceMs?: number;
 }) {
   const router = useRouter();
+  const { language } = useLanguage();
+  const [contentLanguage, setContentLanguage] = useState(
+    listing?.requestedLanguage ?? language,
+  );
+  const version = useRef(listing?.rowVersion);
+  const savedIdentity = useRef<ListingIdentity | null>(
+    listing ? { id: listing.id, slug: listing.slug } : null,
+  );
+  const saveInFlight = useRef<Promise<ListingIdentity> | null>(null);
   const {
     identity,
     setIdentity,
@@ -184,6 +209,10 @@ function ListingFormInner({
     defaultValues: toFormValues(listing),
   });
 
+  useEffect(() => {
+    onDirtyChange?.(form.formState.isDirty);
+  }, [form.formState.isDirty, onDirtyChange]);
+  const selectedCityId = useWatch({ control: form.control, name: "cityId" });
   const createListing = useCreateListing();
   const updateListing = useUpdateListing();
   const updateStatus = useUpdateListingStatus();
@@ -211,19 +240,42 @@ function ListingFormInner({
   async function persist(
     patch: Partial<ListingFormValues>,
   ): Promise<ListingIdentity> {
-    if (!identity) {
-      const created = await createListing.mutateAsync(patch as ListingPatch);
-      const newIdentity = { id: created.id, slug: created.slug };
-      setIdentity(newIdentity);
-      window.history.replaceState(null, "", ROUTES.EDIT_LISTING(created.id));
-      return newIdentity;
+    if (saveInFlight.current) {
+      await saveInFlight.current;
+      return persist(patch);
     }
-
-    const updated = await updateListing.mutateAsync({
-      id: identity.id,
-      patch: patch as ListingPatch,
-    });
-    return { id: updated.id, slug: updated.slug };
+    const run = async () => {
+      const values = savedIdentity.current
+        ? patch
+        : { ...form.getValues(), ...patch };
+      const { amenities, region: _region, currencyCode, ...fields } = values;
+      void _region;
+      const body = {
+        ...fields,
+        ...(currencyCode ? { currencyCode } : {}),
+        contentLanguage,
+        rowVersion: version.current,
+        ...(amenities !== undefined ? { featureIds: amenities } : {}),
+      } as ListingPatch;
+      const result = savedIdentity.current
+        ? await updateListing.mutateAsync({
+            id: savedIdentity.current.id,
+            patch: body,
+          })
+        : await createListing.mutateAsync(body);
+      version.current = result.rowVersion;
+      const identity = { id: result.id, slug: result.slug };
+      savedIdentity.current = identity;
+      setIdentity(identity);
+      window.history.replaceState(null, "", ROUTES.EDIT_LISTING(result.id));
+      return identity;
+    };
+    saveInFlight.current = run();
+    try {
+      return await saveInFlight.current;
+    } finally {
+      saveInFlight.current = null;
+    }
   }
 
   const { status: autosaveStatus, saveNow } = useAutosaveListing({
@@ -234,7 +286,8 @@ function ListingFormInner({
     // afterward and call router.replace back to the edit URL, undoing the
     // navigation the user just triggered. Gating `enabled` off here cancels
     // any not-yet-fired timer immediately (see useAutosaveListing's cleanup).
-    enabled: isDraft && !isPublishing && !deleteListing.isPending,
+    enabled:
+      isDraft && !!selectedCityId && !isPublishing && !deleteListing.isPending,
     onSave: persist,
     ...(autosaveDebounceMs !== undefined && { debounceMs: autosaveDebounceMs }),
   });
@@ -265,47 +318,65 @@ function ListingFormInner({
   // react-hook-form-idiomatic way to get the current values, and it also
   // re-runs the (lenient) draft schema first so a stray invalid value can't
   // slip through to persist().
-  const handleSaveChanges = form.handleSubmit(async () => {
-    setIsSavingExplicit(true);
-    try {
-      await persist(form.getValues());
-      // form.getValues() read fresh here, not the `values` this callback
-      // received: react-hook-form's isDirty compares against whatever
-      // baseline reset()'s first argument supplies, so this both clears the
-      // dirty flags AND folds in anything the developer typed during the
-      // save's network await into the new "clean" baseline, rather than
-      // reverting to a pre-await snapshot.
-      form.reset(form.getValues(), { keepDirty: false });
-      toast.success("Changes saved.");
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsSavingExplicit(false);
-    }
-  });
+  async function handleSaveChanges() {
+    return form.handleSubmit(async () => {
+      setIsSavingExplicit(true);
+      try {
+        const snapshot = form.getValues();
+        await persist(snapshot);
+        // Clear dirty state only if the submitted snapshot still matches.
+        // Changes typed during the save remain dirty and must be saved again.
+        if (JSON.stringify(form.getValues()) === JSON.stringify(snapshot))
+          form.reset(snapshot, { keepDirty: false });
+        toast.success("Changes saved.");
+      } catch (error) {
+        toast.error(getErrorMessage(error));
+      } finally {
+        setIsSavingExplicit(false);
+      }
+    })();
+  }
 
-  const handlePublish = form.handleSubmit(async (values) => {
-    const validation = validateForPublish(values);
-    if (!validation.success) {
-      toast.error(validation.errors[0].message);
-      return;
-    }
+  async function handlePublish() {
+    return form.handleSubmit(async (values) => {
+      const validation = validateForPublish(values);
+      if (!validation.success) {
+        toast.error(validation.errors[0].message);
+        return;
+      }
 
-    setIsPublishing(true);
-    try {
-      const savedIdentity = await persist(values);
-      form.reset(form.getValues(), { keepDirty: false });
-      await updateStatus.mutateAsync({
-        id: savedIdentity.id,
-        status: "ACTIVE",
-      });
-      router.push(ROUTES.LISTINGS);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsPublishing(false);
-    }
-  });
+      const submitted = form.getValues();
+      const changed = (a: ListingFormValues, b: ListingFormValues) =>
+        Object.keys({ ...a, ...b }).some(
+          (key) =>
+            JSON.stringify(a[key as keyof ListingFormValues]) !==
+            JSON.stringify(b[key as keyof ListingFormValues]),
+        );
+      setIsPublishing(true);
+      try {
+        const savedIdentity = await persist(values);
+        if (changed(form.getValues(), submitted))
+          throw new Error(
+            "New changes arrived while saving. Save and publish again.",
+          );
+        form.reset(values, { keepDirty: false });
+        const published = await updateStatus.mutateAsync({
+          id: savedIdentity.id,
+          status: "ACTIVE",
+        });
+        version.current = published.rowVersion;
+        if (changed(form.getValues(), values)) {
+          toast.info("Published. Save the additional changes before leaving.");
+          return;
+        }
+        router.push(ROUTES.LISTINGS);
+      } catch (error) {
+        toast.error(getErrorMessage(error));
+      } finally {
+        setIsPublishing(false);
+      }
+    })();
+  }
 
   async function handleStatusTransition(transition: StatusTransition) {
     if (currentStatus === "DRAFT" && transition.target === "ACTIVE") {
@@ -313,10 +384,11 @@ function ListingFormInner({
       return;
     }
     if (!identity) return;
-    await updateStatus.mutateAsync({
+    const updated = await updateStatus.mutateAsync({
       id: identity.id,
       status: transition.target,
     });
+    version.current = updated.rowVersion;
   }
 
   async function handleConfirmDelete() {
@@ -335,16 +407,59 @@ function ListingFormInner({
         autosaveStatus={autosaveStatus}
       />
 
+      {!listing && (
+        <label>
+          {language === "fr" ? "Langue du contenu" : "Content language"}{" "}
+          <select
+            aria-label="Content language"
+            value={contentLanguage}
+            disabled={!!identity}
+            onChange={(e) => setContentLanguage(e.target.value)}
+          >
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      )}
+      {listing && (
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const identity = await persist(form.getValues());
+              await api.post(
+                `/developers/me/listings/${identity.id}/translations/${contentLanguage}/publish`,
+              );
+              toast.success(
+                language === "fr"
+                  ? "Traduction publiée."
+                  : "Translation published.",
+              );
+            } catch (error) {
+              toast.error(getErrorMessage(error));
+            }
+          }}
+        >
+          {language === "fr"
+            ? "Publier cette traduction"
+            : "Publish this translation"}
+        </button>
+      )}
       <form
         onSubmit={(event) => event.preventDefault()}
         className="flex flex-1 flex-col gap-6 pb-4 [&_[data-slot=card]]:overflow-visible"
       >
-        <ListingBasicsSection />
-        <ListingLocationSection />
-        <ListingPricingSection />
-        <ListingMeasurementsSection />
-        <ListingAmenitiesSection />
-        <MediaUploader />
+        <fieldset
+          disabled={isPublishing || isSavingExplicit}
+          className="contents"
+        >
+          <ListingBasicsSection />
+          <ListingLocationSection />
+          <ListingPricingSection />
+          <ListingMeasurementsSection />
+          <ListingAmenitiesSection />
+          <MediaUploader />
+        </fieldset>
       </form>
 
       <ListingPublishBarConnected

@@ -30,7 +30,13 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
 }
 
 /** App-wide client-side providers. Kept out of layout.tsx so the root layout stays a Server Component. */
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialLanguage,
+}: {
+  children: React.ReactNode;
+  initialLanguage?: "en" | "fr";
+}) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -45,7 +51,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useAuthBootstrap();
 
   return (
-    <LanguageProvider>
+    <LanguageProvider initialLanguage={initialLanguage}>
       <QueryClientProvider client={queryClient}>
         <AppMotionConfig>{children}</AppMotionConfig>
         <Toaster />

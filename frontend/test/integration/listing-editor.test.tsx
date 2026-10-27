@@ -1,3 +1,4 @@
+import i18n, { setStoredLanguage } from "@/lib/i18n";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -48,6 +49,11 @@ function makePhotoFile() {
 
 function makeDraft(overrides: Partial<Property> = {}): Property {
   return {
+    rowVersion: 1,
+    sourceLanguage: "en",
+    requestedLanguage: "en",
+    currencyCode: "XOF",
+    cityId: "c1",
     id: "l1",
     slug: "my-listing",
     title: "My Listing",
@@ -70,14 +76,16 @@ const completeDraft = makeDraft({
   price: 100000,
   listingType: "SALE",
   category: "apartment",
-  city: "Accra",
-  region: "Greater Accra",
+  city: "Ouagadougou",
+  region: "",
   address: "1 Main Street",
   media: [{ url: "https://example.com/a.jpg", publicId: "a", order: 0 }],
 });
 
 describe("Property Editor (ListingForm, all flows composed)", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    setStoredLanguage("en");
+    await i18n.changeLanguage("en");
     vi.clearAllMocks();
   });
 
@@ -92,6 +100,7 @@ describe("Property Editor (ListingForm, all flows composed)", () => {
       <ListingForm mode="create" autosaveDebounceMs={DEBOUNCE_MS} />,
     );
 
+    await user.selectOptions(screen.getByLabelText("City"), "c1");
     await user.type(screen.getByLabelText("Title"), "New Title");
 
     await waitFor(() => expect(svc.createListing).toHaveBeenCalled(), {
@@ -131,6 +140,8 @@ describe("Property Editor (ListingForm, all flows composed)", () => {
       () =>
         expect(svc.updateListing).toHaveBeenCalledWith("l1", {
           price: 5000,
+          contentLanguage: "en",
+          rowVersion: 1,
         }),
       { timeout: 2000 },
     );
@@ -245,7 +256,10 @@ describe("Property Editor (ListingForm, all flows composed)", () => {
     // No Region step: selecting the city derives it (see
     // ListingLocationSection). Publishing succeeding without one is the point —
     // region is no longer a publish gate.
-    await user.selectOptions(screen.getByLabelText("City"), completeDraft.city);
+    await user.selectOptions(
+      screen.getByLabelText("City"),
+      completeDraft.cityId!,
+    );
     await user.type(
       screen.getByLabelText("Address"),
       completeDraft.address as string,
@@ -351,3 +365,12 @@ describe("Property Editor (ListingForm, all flows composed)", () => {
     expect(push).toHaveBeenCalledWith("/listings");
   });
 });
+
+vi.mock("@/hooks/useLocations", () => ({
+  useLocations: () => ({
+    data: [
+      { id: "c1", name: "Ouagadougou", districts: [] },
+      { id: "c2", name: "Bobo-Dioulasso", districts: [] },
+    ],
+  }),
+}));

@@ -8,3 +8,7 @@ uploads/*
 .env
 .env.local
 .env.*.local
+
+# Generated build and test output.
+dist/
+coverage/

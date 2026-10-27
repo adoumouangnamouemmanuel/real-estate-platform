@@ -10,7 +10,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  output = "../../backend/node_modules/.prisma/client"
+  output   = "../../backend/node_modules/.prisma/client"
 }
 
 datasource db {
@@ -34,6 +34,7 @@ enum PropertyCategory {
   HOUSE
   LAND
   COMMERCIAL
+  OFFICE
 }
 
 enum ListingType {
@@ -61,6 +62,8 @@ enum TransactionType {
 }
 
 enum NotificationType {
+  PROPERTY_LIKED
+  PROPERTY_VIEWED_MILESTONE
   APPOINTMENT_REQUESTED
   APPOINTMENT_CONFIRMED
   APPOINTMENT_CANCELLED
@@ -105,14 +108,18 @@ enum NotificationStatus {
 // ─────────────────────────────────────────────
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  role         Role
-  createdAt    DateTime @default(now()) @map("created_at")
-  fullName     String?  @map("full_name")
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  passwordHash          String    @map("password_hash")
+  role                  Role
+  createdAt             DateTime  @default(now()) @map("created_at")
+  fullName              String?   @map("full_name")
+  authUserId            String?   @unique @map("auth_user_id") @db.Uuid // auth.users FK is managed by SQL, outside Prisma's public schema.
+  preferredLanguageCode String?   @map("preferred_language_code")
+  preferredLanguage     Language? @relation(fields: [preferredLanguageCode], references: [code])
 
-  clientAppointments Appointment[] @relation("AppointmentClient")
+  sellerApprovals    PropertyDeveloper[]       @relation("SellerApprover")
+  clientAppointments Appointment[]             @relation("AppointmentClient")
   developerProfile   PropertyDeveloper?
   favorites          PropertyFavorite[]
   ratingsGiven       PropertyDeveloperRating[]
@@ -128,28 +135,41 @@ model User {
 // ─────────────────────────────────────────────
 
 model PropertyDeveloper {
-  id                    String    @id @default(cuid())
-  userId                String    @unique @map("user_id")
-  businessName          String?   @map("business_name")
-  whatsappNumber        String    @map("whatsapp_number")
-  phoneNumber           String    @map("phone_number")
-  profileImageUrl       String    @map("profile_image_url")
-  profileImagePublicId  String    @map("profile_image_public_id")
-  coverImageUrl         String?   @map("cover_image_url")
-  coverImagePublicId    String?   @map("cover_image_public_id")
-  bio                   String?
-  yearsOfExperience     Int?      @map("years_of_experience")
-  specialization        String?
-  languagesSpoken       String?   @map("languages_spoken")
-  address               String?
-  city                  String // free-text city of operation, distinct from the normalized City lookup table used by Property
-  isVerified            Boolean   @default(false) @map("is_verified")
-  verifiedSince         DateTime? @map("verified_since")
-  averageRating         Decimal   @default(0) @db.Decimal(3, 2) @map("average_rating")
-  totalRatings          Int       @default(0) @map("total_ratings")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-  deletedAt             DateTime? @map("deleted_at") // soft delete
+  id                   String    @id @default(cuid())
+  userId               String    @unique @map("user_id")
+  businessName         String?   @map("business_name")
+  whatsappNumber       String    @map("whatsapp_number")
+  phoneNumber          String    @map("phone_number")
+  profileImageUrl      String    @map("profile_image_url")
+  profileImagePublicId String    @map("profile_image_public_id")
+  coverImageUrl        String?   @map("cover_image_url")
+  coverImagePublicId   String?   @map("cover_image_public_id")
+  bio                  String?
+  yearsOfExperience    Int?      @map("years_of_experience")
+  specialization       String?
+  languagesSpoken      String?   @map("languages_spoken")
+  address              String?
+  city                 String // free-text city of operation, distinct from the normalized City lookup table used by Property
+  isVerified           Boolean   @default(false) @map("is_verified")
+  verifiedSince        DateTime? @map("verified_since")
+  averageRating        Decimal   @default(0) @map("average_rating") @db.Decimal(3, 2)
+  totalRatings         Int       @default(0) @map("total_ratings")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at") // soft delete
+
+  slug               String                         @unique
+  sellerStatus       String                         @default("PENDING") @map("seller_status")
+  sourceLanguageCode String?                        @map("source_language_code")
+  sourceLanguage     Language?                      @relation("DeveloperSource", fields: [sourceLanguageCode], references: [code])
+  activatedAt        DateTime?                      @map("activated_at") @db.Timestamptz(3)
+  activatedByUserId  String?                        @map("activated_by_user_id")
+  activatedBy        User?                          @relation("SellerApprover", fields: [activatedByUserId], references: [id], onDelete: Restrict)
+  publicEmail        String?                        @map("public_email")
+  cityId             String?                        @map("city_id")
+  cityRef            City?                          @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  translations       PropertyDeveloperTranslation[]
+  targetReports      Report[]                       @relation("ReportedDeveloper")
 
   user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   properties    Property[]
@@ -181,28 +201,38 @@ model Property {
   districtId          String?          @map("district_id")
   bedrooms            Int?
   bathrooms           Int?
-  carSpaces            Int?            @map("car_spaces")
-  landSizeSqM         Decimal?         @db.Decimal(10, 2) @map("land_size_sq_m")
-  buildingSizeSqM     Decimal?         @db.Decimal(10, 2) @map("building_size_sq_m")
+  carSpaces           Int?             @map("car_spaces")
+  landSizeSqM         Decimal?         @map("land_size_sq_m") @db.Decimal(10, 2)
+  buildingSizeSqM     Decimal?         @map("building_size_sq_m") @db.Decimal(10, 2)
   yearBuilt           Int?             @map("year_built")
   status              PropertyStatus   @default(DRAFT)
   viewCount           Int              @default(0) @map("view_count")
   whatsappClickCount  Int              @default(0) @map("whatsapp_click_count")
-  favoriteCount       Int              @default(0) @map("favorite_count") // denormalized counter, kept in sync with PropertyFavorite by the app layer
+  favoriteCount       Int              @default(0) @map("favorite_count") // denormalized counter, kept in sync with PropertyFavorite by a narrow SQL trigger
   publishedAt         DateTime?        @map("published_at")
   createdAt           DateTime         @default(now()) @map("created_at")
   updatedAt           DateTime         @updatedAt @map("updated_at")
   deletedAt           DateTime?        @map("deleted_at") // soft delete
 
-  developer  PropertyDeveloper  @relation(fields: [propertyDeveloperId], references: [id])
-  cityRef    City               @relation(fields: [cityId], references: [id])
-  district   District?          @relation(fields: [districtId], references: [id])
-  features   PropertyFeature[]
-  media      PropertyMedia[]
-  favorites  PropertyFavorite[]
-  analytics  PropertyAnalytics[]
+  sourceLanguageCode String?               @map("source_language_code")
+  sourceLanguage     Language?             @relation("PropertySource", fields: [sourceLanguageCode], references: [code])
+  currencyCode       String?               @map("currency_code")
+  rentPeriod         String?               @map("rent_period")
+  rowVersion         Int                   @default(1) @map("row_version")
+  translations       PropertyTranslation[]
+  targetReports      Report[]              @relation("ReportedProperty")
+
+  developer    PropertyDeveloper   @relation(fields: [propertyDeveloperId], references: [id])
+  cityRef      City                @relation(fields: [cityId], references: [id])
+  district     District?           @relation(fields: [districtId, cityId], references: [id, cityId], onDelete: Restrict, onUpdate: Cascade, map: "property_district_city_fkey")
+  features     PropertyFeature[]
+  media        PropertyMedia[]
+  favorites    PropertyFavorite[]
+  analytics    PropertyAnalytics[]
   appointments Appointment[]
 
+  @@unique([id, propertyDeveloperId], map: "uq_property_id_developer")
+  @@index([propertyDeveloperId, updatedAt(sort: Desc), id], map: "idx_property_owner_updated")
   @@index([status], map: "idx_property_status")
   @@index([cityId], map: "idx_property_city")
   @@index([districtId], map: "idx_property_district")
@@ -224,8 +254,10 @@ model City {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
-  districts  District[]
-  properties Property[]
+  countryCode String              @default("BF") @map("country_code")
+  developers  PropertyDeveloper[]
+  districts   District[]
+  properties  Property[]
 
   @@map("city")
 }
@@ -244,6 +276,7 @@ model District {
   city       City       @relation(fields: [cityId], references: [id], onDelete: Cascade)
   properties Property[]
 
+  @@unique([id, cityId], map: "uq_district_id_city")
   @@unique([cityId, name], map: "idx_district_city_name") // "Dafra" can exist in both Ouagadougou and Bobo-Dioulasso
   @@index([cityId], map: "idx_district_city")
   @@map("district")
@@ -260,7 +293,11 @@ model Feature {
   iconName    String?  @map("icon_name")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  properties PropertyFeature[]
+  code               String               @unique
+  sourceLanguageCode String?              @map("source_language_code")
+  sourceLanguage     Language?            @relation("FeatureSource", fields: [sourceLanguageCode], references: [code])
+  translations       FeatureTranslation[]
+  properties         PropertyFeature[]
 
   @@map("feature")
 }
@@ -301,6 +338,10 @@ model PropertyMedia {
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
+  storageProvider String  @default("legacy") @map("storage_provider")
+  storageKey      String? @map("storage_key")
+
+  @@unique([propertyId, order], map: "uq_media_property_order")
   @@index([propertyId], map: "idx_media_property")
   @@index([propertyId, isPrimary], map: "idx_media_primary")
   @@map("property_media")
@@ -361,6 +402,8 @@ model Notification {
   readAt              DateTime?          @map("read_at")
   createdAt           DateTime           @default(now()) @map("created_at")
   status              NotificationStatus @default(UNREAD)
+  templateKey         String?            @map("template_key")
+  templateParams      Json?              @map("template_params")
   link                String?
 
   developer PropertyDeveloper @relation(fields: [propertyDeveloperId], references: [id], onDelete: Cascade)
@@ -397,19 +440,24 @@ model PropertyAnalytics {
 // ─────────────────────────────────────────────
 
 model Report {
-  id              String           @id @default(cuid())
-  reporterUserId  String?          @map("reporter_user_id") // nullable - anonymous reports allowed
-  targetType      ReportTargetType @map("target_type")
-  targetId        String           @map("target_id")
-  reason          String
-  description     String?
-  status          ReportStatus     @default(OPEN)
-  resolutionNote  String?          @map("resolution_note")
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  id             String           @id @default(cuid())
+  reporterUserId String?          @map("reporter_user_id") // nullable - anonymous reports allowed
+  targetType     ReportTargetType @map("target_type")
+  targetId       String           @map("target_id")
+  reason         String
+  description    String?
+  status         ReportStatus     @default(OPEN)
+  resolutionNote String?          @map("resolution_note")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
 
-  reporter User? @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+  propertyId          String?            @map("property_id")
+  propertyDeveloperId String?            @map("property_developer_id")
+  property            Property?          @relation("ReportedProperty", fields: [propertyId], references: [id], onDelete: Restrict)
+  developer           PropertyDeveloper? @relation("ReportedDeveloper", fields: [propertyDeveloperId], references: [id], onDelete: Restrict)
+  reporter            User?              @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
 
+  @@index([reporterUserId], map: "idx_report_reporter")
   @@index([status], map: "idx_report_status")
   @@index([targetType, targetId], map: "idx_report_target")
   @@map("report")
@@ -431,9 +479,9 @@ model Appointment {
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
 
-  client   User              @relation("AppointmentClient", fields: [clientUserId], references: [id])
-  developer PropertyDeveloper @relation(fields: [propertyDeveloperId], references: [id], onDelete: Cascade)
-  property  Property          @relation(fields: [propertyId], references: [id])
+  client    User                 @relation("AppointmentClient", fields: [clientUserId], references: [id])
+  developer PropertyDeveloper    @relation(fields: [propertyDeveloperId], references: [id], onDelete: Cascade)
+  property  Property             @relation(fields: [propertyId, propertyDeveloperId], references: [id, propertyDeveloperId], onDelete: Restrict, onUpdate: Cascade, map: "appointment_property_developer_fkey")
   history   AppointmentHistory[]
 
   @@index([propertyDeveloperId], map: "idx_appointment_developer")
@@ -445,11 +493,11 @@ model Appointment {
 }
 
 model AppointmentHistory {
-  id            String      @id @default(cuid())
-  appointmentId String      @map("appointment_id")
+  id            String   @id @default(cuid())
+  appointmentId String   @map("appointment_id")
   type          String
   message       String
-  createdAt     DateTime    @default(now()) @map("created_at")
+  createdAt     DateTime @default(now()) @map("created_at")
 
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
@@ -462,18 +510,84 @@ model AppointmentHistory {
 // ─────────────────────────────────────────────
 
 model RefreshToken {
-  id         String    @id @default(cuid())
-  userId     String    @map("user_id")
-  tokenHash  String    @unique @map("token_hash")
-  expiresAt  DateTime  @map("expires_at")
-  revokedAt  DateTime? @map("revoked_at")
-  userAgent  String?   @map("user_agent")
-  ipAddress  String?   @map("ip_address")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  userAgent String?   @map("user_agent")
+  ipAddress String?   @map("ip_address")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "idx_token_user")
   @@index([tokenHash], map: "idx_token_hash")
   @@map("refresh_token")
+}
+
+// CHECK constraints, partial indexes, auth FK, security triggers and RLS live in migrations.
+model Language {
+  code                  String                         @id
+  isActive              Boolean                        @default(true) @map("is_active")
+  preferredUsers        User[]
+  propertySources       Property[]                     @relation("PropertySource")
+  developerSources      PropertyDeveloper[]            @relation("DeveloperSource")
+  featureSources        Feature[]                      @relation("FeatureSource")
+  propertyTranslations  PropertyTranslation[]
+  developerTranslations PropertyDeveloperTranslation[]
+  featureTranslations   FeatureTranslation[]
+  defaults              AppSettings[]                  @relation("DefaultLanguage")
+  fallbacks             AppSettings[]                  @relation("FallbackLanguage")
+
+  @@map("language")
+}
+
+model AppSettings {
+  id                   Int      @id @default(1)
+  defaultLanguageCode  String   @default("fr") @map("default_language_code")
+  fallbackLanguageCode String   @default("fr") @map("fallback_language_code")
+  defaultLanguage      Language @relation("DefaultLanguage", fields: [defaultLanguageCode], references: [code])
+  fallbackLanguage     Language @relation("FallbackLanguage", fields: [fallbackLanguageCode], references: [code])
+
+  @@map("app_settings")
+}
+
+model PropertyTranslation {
+  propertyId   String   @map("property_id")
+  languageCode String   @map("language_code")
+  title        String
+  description  String
+  isPublished  Boolean  @default(false) @map("is_published")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  language     Language @relation(fields: [languageCode], references: [code], onDelete: Restrict)
+
+  @@id([propertyId, languageCode])
+  @@map("property_translation")
+}
+
+model FeatureTranslation {
+  featureId    String   @map("feature_id")
+  languageCode String   @map("language_code")
+  name         String
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  feature      Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  language     Language @relation(fields: [languageCode], references: [code], onDelete: Restrict)
+
+  @@id([featureId, languageCode])
+  @@map("feature_translation")
+}
+
+model PropertyDeveloperTranslation {
+  developerId    String            @map("developer_id")
+  languageCode   String            @map("language_code")
+  bio            String?
+  specialization String?
+  updatedAt      DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  developer      PropertyDeveloper @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  language       Language          @relation(fields: [languageCode], references: [code], onDelete: Restrict)
+
+  @@id([developerId, languageCode])
+  @@map("property_developer_translation")
 }

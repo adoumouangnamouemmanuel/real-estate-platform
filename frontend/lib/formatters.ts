@@ -1,10 +1,17 @@
+import { getStoredLanguage } from "@/lib/locale";
 import { DEFAULT_CURRENCY } from "@/constants/config";
 
 export function formatPrice(
   amount: number,
-  currency: string = DEFAULT_CURRENCY,
+  currency: string | null = DEFAULT_CURRENCY,
+  language: string = getStoredLanguage(),
 ) {
-  return new Intl.NumberFormat("en-US", {
+  if (currency === null)
+    return (
+      new Intl.NumberFormat(language).format(amount) +
+      (language === "fr" ? " (devise à confirmer)" : " (currency unconfirmed)")
+    );
+  return new Intl.NumberFormat(language === "fr" ? "fr-BF" : "en-US", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
@@ -13,48 +20,63 @@ export function formatPrice(
 
 /** Large counts shortened for KPI tiles: 1240 → "1.2K", 2_000_000 → "2M". */
 export function formatCompactNumber(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
+  return new Intl.NumberFormat(
+    getStoredLanguage() === "fr" ? "fr-BF" : "en-US",
+    {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    },
+  ).format(value);
 }
 
 /** "Jul 23, 2026" — used for last-updated columns and dense date cells. */
 export function formatDate(input: string | number | Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(input));
+  return new Intl.DateTimeFormat(
+    getStoredLanguage() === "fr" ? "fr-BF" : "en-US",
+    {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    },
+  ).format(new Date(input));
 }
 
 /** "Wednesday, July 23, 2026" — the welcome header's full, spelled-out date. */
 export function formatFullDate(input: string | number | Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(input));
+  return new Intl.DateTimeFormat(
+    getStoredLanguage() === "fr" ? "fr-BF" : "en-US",
+    {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    },
+  ).format(new Date(input));
 }
 
 /** "Jul 23, 2026, 2:30 PM" — appointment slots and timestamps that need the time. */
 export function formatDateTime(input: string | number | Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(input));
+  return new Intl.DateTimeFormat(
+    getStoredLanguage() === "fr" ? "fr-BF" : "en-US",
+    {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    },
+  ).format(new Date(input));
 }
 
 /** "2:30 PM" — for rows already grouped under a date header, where repeating the date would be redundant. */
 export function formatTime(input: string | number | Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(input));
+  return new Intl.DateTimeFormat(
+    getStoredLanguage() === "fr" ? "fr-BF" : "en-US",
+    {
+      hour: "numeric",
+      minute: "2-digit",
+    },
+  ).format(new Date(input));
 }
 
 const RELATIVE_UNITS: { unit: Intl.RelativeTimeFormatUnit; ms: number }[] = [
@@ -75,7 +97,10 @@ export function formatRelativeTime(
   now: number = Date.now(),
 ) {
   const deltaMs = new Date(input).getTime() - now;
-  const formatter = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
+  const formatter = new Intl.RelativeTimeFormat(
+    getStoredLanguage() === "fr" ? "fr-BF" : "en-US",
+    { numeric: "auto" },
+  );
 
   for (const { unit, ms } of RELATIVE_UNITS) {
     if (Math.abs(deltaMs) >= ms) {
@@ -84,4 +109,15 @@ export function formatRelativeTime(
   }
 
   return formatter.format(Math.round(deltaMs / 1000), "second");
+}
+
+export function formatRentPeriod(
+  period?: string | null,
+  language: string = getStoredLanguage(),
+) {
+  const labels: Record<string, string> =
+    language === "fr"
+      ? { DAY: "/jour", WEEK: "/semaine", MONTH: "/mois", YEAR: "/an" }
+      : { DAY: "/day", WEEK: "/week", MONTH: "/month", YEAR: "/year" };
+  return period ? (labels[period] ?? "") : "";
 }

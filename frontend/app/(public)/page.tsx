@@ -30,7 +30,7 @@ import { ROUTES } from "@/constants/routes";
 import { getContactTrustPoint } from "@/lib/contactTrustPoint";
 import { getCategoryImageUrl, HERO_IMAGES } from "@/lib/demoImagery";
 import { cn } from "@/lib/utils";
-import { propertyService } from "@/services";
+import { serverPropertyService as propertyService } from "@/lib/server-api";
 import type { Property } from "@/types";
 
 const CATEGORY_ICONS: Record<

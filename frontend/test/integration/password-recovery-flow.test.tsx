@@ -106,14 +106,21 @@ describe("Password recovery flow (page-level composition)", () => {
     expect(push).toHaveBeenCalledWith("/login?reset=success");
   });
 
-  it("shows the expired-link state instead of the form for an expired token", async () => {
-    validateResetToken.mockResolvedValue({ valid: false, expired: true });
-
-    render(<ResetPasswordPage token="expired-token-demo" />);
-
+  it("reports an expired link when the one-time reset is submitted", async () => {
+    resetPassword.mockRejectedValue(
+      new Error("This reset link is invalid or expired"),
+    );
+    const user = userEvent.setup();
+    render(<ResetPasswordPage token="expired-token" />);
+    await user.type(screen.getByLabelText("New password"), "BrandNewPass1");
+    await user.type(
+      screen.getByLabelText("Confirm new password"),
+      "BrandNewPass1",
+    );
+    await user.click(screen.getByRole("button", { name: "Reset password" }));
     expect(
-      await screen.findByText("This link has expired"),
+      await screen.findByText("This reset link is invalid or expired"),
     ).toBeInTheDocument();
-    expect(resetPassword).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
   });
 });

@@ -10,7 +10,7 @@ This repository is organized as a monorepo with three primary workspaces:
 
 ## Current Status
 
-The repository is in its foundation phase. The `.github` automation, templates, and governance files are in place; application workspaces and package manifests still need to be initialized.
+The frontend, Express API and database workspaces are implemented. The approved Lumavok database and bilingual integration candidate is documented in [the database review](docs/database-review/README.md), including actual validation results and mandatory staging gates. It has not been deployed to the shared Supabase project. Existing Burkina Faso seeds are unchanged.
 
 ## Repository Layout
 

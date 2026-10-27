@@ -1,5 +1,6 @@
 "use client";
 
+import { useContentLocale } from "@/hooks/useContentLocale";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -18,6 +19,8 @@ import { authService } from "@/services";
 
 export function RegisterForm() {
   const router = useRouter();
+  const { language } = useContentLocale();
+  const [confirmationPending, setConfirmationPending] = useState(false);
   const { setAuth } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -34,6 +37,10 @@ export function RegisterForm() {
 
     try {
       const session = await authService.register(values);
+      if ("requiresEmailConfirmation" in session) {
+        setConfirmationPending(true);
+        return;
+      }
       // Auto-login after registration — low-friction onboarding matches the
       // product's public-access-first philosophy (docs/ARCHITECTURE.md §1).
       setAuth(session.user, session.accessToken);
@@ -42,6 +49,15 @@ export function RegisterForm() {
       setFormError(getErrorMessage(error));
     }
   }
+
+  if (confirmationPending)
+    return (
+      <p role="status">
+        {language === "fr"
+          ? "Vérifiez votre e-mail pour confirmer votre compte."
+          : "Check your email to confirm your account."}
+      </p>
+    );
 
   // `method="post"` keeps a pre-hydration native submit out of the URL — see
   // the full explanation in LoginForm.

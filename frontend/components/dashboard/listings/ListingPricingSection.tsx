@@ -1,5 +1,6 @@
 "use client";
 
+import { useContentLocale } from "@/hooks/useContentLocale";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
@@ -16,7 +17,9 @@ export function ListingPricingSection() {
   } = useFormContext<ListingFormValues>();
   const listingType = useWatch({ control, name: "listingType" });
 
-  const label = listingType === "RENT" ? "Monthly rent" : "Price";
+  const { language } = useContentLocale();
+  const fr = language === "fr";
+  const label = fr ? "Prix" : "Price";
 
   return (
     <DashboardSection title="Pricing" description="What it costs.">
@@ -39,6 +42,28 @@ export function ListingPricingSection() {
           })}
         />
       </FormField>
+      <FormField label={fr ? "Devise" : "Currency"} htmlFor="listing-currency">
+        <select id="listing-currency" {...register("currencyCode")}>
+          <option value="">{fr ? "À confirmer" : "Confirm currency"}</option>
+          <option value="XOF">XOF / CFA</option>
+        </select>
+      </FormField>
+      {listingType === "RENT" && (
+        <FormField
+          label={fr ? "Période du loyer" : "Rental period"}
+          htmlFor="listing-rent-period"
+        >
+          <select id="listing-rent-period" {...register("rentPeriod")}>
+            <option value="">
+              {fr ? "Choisir une période" : "Choose a period"}
+            </option>
+            <option value="DAY">{fr ? "Jour" : "Day"}</option>
+            <option value="WEEK">{fr ? "Semaine" : "Week"}</option>
+            <option value="MONTH">{fr ? "Mois" : "Month"}</option>
+            <option value="YEAR">{fr ? "Année" : "Year"}</option>
+          </select>
+        </FormField>
+      )}
     </DashboardSection>
   );
 }

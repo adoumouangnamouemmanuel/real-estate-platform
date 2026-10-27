@@ -1,4 +1,5 @@
 "use client";
+import { useContentLocale as useLanguage } from "@/hooks/useContentLocale";
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -12,50 +13,57 @@ import { dashboardService } from "@/services";
  */
 
 export function useDashboardSummary() {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: ["dashboard", "summary"],
+    queryKey: ["dashboard", "summary", language],
     queryFn: () => dashboardService.getSummary(),
   });
 }
 
 export function useDashboardMetrics() {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: ["dashboard", "metrics"],
+    queryKey: ["dashboard", "metrics", language],
     queryFn: () => dashboardService.getMetrics(),
   });
 }
 
 export function useRecentListings(limit = 5) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: ["dashboard", "recent-listings", limit],
+    queryKey: ["dashboard", "recent-listings", limit, language],
     queryFn: () => dashboardService.getRecentListings(limit),
   });
 }
 
 export function useDashboardActionNeeded() {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: ["dashboard", "action-needed"],
+    queryKey: ["dashboard", "action-needed", language],
     queryFn: () => dashboardService.getActionNeeded(),
   });
 }
 
 export function useAppointmentOverview() {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: ["dashboard", "appointments"],
+    queryKey: ["dashboard", "appointments", language],
     queryFn: () => dashboardService.getAppointmentOverview(),
   });
 }
 
 export function useDashboardNotifications(limit = 5) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: ["dashboard", "notifications", limit],
+    queryKey: ["dashboard", "notifications", limit, language],
     queryFn: () => dashboardService.getNotifications(limit),
   });
 }
 
 export function useDashboardActivity(limit = 6) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: ["dashboard", "activity", limit],
+    queryKey: ["dashboard", "activity", limit, language],
     queryFn: () => dashboardService.getActivity(limit),
   });
 }

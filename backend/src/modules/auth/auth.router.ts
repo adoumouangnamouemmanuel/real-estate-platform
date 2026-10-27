@@ -3,7 +3,12 @@ import { z } from "zod";
 import type { RequestHandler } from "express";
 import * as authController from "./auth.controller.js";
 import { authenticate } from "../../middleware/auth.js";
-import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema } from "./auth.schema.js";
+import {
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "./auth.schema.js";
 
 const router = Router();
 
@@ -33,8 +38,15 @@ router.post("/login", validate(loginSchema), authController.login);
 router.post("/register", validate(registerSchema), authController.register);
 router.post("/refresh", authController.refresh);
 router.post("/logout", authenticateHandler, authController.logout);
-router.post("/forgot-password", validate(forgotPasswordSchema), authController.forgotPassword);
-router.post("/reset-password", validate(resetPasswordSchema), authController.resetPassword);
-router.get("/reset-password/:token", authController.validateResetToken);
+router.post(
+  "/forgot-password",
+  validate(forgotPasswordSchema),
+  authController.forgotPassword,
+);
+router.post(
+  "/reset-password",
+  validate(resetPasswordSchema),
+  authController.resetPassword,
+);
 
 export default router;

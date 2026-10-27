@@ -108,3 +108,12 @@ describe("FilterPanel", () => {
     expect(screen.getByLabelText("Min price")).toHaveValue(50000);
   });
 });
+
+vi.mock("@/hooks/useLocations", () => ({
+  useLocations: () => ({
+    data: [
+      { id: "c1", name: "Ouagadougou", districts: [] },
+      { id: "c2", name: "Bobo-Dioulasso", districts: [] },
+    ],
+  }),
+}));

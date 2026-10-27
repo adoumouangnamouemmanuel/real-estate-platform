@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-27",
+  "scope": "isolated local review; no live Supabase writes",
+  "database": {
+    "tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "backend": {
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "authProvider": "mocked; HTTP/Prisma/PostgreSQL exercised"
+  },
+  "frontendBaseline": {
+    "commit": "524deb7e7dc2ac3d20ac3f10dde6f92a312c792e",
+    "tests": 659,
+    "passed": 568,
+    "failed": 91,
+    "skipped": 0
+  },
+  "frontendReview": {
+    "tests": 659,
+    "passed": 568,
+    "failed": 91,
+    "skipped": 0,
+    "newFailingTestNames": [],
+    "removedFailingTestNames": []
+  },
+  "frontendFocused": {
+    "tests": 25,
+    "passed": 25,
+    "failed": 0,
+    "files": [
+      "useAutosaveListing.test.ts",
+      "bilingual-contract.test.tsx",
+      "listing-editor.test.tsx",
+      "ResetPasswordForm.test.tsx"
+    ],
+    "scope": "selected files within final full-suite run"
+  },
+  "builds": {
+    "backend": "passed",
+    "frontendProduction": "passed",
+    "frontendTypecheck": "passed"
+  },
+  "knownRuntimeDependencyVulnerabilities": {
+    "backend": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "frontend": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "database": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "notVerified": [
+    "Complete managed Supabase restore",
+    "Real non-owner login/pooler",
+    "Real provider Auth flows",
+    "Live Storage upload/signing/expiry/delete",
+    "External availability of eight legacy media URLs",
+    "Production load"
+  ],
+  "frontendChangedFileLint": {
+    "errors": 0,
+    "warnings": 0,
+    "files": 60
+  }
+}
