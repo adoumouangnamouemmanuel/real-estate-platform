@@ -44,7 +44,9 @@ describe("NavbarAuthSection", () => {
     render(<NavbarAuthSection />);
 
     expect(screen.getByText("Ama Boateng")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Déconnexion" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Déconnexion" }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Connexion" }),
     ).not.toBeInTheDocument();
@@ -81,11 +83,12 @@ describe("NavbarAuthSection", () => {
 
     render(<NavbarAuthSection />);
 
-    expect(screen.getByRole("link", { name: /tableau de bord/i })).toHaveAttribute(
-      "href",
-      "/dashboard",
-    );
-    expect(screen.getByRole("button", { name: "Déconnexion" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /tableau de bord/i }),
+    ).toHaveAttribute("href", "/dashboard");
+    expect(
+      screen.getByRole("button", { name: "Déconnexion" }),
+    ).toBeInTheDocument();
   });
 
   it("clears the session when Log out is clicked", async () => {

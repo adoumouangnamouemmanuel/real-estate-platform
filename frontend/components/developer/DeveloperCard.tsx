@@ -33,7 +33,7 @@ interface DeveloperCardProps {
  */
 export function DeveloperCard({ developer, bio }: DeveloperCardProps) {
   const { t } = useTranslation("common");
-  
+
   return (
     <Link
       href={ROUTES.DEVELOPER_DETAIL(developer.slug)}

@@ -254,7 +254,13 @@ function ListingCards({
               {property.city}, {property.region}
             </span>
             <span className="flex flex-wrap items-center gap-x-2 text-sm">
-              <span className="font-medium">{formatPrice(property.price)}</span>
+              <span className="font-medium">
+                {formatPrice(
+                  property.price,
+                  property.currencyCode,
+                  property.requestedLanguage,
+                )}
+              </span>
               <span className="text-muted-foreground">
                 {property.listingType === "SALE" ? "For Sale" : "For Rent"}
               </span>
@@ -436,7 +442,13 @@ export function ListingsTable({
             <TableCell className="text-muted-foreground">
               {property.listingType === "SALE" ? "For Sale" : "For Rent"}
             </TableCell>
-            <TableCell>{formatPrice(property.price)}</TableCell>
+            <TableCell>
+              {formatPrice(
+                property.price,
+                property.currencyCode,
+                property.requestedLanguage,
+              )}
+            </TableCell>
             <TableCell>
               <PropertyStatusBadge status={property.status} />
             </TableCell>

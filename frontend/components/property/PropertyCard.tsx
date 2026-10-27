@@ -10,7 +10,7 @@ import { FavoriteButton } from "@/components/property/FavoriteButton";
 import { MotionImage } from "@/components/motion";
 import { ROUTES } from "@/constants/routes";
 import { useFavoriteCount } from "@/hooks/useFavorites";
-import { formatPrice } from "@/lib/formatters";
+import { formatPrice, formatRentPeriod } from "@/lib/formatters";
 import { formatPropertyLocation } from "@/lib/propertyLocation";
 import { getPrimaryMeasurement } from "@/lib/propertyMeasurements";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,6 @@ import type { Property } from "@/types";
 
 // For Translation
 import { useTranslation } from "react-i18next";
-
 
 /** Above this, a property earns a "Popular" signal on its card — see favoriteService for what backs the count. */
 const POPULAR_THRESHOLD = 100;
@@ -89,7 +88,9 @@ export function PropertyCard({
 
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
             <Badge className="bg-background/90 text-foreground border-0 backdrop-blur-sm">
-              {property.listingType === "SALE" ? t("properties.sale") : t("properties.rent")}
+              {property.listingType === "SALE"
+                ? t("properties.sale")
+                : t("properties.rent")}
             </Badge>
             {isPopular && (
               <Badge className="bg-brand-gold text-brand-gold-foreground border-0">
@@ -136,11 +137,18 @@ export function PropertyCard({
           )}
 
           <p className="mt-auto pt-1 text-base font-semibold tracking-tight">
-            {formatPrice(property.price)}
+            {formatPrice(
+              property.price,
+              property.currencyCode,
+              property.requestedLanguage,
+            )}
             {property.listingType === "RENT" && (
               <span className="text-muted-foreground text-xs font-normal">
                 {" "}
-                /mo
+                {formatRentPeriod(
+                  property.rentPeriod,
+                  property.requestedLanguage,
+                )}
               </span>
             )}
           </p>

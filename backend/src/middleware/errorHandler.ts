@@ -1,8 +1,34 @@
+import { ZodError } from "zod";
 import type { Request, Response, NextFunction } from "express";
 import { ApiError } from "../utils/errors.js";
 import type { ApiError as ApiErrorType } from "../types/index.js";
 
-export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
+export function errorHandler(
+  err: Error,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+): void {
+  if (err instanceof ZodError) {
+    res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      code: "VALIDATION_ERROR",
+      errors: err.issues.map((i) => ({
+        field: i.path.join("."),
+        message: i.message,
+      })),
+    });
+    return;
+  }
+  if (err.name === "PrismaClientValidationError") {
+    res.status(400).json({
+      success: false,
+      message: "Invalid request",
+      code: "VALIDATION_ERROR",
+    });
+    return;
+  }
   if (err instanceof ApiError) {
     const body: ApiErrorType = {
       success: false,
@@ -16,7 +42,10 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
   }
 
   if (err.name === "PrismaClientKnownRequestError") {
-    const prismaErr = err as unknown as { code: string; meta?: { target?: string[] } };
+    const prismaErr = err as unknown as {
+      code: string;
+      meta?: { target?: string[] };
+    };
 
     if (prismaErr.code === "P2002") {
       const field = prismaErr.meta?.target?.[0] ?? "value";
@@ -38,7 +67,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
     }
   }
 
-  console.error("❌ Unhandled error:", err);
+  console.error("Unhandled API error", { name: err.name });
   res.status(500).json({
     success: false,
     message: "An internal server error occurred.",

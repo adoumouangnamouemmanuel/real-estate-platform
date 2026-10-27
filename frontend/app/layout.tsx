@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
@@ -33,14 +34,16 @@ export const metadata: Metadata = {
   description: "Property discovery and trust platform for African markets.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const language =
+    (await cookies()).get("lumavok-language")?.value === "en" ? "en" : "fr";
   return (
     <html
-      lang="en"
+      lang={language}
       className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full antialiased`}
       // The pre-paint script below writes theme/contrast/motion attributes here.
       // suppressHydrationWarning stops React complaining that the server markup
@@ -79,7 +82,7 @@ d.style.setProperty("--a11y-font-scale",s[p.fontSize]||"1");}catch(e){}})();`,
       </head>
       <body className="flex min-h-full flex-col">
         <ErrorBoundary>
-          <Providers>{children}</Providers>
+          <Providers initialLanguage={language}>{children}</Providers>
         </ErrorBoundary>
       </body>
     </html>

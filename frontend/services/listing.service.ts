@@ -11,10 +11,7 @@ import type {
 const DEFAULT_PAGE_SIZE = 10;
 
 export type ListingSort =
-  | "updated_desc"
-  | "price_asc"
-  | "price_desc"
-  | "title_asc";
+  "updated_desc" | "price_asc" | "price_desc" | "title_asc";
 
 export interface ListingFilters {
   q?: string;
@@ -113,7 +110,13 @@ export type ListingPatch = Partial<
     | "buildingSizeSqm"
     | "media"
   >
->;
+> & {
+  contentLanguage?: string;
+  rowVersion?: number;
+  cityId?: string;
+  districtId?: string | null;
+  featureIds?: string[];
+};
 
 export const listingService = {
   getListings: ({
@@ -129,10 +132,9 @@ export const listingService = {
     if (filters.sort) params.sort = filters.sort;
 
     return api
-      .get<ApiResponse<PaginatedResult<Property>>>(
-        "/developers/me/listings",
-        { params },
-      )
+      .get<ApiResponse<PaginatedResult<Property>>>("/developers/me/listings", {
+        params,
+      })
       .then((res) => res.data.data);
   },
 
@@ -177,9 +179,11 @@ export const listingService = {
       )
       .then((res) => res.data.data),
 
-  getListingForEdit: (id: string): Promise<Property> =>
+  getListingForEdit: (id: string, lang?: string): Promise<Property> =>
     api
-      .get<ApiResponse<Property>>(`/developers/me/listings/${id}`)
+      .get<ApiResponse<Property>>(`/developers/me/listings/${id}`, {
+        params: lang ? { lang } : undefined,
+      })
       .then((res) => res.data.data),
 
   createListing: (patch: ListingPatch = {}): Promise<Property> =>

@@ -60,14 +60,18 @@ export function useAutosaveListing({
   const { dirtyFields } = useFormState({ control: form.control });
   const [status, setStatus] = useState<AutosaveStatus>("idle");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
   const failureCountRef = useRef(0);
   const onSaveRef = useRef(onSave);
   const performSaveRef = useRef<() => Promise<void>>(async () => {});
 
   async function performSave() {
+    if (savingRef.current) return;
+    const snapshot = form.getValues();
     const dirty = pickDirtyValues(form.getValues(), dirtyFields);
     if (Object.keys(dirty).length === 0) return;
 
+    savingRef.current = true;
     setStatus("saving");
     try {
       await onSaveRef.current(dirty);
@@ -78,12 +82,19 @@ export function useAutosaveListing({
       // every save. Reading now naturally folds in anything that changed
       // concurrently (e.g. a photo upload's append() finishing mid-save),
       // rather than risking a stale pre-await snapshot overwriting it.
-      form.reset(form.getValues(), { keepDirty: false });
+      const current = form.getValues();
+      form.reset(snapshot, { keepDirty: false });
+      for (const key of Object.keys(current) as (keyof ListingFormValues)[]) {
+        if (JSON.stringify(current[key]) !== JSON.stringify(snapshot[key]))
+          form.setValue(key, current[key], { shouldDirty: true });
+      }
       setStatus("saved");
       failureCountRef.current = 0;
     } catch {
       failureCountRef.current += 1;
       setStatus("error");
+    } finally {
+      savingRef.current = false;
     }
   }
 
@@ -99,6 +110,11 @@ export function useAutosaveListing({
   useEffect(() => {
     if (!enabled) return;
 
+    if (form.formState.isDirty)
+      timeoutRef.current = setTimeout(
+        () => void performSaveRef.current(),
+        debounceMs,
+      );
     const subscription = form.watch(() => {
       if (failureCountRef.current >= MAX_CONSECUTIVE_FAILURES) return;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);

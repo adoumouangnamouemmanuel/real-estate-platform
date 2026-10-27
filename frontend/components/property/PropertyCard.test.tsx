@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/formatters";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
@@ -26,7 +27,13 @@ describe("PropertyCard", () => {
 
     expect(screen.getByText("Luxury 3BR Apartment")).toBeInTheDocument();
     expect(screen.getByText("Accra, Greater Accra")).toBeInTheDocument();
-    expect(screen.getByText("GHS 450,000")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_text, element) =>
+          element?.tagName === "P" &&
+          element.textContent === formatPrice(450000, "XOF"),
+      ),
+    ).toBeInTheDocument();
   });
 
   it("links to the property's detail page by slug", () => {

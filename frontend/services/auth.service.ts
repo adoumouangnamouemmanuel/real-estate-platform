@@ -1,5 +1,6 @@
+import { mapSession } from "@/lib/authSession";
 import { api } from "@/lib/api";
-import type { ApiResponse, User, UserRole } from "@/types";
+import type { ApiResponse, User } from "@/types";
 
 export interface AuthSession {
   user: User;
@@ -27,20 +28,6 @@ export interface ValidateResetTokenResult {
   expired: boolean;
 }
 
-/**
- * Maps backend role names to frontend role names.
- * The backend uses "PROPERTY_DEVELOPER" but the frontend "UserRole" type
- * uses "DEVELOPER" — this is the single seam where the mapping lives.
- */
-function mapRole(backendRole: string): UserRole {
-  if (backendRole === "PROPERTY_DEVELOPER") return "DEVELOPER";
-  return backendRole as UserRole;
-}
-
-function mapSession(raw: AuthSession): AuthSession {
-  return { ...raw, user: { ...raw.user, role: mapRole(raw.user.role) } };
-}
-
 /** Auth API calls. Encapsulates the request/response shape so callers never touch Axios directly. */
 export const authService = {
   /** Exchanges the HttpOnly refresh cookie for a new access token — see docs/ARCHITECTURE.md §6. */
@@ -58,32 +45,38 @@ export const authService = {
     fullName,
     email,
     password,
-  }: RegisterPayload): Promise<AuthSession> =>
+  }: RegisterPayload): Promise<
+    AuthSession | { requiresEmailConfirmation: true }
+  > =>
     api
-      .post<ApiResponse<AuthSession>>("/auth/register", {
-        fullName,
-        email,
-        password,
-      })
-      .then((res) => mapSession(res.data.data)),
+      .post<ApiResponse<AuthSession | { requiresEmailConfirmation: true }>>(
+        "/auth/register",
+        {
+          fullName,
+          email,
+          password,
+        },
+      )
+      .then((res) =>
+        "requiresEmailConfirmation" in res.data.data
+          ? res.data.data
+          : mapSession(res.data.data),
+      ),
 
-  logout: (): Promise<void> =>
-    api.post("/auth/logout").then(() => undefined),
+  logout: (): Promise<void> => api.post("/auth/logout").then(() => undefined),
 
   requestPasswordReset: (email: string): Promise<void> =>
-    api
-      .post("/auth/forgot-password", { email })
-      .then(() => undefined),
+    api.post("/auth/forgot-password", { email }).then(() => undefined),
 
-  validateResetToken: (token: string): Promise<ValidateResetTokenResult> =>
-    api
-      .get<ApiResponse<ValidateResetTokenResult>>(
-        `/auth/reset-password/${token}`,
-      )
-      .then((res) => res.data.data),
+  validateResetToken: (_token: string): Promise<ValidateResetTokenResult> => {
+    void _token;
+    return Promise.reject(
+      new Error(
+        "Recovery tokens are verified when the reset form is submitted",
+      ),
+    );
+  },
 
   resetPassword: ({ token, password }: ResetPasswordPayload): Promise<void> =>
-    api
-      .post("/auth/reset-password", { token, password })
-      .then(() => undefined),
+    api.post("/auth/reset-password", { token, password }).then(() => undefined),
 };

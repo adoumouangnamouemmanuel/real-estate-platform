@@ -42,6 +42,19 @@ export interface PropertyMedia {
 }
 
 export interface Property {
+  currencyCode?: string | null;
+  rentPeriod?: string | null;
+  rowVersion?: number;
+  sourceLanguage?: string;
+  requestedLanguage?: string;
+  contentLanguage?: string | null;
+  fallbackUsed?: boolean;
+  cityId?: string;
+  districtId?: string | null;
+  featureIds?: string[];
+  features?: { id: string; code: string; name: string; iconName?: string }[];
+  translationExists?: boolean;
+  translationPublished?: boolean;
   id: string;
   slug: string;
   title: string;

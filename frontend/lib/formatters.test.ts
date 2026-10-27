@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { setStoredLanguage } from "@/lib/i18n";
+beforeEach(() => setStoredLanguage("en"));
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   formatCompactNumber,

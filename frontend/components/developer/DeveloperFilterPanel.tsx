@@ -11,8 +11,6 @@ interface DeveloperFilterPanelProps {
   onApply: (filters: Partial<GetDevelopersParams>) => void;
 }
 
-
-
 const SELECT_CLASSNAME =
   "border-border bg-background h-8 rounded-md border px-2 text-sm";
 const INPUT_CLASSNAME =

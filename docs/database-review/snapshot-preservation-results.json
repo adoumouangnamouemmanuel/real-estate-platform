@@ -1,0 +1,49 @@
+{
+  "environment": "PGlite PostgreSQL 17.5; disposable in-memory instance",
+  "scope": "Sanitized public schema plus original public rows restored locally; full Supabase system/Auth/Storage restore not rehearsed.",
+  "migrationsAppliedLocally": 3,
+  "dryRun": {
+    "properties": 9,
+    "features": 10,
+    "developers": 4,
+    "applied": false
+  },
+  "applied": {
+    "properties": 9,
+    "features": 10,
+    "developers": 4,
+    "applied": true
+  },
+  "originalColumnsPreserved": true,
+  "propertyTranslationLanguages": [
+    {
+      "language_code": "en",
+      "n": 1
+    },
+    {
+      "language_code": "fr",
+      "n": 8
+    }
+  ],
+  "liveDatabaseModified": false,
+  "tableCounts": {
+    "user": 4,
+    "city": 2,
+    "district": 7,
+    "feature": 10,
+    "property_developer": 4,
+    "property": 9,
+    "property_media": 8,
+    "property_feature": 9,
+    "property_favorite": 0,
+    "property_developer_rating": 0,
+    "notification": 0,
+    "property_analytics": 0,
+    "report": 0,
+    "refresh_token": 22,
+    "appointment": 0,
+    "appointment_history": 0,
+    "_prisma_migrations": 6
+  },
+  "privacy": "Record fingerprints and per-record backfill manifest are supplied privately, outside the public repository."
+}

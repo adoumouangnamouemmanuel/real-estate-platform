@@ -1,12 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { InvalidResetLink } from "@/components/auth/InvalidResetLink";
 import { PasswordInput } from "@/components/auth/PasswordInput";
-import { Loading } from "@/components/common/Loading";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { ROUTES } from "@/constants/routes";
@@ -22,27 +20,9 @@ interface ResetPasswordFormProps {
   token: string;
 }
 
-type TokenStatus = "checking" | "valid" | "invalid" | "expired";
-
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const router = useRouter();
-  const [tokenStatus, setTokenStatus] = useState<TokenStatus>("checking");
   const [formError, setFormError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    authService.validateResetToken(token).then((result) => {
-      if (cancelled) return;
-      setTokenStatus(
-        result.valid ? "valid" : result.expired ? "expired" : "invalid",
-      );
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
 
   const {
     register,
@@ -63,14 +43,6 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     } catch (error) {
       setFormError(getErrorMessage(error));
     }
-  }
-
-  if (tokenStatus === "checking") {
-    return <Loading />;
-  }
-
-  if (tokenStatus === "invalid" || tokenStatus === "expired") {
-    return <InvalidResetLink reason={tokenStatus} />;
   }
 
   // `method="post"` keeps a pre-hydration native submit out of the URL — see

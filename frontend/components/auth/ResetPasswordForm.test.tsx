@@ -1,10 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { StrictMode } from "react";
 
 import { authService } from "@/services";
 
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import { RecoveryLink } from "./RecoveryLink";
 
 const push = vi.fn();
 
@@ -30,30 +32,57 @@ describe("ResetPasswordForm", () => {
     resetPassword.mockReset();
   });
 
-  it("shows a loading state while the token is being validated", () => {
-    validateResetToken.mockReturnValue(new Promise(() => {})); // never resolves
-    render(<ResetPasswordForm token="some-token" />);
-
-    expect(screen.getByRole("status")).toBeInTheDocument();
+  it("keeps a scrubbed fragment token through Strict Mode and submits it once", async () => {
+    resetPassword.mockResolvedValue(undefined);
+    window.history.replaceState(
+      null,
+      "",
+      "/reset-password#token=one-time-link",
+    );
+    const user = userEvent.setup();
+    render(
+      <StrictMode>
+        <RecoveryLink />
+      </StrictMode>,
+    );
+    await screen.findByLabelText("New password");
+    expect(window.location.hash).toBe("");
+    expect(resetPassword).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText("New password"), "NewPassword123");
+    await user.type(
+      screen.getByLabelText("Confirm new password"),
+      "NewPassword123",
+    );
+    await user.click(screen.getByRole("button", { name: "Reset password" }));
+    await waitFor(() => expect(resetPassword).toHaveBeenCalledTimes(1));
+    expect(resetPassword).toHaveBeenCalledWith({
+      token: "one-time-link",
+      password: "NewPassword123",
+    });
   });
 
-  it("shows an expired-link message for an expired token, not the form", async () => {
-    validateResetToken.mockResolvedValue({ valid: false, expired: true });
+  it("does not consume or send a recovery token while displaying the form", () => {
+    render(<ResetPasswordForm token="one-time-token" />);
+    expect(screen.getByLabelText("New password")).toBeInTheDocument();
+    expect(validateResetToken).not.toHaveBeenCalled();
+  });
+  it("shows a server rejection without claiming the reset succeeded", async () => {
+    resetPassword.mockRejectedValue(
+      new Error("This reset link is invalid or expired"),
+    );
+    const user = userEvent.setup();
     render(<ResetPasswordForm token="expired-token" />);
-
+    await user.type(screen.getByLabelText("New password"), "NewPassword123");
+    await user.type(
+      screen.getByLabelText("Confirm new password"),
+      "NewPassword123",
+    );
+    await user.click(screen.getByRole("button", { name: "Reset password" }));
     expect(
-      await screen.findByText("This link has expired"),
+      await screen.findByText("This reset link is invalid or expired"),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("New password")).not.toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
-
-  it("shows an invalid-link message for an unknown token", async () => {
-    validateResetToken.mockResolvedValue({ valid: false, expired: false });
-    render(<ResetPasswordForm token="bogus-token" />);
-
-    expect(await screen.findByText("This link is invalid")).toBeInTheDocument();
-  });
-
   it("shows the form for a valid token and enforces matching passwords", async () => {
     validateResetToken.mockResolvedValue({ valid: true, expired: false });
     const user = userEvent.setup();

@@ -13,7 +13,10 @@ export const featureService = {
       .get<ApiResponse<Feature[]>>("/features", {
         params: category ? { category } : undefined,
       })
-      .then((res) => res.data.data),
+      .then((res) => {
+        cachedFeatures = res.data.data;
+        return res.data.data;
+      }),
 };
 
 /**
@@ -22,10 +25,6 @@ export const featureService = {
  * icon/category. Populated once from the API on module load.
  */
 let cachedFeatures: Feature[] | null = null;
-
-featureService.getFeatures().then((features) => {
-  cachedFeatures = features;
-});
 
 export function getFeatureByName(name: string): Feature | undefined {
   return cachedFeatures?.find((feature) => feature.name === name);

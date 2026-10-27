@@ -1,0 +1,15 @@
+{
+  "status": "SYNTHETIC EXAMPLE ONLY; supply a reviewed private manifest via LUMAVOK_CONTENT_MANIFEST.",
+  "propertyCount": 1,
+  "properties": [
+    {
+      "id": "example_property_id",
+      "sourceLanguage": "fr",
+      "textSha256": "b499abf7697636293f68b50cadd2b4e08202e05f33334614fe31b60a758f5be8",
+      "currencyCode": "XOF",
+      "rentPeriod": null
+    }
+  ],
+  "features": [],
+  "developers": []
+}

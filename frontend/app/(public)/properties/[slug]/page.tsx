@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PropertyDetailView } from "@/components/property/PropertyDetailView";
 import { APP_NAME } from "@/constants/config";
-import { propertyService } from "@/services";
+import { serverPropertyService as propertyService } from "@/lib/server-api";
 
 interface PropertyDetailPageProps {
   params: Promise<{ slug: string }>;

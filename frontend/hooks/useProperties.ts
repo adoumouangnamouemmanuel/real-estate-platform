@@ -1,4 +1,5 @@
 "use client";
+import { useContentLocale as useLanguage } from "@/hooks/useContentLocale";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
@@ -9,8 +10,9 @@ export const PROPERTIES_KEY = ["properties"] as const;
 
 /** Keeps the previous page's data visible while the next page loads, instead of flashing skeletons on every click. */
 export function useProperties(params: GetPropertiesParams = {}) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...PROPERTIES_KEY, params],
+    queryKey: [...PROPERTIES_KEY, params, language],
     queryFn: () => propertyService.getProperties(params),
     placeholderData: keepPreviousData,
   });
@@ -27,11 +29,12 @@ export function useProperties(params: GetPropertiesParams = {}) {
  * removal would blank the whole grid to skeletons for a frame.
  */
 export function useSavedProperties() {
+  const { language } = useLanguage();
   const favorites = useFavoritesState();
   const ids = favorites.data?.ids ?? [];
 
   const properties = useQuery({
-    queryKey: [...PROPERTIES_KEY, "saved", ids],
+    queryKey: [...PROPERTIES_KEY, "saved", ids, language],
     queryFn: () => propertyService.getPropertiesByIds(ids),
     enabled: favorites.isSuccess,
     placeholderData: keepPreviousData,

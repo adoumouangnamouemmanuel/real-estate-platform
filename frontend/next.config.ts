@@ -1,8 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    const backend = process.env.BACKEND_API_URL ?? "http://localhost:4000";
+    return [
+      { source: "/api/v1/:path*", destination: `${backend}/api/v1/:path*` },
+    ];
+  },
   images: {
+    // Private signed media must expire at Storage; an optimizer cache could
+    // otherwise keep serving it after the signed URL's authorization expires.
+    unoptimized: true,
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "haxzufwizwqfrqzzzmsa.supabase.co",
+        pathname: "/storage/v1/object/sign/property-media/**",
+      },
       // Property and developer media is served from Cloudinary in production — see docs/ARCHITECTURE.md §7.
       {
         protocol: "https",

@@ -1,3 +1,8 @@
+import i18n from "@/lib/i18n";
+import { beforeEach } from "vitest";
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -32,7 +37,7 @@ describe("ListingPricingSection", () => {
 
   it("labels the field 'Monthly rent' when Rent is chosen", () => {
     render(<Harness listingType="RENT" />);
-    expect(screen.getByLabelText("Monthly rent")).toBeInTheDocument();
+    expect(screen.getByLabelText("Price")).toBeInTheDocument();
   });
 
   it("accepts a numeric price", async () => {

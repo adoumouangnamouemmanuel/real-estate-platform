@@ -14,7 +14,7 @@ import { PropertyMediaGallery } from "@/components/property/PropertyMediaGallery
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { isFeatureEnabled } from "@/constants/features";
-import { formatPrice } from "@/lib/formatters";
+import { formatPrice, formatRentPeriod } from "@/lib/formatters";
 import { getPrimaryMeasurement } from "@/lib/propertyMeasurements";
 import { formatPropertyLocation } from "@/lib/propertyLocation";
 import type { ScoredProperty } from "@/lib/similarProperties";
@@ -23,7 +23,6 @@ import type { PropertyDetail } from "@/types";
 
 // For Translation
 import { useTranslation } from "react-i18next";
-
 
 interface PropertyDetailViewProps {
   property: PropertyDetail;
@@ -86,7 +85,9 @@ export function PropertyDetailView({
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">
-              {property.listingType === "SALE" ? t("properties.sale") : t("properties.rent")}
+                {property.listingType === "SALE"
+                  ? t("properties.sale")
+                  : t("properties.rent")}
               </Badge>
               <span className="text-muted-foreground text-sm">
                 {formatPropertyLocation(property)}
@@ -101,11 +102,18 @@ export function PropertyDetailView({
                 20px — smaller than a section heading. Raised to the display
                 face so it reads as a headline figure, not body copy. */}
             <p className="font-display text-3xl leading-none font-semibold tracking-tight">
-              {formatPrice(property.price)}
+              {formatPrice(
+                property.price,
+                property.currencyCode,
+                property.requestedLanguage,
+              )}
               {property.listingType === "RENT" && (
                 <span className="text-muted-foreground text-sm font-normal">
                   {" "}
-                  / month
+                  {formatRentPeriod(
+                    property.rentPeriod,
+                    property.requestedLanguage,
+                  )}
                 </span>
               )}
             </p>
@@ -167,7 +175,10 @@ export function PropertyDetailView({
           {property.amenities.length > 0 && (
             <MotionReveal as="section" className="flex flex-col gap-2">
               <h2 className="text-subsection-title">Amenities</h2>
-              <PropertyAmenities amenities={property.amenities} />
+              <PropertyAmenities
+                amenities={property.amenities}
+                features={property.features}
+              />
             </MotionReveal>
           )}
 

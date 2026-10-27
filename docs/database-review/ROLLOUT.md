@@ -1,0 +1,26 @@
+# Approved architecture: controlled rollout
+
+No commands in this document have been run against the shared project. The target is Lumavok / real-estate, project `haxzufwizwqfrqzzzmsa`; do not use the unrelated Maison project exposed by a different connector scope.
+
+## Prepare and verify in staging
+
+1. Recover the two original August SQL files and verify the audited SHA-256 values in `scripts/deploy-reviewed.cjs`. Retain successful and rolled-back Prisma history. If recovery is impossible, agree a separately reviewed baseline strategy; do not bypass the gate.
+2. Take a fresh backup and test the complete recovery process in an isolated Supabase environment. Keep backups private. Record the restore evidence and approval reference in the deployment environment.
+3. Install dependencies from lockfiles. Run database tests, Prisma generation/validation, backend typecheck/integration tests, frontend typecheck/focused tests/build. Review the inherited full-suite failures recorded in `VALIDATION.md`.
+4. Run the read-only migration preflight with the migration owner's `DIRECT_URL` supplied securely. Confirm counts, source-text hashes, duplicate scans, existing grants, slugs and district/appointment/media checks match expectations.
+5. With explicit database deployment approval and the restore-test reference, run the guarded migration deployment. Apply enum reconciliation first, expansion second, security third. The migration-owner connection never becomes the application runtime connection.
+6. Review the separately supplied private reviewed content manifest. Set `LUMAVOK_CONTENT_MANIFEST` to its secure local path. Run content check first. Only after content review, apply the manifest with the deployment/restore/content approval references. The backfill uses a serializable transaction and stops if source text/counts changed. It preserves every original text/numeric field. Do not seed production.
+7. Provision a dedicated login, for example `lumavok_api`, with LOGIN, INHERIT, NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOBYPASSRLS, and membership in `lumavok_runtime`. Set its password through the secure administrative mechanism, outside migrations/chat. It must own no application tables or migration/maintenance role. Confirm `session_user = current_user` and startup checks pass with the real login. Test the actual pooler's transaction mode and transaction-local claims.
+8. Configure server-only environment from `backend/.env.example`, and `BACKEND_API_URL` for the frontend proxy. Keep Storage privilege separate from the ordinary database login. Restrict direct backend ingress; set `TRUST_PROXY_HOPS` to the verified chain length rather than trusting arbitrary forwarded headers. Review CORS and refresh-cookie behavior on the real HTTPS origin.
+9. Configure Supabase Auth before cutover. Keep confirmation links using Supabase's normal confirmation URL with an approved login redirect. Set recovery email links to `{{ .RedirectTo }}#token={{ .TokenHash }}` and an allowlisted `/reset-password` redirect. Check template behavior against the actual Auth version. Never put recovery tokens in access logs or query-string analytics. Test confirmed/unconfirmed signup, login, concurrent refresh, recovery, global sign-out and revoked-session denial with the real provider.
+10. Link existing CUID accounts only to confirmed, verified matching Auth identities using the reviewed operator SQL. Never auto-link from an unverified email or editable metadata. The project owner chooses the first administrator through a separate privileged action. Record that decision; do not promote signup requests.
+11. Provision `property-media` as a private bucket using the reviewed operation. Retain existing files/URLs. Test real valid/invalid bytes, cross-owner attachment/delete, draft privacy, signed URL expiry, last-image publication protection and cache behavior.
+12. Confirm each developer's chosen public business email separately from their login email before relying on the email contact flow. No automatic disclosure or copying of login addresses is included. Deploy API/frontend together after backfill and provider verification. Compare original-record fingerprints/counts, run the actor matrix and locale workflows, inspect advisors/logs, and monitor Auth errors. Revoke legacy refresh sessions after successful account cutover; retain legacy hashes/columns for the approved compatibility window. No automatic deletion or schema contraction is included.
+
+## Rollback
+
+For a localized-read issue, set `CONTENT_READ_MODE=legacy` and restart the reviewed API. Source columns are preserved and source edits remain synchronized; the security/Auth fixes remain in place. Keep translation rows and new metadata for recovery.
+
+Do not roll back by dropping populated translation tables, disabling RLS, running the API as postgres/service_role, restoring a stale backup over new writes or reinstating the vulnerable reset/refresh implementation. Pause rollout and repair in staging if permissions or Auth cutover fail. Reverting account/session configuration requires its own tested operational procedure.
+
+Later removal of legacy text/auth columns, redundant indexes, old files or branch resources requires dependency review and explicit approval. No such removal is part of this release.

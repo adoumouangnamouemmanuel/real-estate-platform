@@ -5,10 +5,18 @@ on:
     branches:
       - develop
       - main
+      - master
+      - dba
+      - feature/APP-002-french
+      - review/**
   pull_request:
     branches:
       - develop
       - main
+      - master
+      - dba
+      - feature/APP-002-french
+      - review/**
 
 permissions:
   contents: read
@@ -54,7 +62,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
@@ -91,7 +99,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
@@ -121,20 +129,34 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
         working-directory: backend
         run: npm ci
-      - name: Lint
+      - name: Install database test dependencies
+        working-directory: database/full-database-design
+        run: npm ci
+      - name: Generate pinned Prisma client
         working-directory: backend
-        run: |
-          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.lint ? 0 : 1)"; then npm run lint; else echo "No lint script found; skipping."; fi
-      - name: Test
+        env:
+          DATABASE_URL: postgresql://local.invalid/lumavok
+          DIRECT_URL: postgresql://local.invalid/lumavok
+        run: npm run db:generate
+      - name: Typecheck and test API against isolated PostgreSQL
         working-directory: backend
-        run: |
-          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts.test ? 0 : 1)"; then npm run test; else echo "No test script found; skipping."; fi
+        run: npm run typecheck && npm test
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - working-directory: database/full-database-design
+        run: npm ci && npm test
 
   root-check:
     needs: detect-workspaces
@@ -144,7 +166,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - name: Install root dependencies
         run: npm ci

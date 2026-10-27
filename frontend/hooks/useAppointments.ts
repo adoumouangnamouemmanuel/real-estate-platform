@@ -1,4 +1,5 @@
 "use client";
+import { useContentLocale as useLanguage } from "@/hooks/useContentLocale";
 
 import {
   keepPreviousData,
@@ -16,23 +17,26 @@ const APPOINTMENTS_KEY = ["appointments"] as const;
 
 /** Keeps the previous page visible while the next page/filter loads, same as useListings. */
 export function useAppointments(params: GetAppointmentsParams = {}) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...APPOINTMENTS_KEY, params],
+    queryKey: [...APPOINTMENTS_KEY, params, language],
     queryFn: () => appointmentService.getAppointments(params),
     placeholderData: keepPreviousData,
   });
 }
 
 export function useAppointmentStatusCounts() {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...APPOINTMENTS_KEY, "counts"],
+    queryKey: [...APPOINTMENTS_KEY, "counts", language],
     queryFn: () => appointmentService.getStatusCounts(),
   });
 }
 
 export function useAppointment(id: string | undefined) {
+  const { language } = useLanguage();
   return useQuery({
-    queryKey: [...APPOINTMENTS_KEY, "detail", id],
+    queryKey: [...APPOINTMENTS_KEY, "detail", id, language],
     queryFn: () => appointmentService.getAppointment(id!),
     enabled: Boolean(id),
   });

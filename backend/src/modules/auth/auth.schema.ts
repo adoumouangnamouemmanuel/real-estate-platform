@@ -6,19 +6,28 @@ const passwordSchema = z
   .max(128, "Password must be at most 128 characters");
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z
+    .string()
+    .email("Invalid email address")
+    .transform((email) => email.toLowerCase()),
   password: passwordSchema,
 });
 
 export const registerSchema = z.object({
   fullName: z.string().min(1, "Full name is required").max(100),
-  email: z.string().email("Invalid email address"),
+  email: z
+    .string()
+    .email("Invalid email address")
+    .transform((email) => email.toLowerCase()),
   password: passwordSchema,
   role: z.enum(["USER", "PROPERTY_DEVELOPER"]).default("USER"),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z
+    .string()
+    .email("Invalid email address")
+    .transform((email) => email.toLowerCase()),
 });
 
 export const resetPasswordSchema = z.object({

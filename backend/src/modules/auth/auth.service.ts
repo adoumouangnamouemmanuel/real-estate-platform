@@ -1,19 +1,19 @@
-import { prisma } from "../../config/prisma.js";
-import {
-  hashPassword,
-  comparePassword,
-  generateAccessToken,
-  createRefreshToken,
-  rotateRefreshToken,
-  revokeAllRefreshTokens,
-} from "../../utils/auth.js";
+import crypto from "node:crypto";
+import { databaseContext, prisma } from "../../config/prisma.js";
+import { getSupabase } from "../../config/supabase.js";
+import { getEnv } from "../../config/env.js";
 import {
   UnauthorizedError,
   BadRequestError,
-  ConflictError,
+  ApiError,
 } from "../../utils/errors.js";
-import type { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput } from "./auth.schema.js";
-import crypto from "node:crypto";
+import type {
+  LoginInput,
+  RegisterInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+} from "./auth.schema.js";
+import type { Session, User as AuthUser } from "@supabase/supabase-js";
 
 export interface AuthSession {
   user: {
@@ -25,193 +25,180 @@ export interface AuthSession {
   };
   accessToken: string;
 }
-
+async function mapSession(session: Session, authUser: AuthUser) {
+  if (!authUser.email_confirmed_at || !authUser.email)
+    throw new UnauthorizedError("Confirm your email before signing in");
+  const context = databaseContext.getStore();
+  if (!context) throw new Error("Missing request context");
+  context.actor = { authUserId: authUser.id };
+  const select = {
+    id: true,
+    email: true,
+    fullName: true,
+    role: true,
+    developerProfile: {
+      select: { id: true, sellerStatus: true, deletedAt: true },
+    },
+  } as const;
+  let user = await prisma.user.findUnique({
+    where: { authUserId: authUser.id },
+    select,
+  });
+  if (!user) {
+    try {
+      user = await prisma.user.create({
+        data: {
+          authUserId: authUser.id,
+          email: authUser.email.toLowerCase(),
+          role: "USER",
+          fullName:
+            typeof authUser.user_metadata?.full_name === "string"
+              ? authUser.user_metadata.full_name.slice(0, 100)
+              : null,
+          // Retain the legacy NOT NULL column without a usable legacy password.
+          passwordHash:
+            "managed-auth:" + crypto.randomBytes(32).toString("hex"),
+        },
+        select,
+      });
+    } catch {
+      throw new UnauthorizedError(
+        "Existing account requires verified identity mapping",
+      );
+    }
+  }
+  const developerId =
+    user.role === "PROPERTY_DEVELOPER" &&
+    user.developerProfile?.sellerStatus === "ACTIVE" &&
+    !user.developerProfile.deletedAt
+      ? user.developerProfile.id
+      : undefined;
+  context.actor = {
+    authUserId: authUser.id,
+    userId: user.id,
+    role: user.role,
+    developerId,
+  };
+  return {
+    session: {
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        developerId,
+      },
+      accessToken: session.access_token,
+    },
+    refreshToken: session.refresh_token,
+    expiresAt: new Date(
+      Date.now() + getEnv().REFRESH_TOKEN_EXPIRES_IN_DAYS * 86400000,
+    ),
+  };
+}
 export async function login(
   input: LoginInput,
-  userAgent?: string,
-  ipAddress?: string,
-): Promise<{ session: AuthSession; refreshToken: string; expiresAt: Date }> {
-  const user = await prisma.user.findUnique({ where: { email: input.email } });
-
-  if (!user) {
-    throw new UnauthorizedError("Invalid email or password");
-  }
-
-  const validPassword = await comparePassword(input.password, user.passwordHash);
-  if (!validPassword) {
-    throw new UnauthorizedError("Invalid email or password");
-  }
-
-  const devProfile = await prisma.propertyDeveloper.findUnique({
-    where: { userId: user.id },
-    select: { id: true },
+  _userAgent?: string,
+  _ip?: string,
+) {
+  const { data, error } = await getSupabase().auth.signInWithPassword({
+    email: input.email,
+    password: input.password,
   });
-
-  const accessToken = generateAccessToken({
-    userId: user.id,
-    role: user.role,
-    developerId: devProfile?.id,
-  });
-
-  const { rawToken, expiresAt } = await createRefreshToken(user.id, userAgent, ipAddress);
-
-  return {
-    session: {
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        developerId: devProfile?.id,
-      },
-      accessToken,
-    },
-    refreshToken: rawToken,
-    expiresAt,
-  };
+  if (error || !data.session || !data.user)
+    throw new UnauthorizedError("Invalid email or password");
+  return mapSession(data.session, data.user);
 }
-
 export async function register(
   input: RegisterInput,
-  userAgent?: string,
-  ipAddress?: string,
-): Promise<{ session: AuthSession; refreshToken: string; expiresAt: Date }> {
-  const existing = await prisma.user.findUnique({ where: { email: input.email } });
-  if (existing) {
-    throw new ConflictError("An account with this email already exists");
-  }
-
-  const passwordHash = await hashPassword(input.password);
-
-  const user = await prisma.user.create({
-    data: {
-      fullName: input.fullName,
-      email: input.email,
-      passwordHash,
-      role: input.role as "USER" | "PROPERTY_DEVELOPER",
+  _userAgent?: string,
+  _ip?: string,
+) {
+  // Registration never grants a seller/admin role; editable metadata is profile text only.
+  const { data, error } = await getSupabase().auth.signUp({
+    email: input.email,
+    password: input.password,
+    options: {
+      data: { full_name: input.fullName },
+      emailRedirectTo: getEnv().CORS_ORIGIN + "/login?confirmed=1",
     },
   });
-
-  const devProfile = await prisma.propertyDeveloper.findUnique({
-    where: { userId: user.id },
-    select: { id: true },
-  });
-
-  const accessToken = generateAccessToken({
-    userId: user.id,
-    role: user.role,
-    developerId: devProfile?.id,
-  });
-
-  const { rawToken, expiresAt } = await createRefreshToken(user.id, userAgent, ipAddress);
-
-  return {
-    session: {
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        developerId: devProfile?.id,
-      },
-      accessToken,
-    },
-    refreshToken: rawToken,
-    expiresAt,
-  };
+  if (error)
+    throw new BadRequestError(
+      "Unable to register account",
+      "REGISTRATION_FAILED",
+    );
+  if (!data.session || !data.user?.email_confirmed_at)
+    return { requiresEmailConfirmation: true as const };
+  return mapSession(data.session, data.user);
 }
-
 export async function refresh(
-  rawRefreshToken: string,
-  userAgent?: string,
-  ipAddress?: string,
-): Promise<{ session: AuthSession; refreshToken: string; expiresAt: Date }> {
-  const tokenRecord = await validateRefreshToken(rawRefreshToken);
-
-  if (!tokenRecord) {
-    throw new UnauthorizedError("Invalid or expired refresh token");
-  }
-
-  const user = await prisma.user.findUnique({ where: { id: tokenRecord.userId } });
-  if (!user) {
-    throw new UnauthorizedError("User no longer exists");
-  }
-
-  const devProfile = await prisma.propertyDeveloper.findUnique({
-    where: { userId: user.id },
-    select: { id: true },
+  token: string,
+  _userAgent?: string,
+  _ip?: string,
+) {
+  const { data, error } = await getSupabase().auth.refreshSession({
+    refresh_token: token,
   });
-
-  const { rawToken: newRawToken, expiresAt } = await rotateRefreshToken(
-    rawRefreshToken,
-    user.id,
-    userAgent,
-    ipAddress,
+  if (error || !data.session || !data.user)
+    throw new UnauthorizedError("Invalid or expired refresh session");
+  return mapSession(data.session, data.user);
+}
+export async function logout(accessToken: string, refreshToken: string) {
+  const client = getSupabase();
+  const { error } = await client.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  if (error) throw new UnauthorizedError("Session could not be revoked");
+  const signedOut = await client.auth.signOut({ scope: "global" });
+  if (signedOut.error)
+    throw new ApiError(
+      503,
+      "Session revocation is temporarily unavailable",
+      "SESSION_REVOCATION_FAILED",
+    );
+}
+export async function forgotPassword(input: ForgotPasswordInput) {
+  const { error } = await getSupabase().auth.resetPasswordForEmail(
+    input.email,
+    { redirectTo: getEnv().AUTH_REDIRECT_URL },
   );
-
-  const accessToken = generateAccessToken({
-    userId: user.id,
-    role: user.role,
-    developerId: devProfile?.id,
+  // Same response for existing/unknown accounts. Never log identifiers or tokens.
+  if (error && error.status && error.status >= 500)
+    throw new BadRequestError(
+      "Recovery is temporarily unavailable",
+      "RECOVERY_UNAVAILABLE",
+    );
+}
+export async function resetPassword(input: ResetPasswordInput) {
+  const client = getSupabase();
+  const { data, error } = await client.auth.verifyOtp({
+    token_hash: input.token,
+    type: "recovery",
   });
-
-  return {
-    session: {
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        developerId: devProfile?.id,
-      },
-      accessToken,
-    },
-    refreshToken: newRawToken,
-    expiresAt,
-  };
+  if (error || !data.session)
+    throw new BadRequestError(
+      "This reset link is invalid or expired",
+      "INVALID_TOKEN",
+    );
+  const updated = await client.auth.updateUser({ password: input.password });
+  if (updated.error)
+    throw new BadRequestError(
+      "Password could not be updated",
+      "PASSWORD_UPDATE_FAILED",
+    );
+  const signedOut = await client.auth.signOut({ scope: "global" });
+  if (signedOut.error)
+    throw new ApiError(
+      503,
+      "Password updated but session revocation failed",
+      "SESSION_REVOCATION_FAILED",
+    );
 }
-
-export async function logout(userId: string): Promise<void> {
-  await revokeAllRefreshTokens(userId);
-}
-
-// ─────────────────────────────────────────────
-// Forgot Password — always returns 200 (anti-enumeration)
-// ─────────────────────────────────────────────
-
-const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
-const resetTokens = new Map<string, { email: string; expiresAt: number }>();
-
-export async function forgotPassword(input: ForgotPasswordInput): Promise<void> {
-  // Always succeeds — never reveals whether the email exists
-  const user = await prisma.user.findUnique({ where: { email: input.email } });
-  if (user) {
-    const token = crypto.randomBytes(32).toString("hex");
-    resetTokens.set(token, { email: user.email, expiresAt: Date.now() + RESET_TOKEN_TTL_MS });
-    // In production: send email with reset link containing this token
-    console.log(`[DEV] Password reset token for ${user.email}: ${token}`);
-  }
-}
-
-export async function resetPassword(input: ResetPasswordInput): Promise<void> {
-  const entry = resetTokens.get(input.token);
-  if (!entry || entry.expiresAt < Date.now()) {
-    throw new BadRequestError("This reset link is invalid or has expired.", "INVALID_TOKEN");
-  }
-
-  const passwordHash = await hashPassword(input.password);
-  await prisma.user.update({ where: { email: entry.email }, data: { passwordHash } });
-  resetTokens.delete(input.token);
-}
-
-export async function validateResetToken(token: string): Promise<{ valid: boolean; expired: boolean }> {
-  const entry = resetTokens.get(token);
-  if (!entry) return { valid: false, expired: false };
-  if (entry.expiresAt < Date.now()) return { valid: false, expired: true };
-  return { valid: true, expired: false };
-}
-
-async function validateRefreshToken(rawToken: string) {
-  const { validateRefreshToken: validate } = await import("../../utils/auth.js");
-  return validate(rawToken);
+export async function validateResetToken(_token: string): Promise<never> {
+  throw new BadRequestError(
+    "Submit the recovery token in the reset form",
+    "RECOVERY_TOKEN_CHECK_REMOVED",
+  );
 }

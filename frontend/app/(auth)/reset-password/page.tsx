@@ -1,34 +1,17 @@
 import type { Metadata } from "next";
-
 import { AuthCard } from "@/components/auth/AuthCard";
-import { InvalidResetLink } from "@/components/auth/InvalidResetLink";
-import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
-import { APP_NAME } from "@/constants/config";
-
+import { RecoveryLink } from "@/components/auth/RecoveryLink";
 export const metadata: Metadata = {
-  title: `Reset password | ${APP_NAME}`,
-  description: `Choose a new password for your ${APP_NAME} account.`,
+  title: "Reset password | Lumavok",
+  referrer: "no-referrer",
 };
-
-interface ResetPasswordPageProps {
-  searchParams: Promise<{ token?: string }>;
-}
-
-export default async function ResetPasswordPage({
-  searchParams,
-}: ResetPasswordPageProps) {
-  const { token } = await searchParams;
-
+export default function ResetPasswordPage() {
   return (
     <AuthCard
       title="Reset your password"
       description="Choose a new password below"
     >
-      {token ? (
-        <ResetPasswordForm token={token} />
-      ) : (
-        <InvalidResetLink reason="missing" />
-      )}
+      <RecoveryLink />
     </AuthCard>
   );
 }

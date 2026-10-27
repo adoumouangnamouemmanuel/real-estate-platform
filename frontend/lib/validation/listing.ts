@@ -21,6 +21,8 @@ const mediaSchema = z.object({
  * publish profile is always a superset of this base, never a parallel copy.
  */
 export const listingSchema = z.object({
+  currencyCode: z.literal("XOF").optional().or(z.literal("")),
+  rentPeriod: z.enum(["DAY", "WEEK", "MONTH", "YEAR"]).nullable().optional(),
   title: z
     .string()
     .trim()
@@ -41,6 +43,8 @@ export const listingSchema = z.object({
   // undefined — accept it as equivalent to "not chosen yet" for a draft.
   listingType: z.enum(["SALE", "RENT"]).optional().or(z.literal("")),
   category: z.enum(CATEGORY_VALUES).optional().or(z.literal("")),
+  cityId: z.string().optional(),
+  districtId: z.string().nullable().optional(),
   city: z.string().trim().optional().or(z.literal("")),
   // Additive alongside `region` — see constants/locations.ts's doc comment on
   // why `district` isn't a rename of `region`.

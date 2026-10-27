@@ -59,7 +59,9 @@ export const propertyService = {
     return Promise.all(
       ids.map((id) =>
         api
-          .get<ApiResponse<Property>>(`/properties/${id}`)
+          .get<ApiResponse<Property>>(
+            `/properties/by-id/${encodeURIComponent(id)}`,
+          )
           .then((res) => res.data.data)
           .catch(() => null),
       ),

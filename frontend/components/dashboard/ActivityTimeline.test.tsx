@@ -35,10 +35,7 @@ describe("ActivityTimeline", () => {
   it("exposes each timestamp as a machine-readable <time>", () => {
     render(<ActivityTimeline items={items} />);
 
-    const times = screen.getAllByText(/ago|in /);
-    expect(times[0].closest("time")).toHaveAttribute(
-      "datetime",
-      "2026-07-23T10:00:00.000Z",
-    );
+    const times = document.querySelectorAll("time");
+    expect(times[0]).toHaveAttribute("datetime", "2026-07-23T10:00:00.000Z");
   });
 });

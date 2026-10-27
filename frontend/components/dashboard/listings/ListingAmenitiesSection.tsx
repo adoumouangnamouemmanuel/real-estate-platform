@@ -26,11 +26,11 @@ export function ListingAmenitiesSection() {
   const amenities = useWatch({ control, name: "amenities" }) ?? [];
   const { data: features, isLoading } = useFeatures(category);
 
-  function toggle(featureName: string) {
+  function toggle(featureId: string) {
     const current = getValues("amenities") ?? [];
-    const next = current.includes(featureName)
-      ? current.filter((item) => item !== featureName)
-      : [...current, featureName];
+    const next = current.includes(featureId)
+      ? current.filter((item) => item !== featureId)
+      : [...current, featureId];
     setValue("amenities", next, { shouldDirty: true });
   }
 
@@ -48,7 +48,7 @@ export function ListingAmenitiesSection() {
   }
 
   const selected: Feature[] = (features ?? []).filter((feature) =>
-    amenities.includes(feature.name),
+    amenities.includes(feature.id),
   );
 
   return (
@@ -66,7 +66,7 @@ export function ListingAmenitiesSection() {
                   key={feature.id}
                   type="button"
                   aria-label={`Remove ${feature.name}`}
-                  onClick={() => toggle(feature.name)}
+                  onClick={() => toggle(feature.id)}
                   className="bg-primary/10 text-primary ring-primary/20 hover:bg-primary/15 inline-flex items-center gap-1.5 rounded-full py-1 pr-1.5 pl-2.5 text-xs font-medium ring-1 transition-colors"
                 >
                   <Icon className="size-3.5" aria-hidden />
@@ -83,14 +83,14 @@ export function ListingAmenitiesSection() {
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
             {(features ?? []).map((feature) => {
-              const isSelected = amenities.includes(feature.name);
+              const isSelected = amenities.includes(feature.id);
               const Icon = getFeatureIcon(feature.iconName);
               return (
                 <button
                   key={feature.id}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => toggle(feature.name)}
+                  onClick={() => toggle(feature.id)}
                   className={`ring-border flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm ring-1 transition-colors ${
                     isSelected
                       ? "bg-primary/10 ring-primary/30"
