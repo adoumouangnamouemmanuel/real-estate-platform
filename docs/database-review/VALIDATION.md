@@ -6,13 +6,13 @@ Validation date: 27 October 2026. These are local review results, not results fr
 | ----------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Database tests                      | 5 passed, 0 failed/skipped                   | Fresh June SQL replay; observed-schema replay; constraints/RLS actor matrix; unchanged Burkina seeds; missing-history gate; production seed denial |
 | API tests                           | 2 passed, 0 failed/skipped                   | HTTP + Prisma + PostgreSQL integration and image byte validation                                                                                   |
-| Focused frontend                    | 25 passed, 0 failed                          | Autosave, listing editor, bilingual contract and managed recovery in four files                                                                                     |
+| Focused frontend                    | 25 passed, 0 failed                          | Autosave, listing editor, bilingual contract and managed recovery in four files                                                                    |
 | Full original French suite          | 568 passed, 91 failed of 659                 | Clean baseline at pinned French commit                                                                                                             |
 | Full review frontend suite          | 568 passed, 91 failed of 659                 | Exact failing test-name set matches baseline; no new failing names                                                                                 |
-| Changed frontend file lint | 0 errors/warnings | ESLint on 60 changed TypeScript/TSX files; not a claim about untouched files |
+| Changed frontend file lint          | 0 errors/warnings                            | ESLint on 60 changed TypeScript/TSX files; not a claim about untouched files                                                                       |
 | Backend compilation                 | Passed                                       | TypeScript build                                                                                                                                   |
 | Frontend production build/typecheck | Passed                                       | Next.js 16.4.3; final clean-cache build succeeded                                                                                                  |
-| Runtime dependency audits           | 0 reported vulnerabilities in each workspace | `npm audit --omit=dev` at review time; not a guarantee against unknown vulnerabilities                                                             |
+| All dependency audits               | 0 reported vulnerabilities in each workspace | Final `npm audit` includes runtime and development packages; not a guarantee against unknown vulnerabilities                                       |
 | Original-record preservation        | Passed locally                               | All original columns across 17 public tables matched before/after fingerprints                                                                     |
 
 ## What the tests establish
@@ -45,3 +45,9 @@ The last incremental Next build encountered a generated Turbopack persistence er
 - Target-load benchmarks and bounded dashboard/analytics aggregates.
 
 Use `ROLLOUT.md` as the staging/release gate. A passing local build or isolated RLS test does not remove these requirements.
+
+## Published CI and dependency follow-up
+
+GitHub Actions passed the database and backend jobs for the published review candidate. Frontend typechecking and lint also passed there. The first frontend job stopped on formatting in eight inherited files, before executing its tests/build. Those files were formatted and the complete frontend lint/format checks passed locally. The follow-up commit leaves the original shared branches unchanged. Browser E2E success has not been established.
+
+The initial runtime-only audits were clear, but CI's full install exposed 21 frontend development-tool advisories, including one critical. Compatible updates and matching Vitest/coverage 4.1.12 patches removed the reported vulnerabilities. A final full `npm audit` reports zero for frontend, backend and database workspaces, including development dependencies. The complete frontend run after those updates still has 568 passes and the identical 91 baseline failures; all 25 selected editor/autosave/locale/recovery tests pass. No major-version forced audit fix was used.

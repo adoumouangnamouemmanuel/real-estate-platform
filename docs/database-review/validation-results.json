@@ -84,5 +84,46 @@
     "errors": 0,
     "warnings": 0,
     "files": 60
+  },
+  "allDependencyAudits": {
+    "frontend": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "backend": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "database": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "frontendFullLint": "passed",
+  "frontendFullFormatCheck": "passed",
+  "toolingVersions": {
+    "vitest": "4.1.12",
+    "coverageV8": "4.1.12",
+    "next": "16.4.3"
+  },
+  "publishedCI": {
+    "database": "passed",
+    "backend": "passed",
+    "frontendTypecheck": "passed",
+    "frontendLint": "passed",
+    "initialFrontendFormat": "failed on eight inherited files; fixed and rechecked locally",
+    "browserE2E": "not yet verified"
   }
 }
