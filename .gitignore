@@ -1,0 +1,7 @@
+# Claude Code local settings (machine/session-specific permission logs)
+.claude/
+node_modules/
+database-details.txt
+
+# Production-specific rollout data is provided privately.
+database/full-database-design/operations/reviewed-content-manifest.json
