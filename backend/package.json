@@ -14,7 +14,7 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@prisma/client": "5.20.0",
+    "@prisma/client": "7.10.1",
     "@supabase/supabase-js": "2.118.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
