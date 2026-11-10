@@ -27,7 +27,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.3.12",
+    "@electric-sql/pglite": "0.5.15",
     "@electric-sql/pglite-socket": "0.0.17",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
